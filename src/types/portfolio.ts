@@ -37,7 +37,7 @@ export interface ArtworkFormData {
   for_sale: boolean;
 }
 
-// Added new interface for the portfolio with artist information
+// Updated interface for the portfolio with artist information
 export interface PortfolioWithArtist {
   id: string;
   name: string;
@@ -54,7 +54,6 @@ export interface PortfolioWithArtist {
     instagram_url: string | null;
     twitter_url: string | null;
     website_url: string | null;
-    // Added contact_email field
     contact_email: string | null;
   };
 }
