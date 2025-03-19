@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 
 @tailwind base;
@@ -100,6 +99,14 @@
   .text-gradient {
     @apply bg-gradient-to-r from-brand-blue via-brand-green to-brand-red bg-clip-text text-transparent;
   }
+
+  .auth-button {
+    @apply transition-all duration-300 transform hover:translate-y-[-2px] hover:shadow-md;
+  }
+  
+  .form-input-shake {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+  }
 }
 
 /* Animation Utilities */
@@ -131,4 +138,40 @@
   .hover-grow {
     @apply transition-transform duration-300 hover:scale-105;
   }
+}
+
+/* Additional animations */
+@keyframes shake {
+  10%, 90% {
+    transform: translateX(-1px);
+  }
+  20%, 80% {
+    transform: translateX(2px);
+  }
+  30%, 50%, 70% {
+    transform: translateX(-4px);
+  }
+  40%, 60% {
+    transform: translateX(4px);
+  }
+}
+
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.page-transition-exit {
+  opacity: 1;
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
 }

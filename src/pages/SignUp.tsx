@@ -1,20 +1,49 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import DefaultLayout from '@/components/layout/DefaultLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Lock, User, ArrowRight, Github, Twitter } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Github, Twitter, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const SignUp = () => {
-  // Note: This is a placeholder for Supabase authentication
-  // In a real implementation, we would use Supabase client here
-  const handleSignUp = (e: React.FormEvent) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const { signUp, signInWithProvider, loading } = useAuth();
+
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Sign up functionality will use Supabase Auth');
-    // Placeholder for redirect to dashboard after registration
+    setError(null);
+    
+    if (!name || !email || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+    
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+    
+    try {
+      await signUp(email, password, name);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleProviderSignIn = async (provider: 'github' | 'twitter') => {
+    try {
+      await signInWithProvider(provider);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -29,6 +58,12 @@ const SignUp = () => {
           </div>
 
           <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={handleSignUp}>
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -43,6 +78,8 @@ const SignUp = () => {
                       placeholder="Your Name" 
                       className="pl-10"
                       required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
                     />
                   </div>
                 </div>
@@ -59,6 +96,8 @@ const SignUp = () => {
                       placeholder="your@email.com" 
                       className="pl-10"
                       required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                     />
                   </div>
                 </div>
@@ -75,16 +114,31 @@ const SignUp = () => {
                       placeholder="••••••••" 
                       className="pl-10"
                       required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className={`text-xs ${password.length > 0 && password.length < 8 ? 'text-destructive' : 'text-muted-foreground'} mt-1`}>
                     Must be at least 8 characters
                   </p>
                 </div>
                 
-                <Button type="submit" className="w-full">
-                  Create Account
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button 
+                  type="submit" 
+                  className="w-full transition-all duration-300 hover:bg-primary/90 hover:shadow-md"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    <>
+                      Create Account
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
                 </Button>
               </div>
             </form>
@@ -97,11 +151,21 @@ const SignUp = () => {
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="w-full">
+              <Button 
+                variant="outline" 
+                className="w-full transition-all duration-300 hover:bg-secondary/80 hover:shadow-sm"
+                onClick={() => handleProviderSignIn('github')}
+                disabled={loading}
+              >
                 <Github className="mr-2 h-4 w-4" />
                 GitHub
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button 
+                variant="outline" 
+                className="w-full transition-all duration-300 hover:bg-secondary/80 hover:shadow-sm"
+                onClick={() => handleProviderSignIn('twitter')}
+                disabled={loading}
+              >
                 <Twitter className="mr-2 h-4 w-4" />
                 Twitter
               </Button>
