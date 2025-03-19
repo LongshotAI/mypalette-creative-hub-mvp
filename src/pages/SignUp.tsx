@@ -153,7 +153,7 @@ const SignUp = () => {
                 
                 <Button 
                   type="submit" 
-                  className="w-full transition-all duration-300 hover:bg-primary/90 hover:shadow-md"
+                  className="w-full transition-all duration-300 hover:bg-primary/90 hover:shadow-md bg-primary"
                   disabled={loading || configError}
                 >
                   {loading ? (
