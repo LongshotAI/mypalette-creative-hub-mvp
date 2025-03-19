@@ -20,6 +20,9 @@ const Portfolios = () => {
       try {
         setLoading(true);
         
+        // Debug log to track execution
+        console.log('Fetching public portfolios...');
+        
         const { data, error } = await supabase
           .from('portfolios')
           .select(`
@@ -43,7 +46,7 @@ const Portfolios = () => {
           setPortfolios([]);
         } else {
           console.log('Fetched portfolios:', data);
-          setPortfolios(data as unknown as PortfolioWithArtist[]);
+          setPortfolios(data as PortfolioWithArtist[]);
         }
       } catch (error) {
         console.error('Error fetching portfolios:', error);
@@ -105,7 +108,15 @@ const Portfolios = () => {
               <Card key={portfolio.id} className="overflow-hidden hover:shadow-md transition-shadow">
                 <Link to={`/portfolio/${portfolio.id}`}>
                   <div className="aspect-[3/2] bg-accent/10 flex items-center justify-center">
-                    <Image className="h-12 w-12 text-muted-foreground" />
+                    {portfolio.profiles?.avatar_url ? (
+                      <img 
+                        src={portfolio.profiles.avatar_url} 
+                        alt={`${portfolio.profiles.full_name || 'Artist'}'s avatar`}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <Image className="h-12 w-12 text-muted-foreground" />
+                    )}
                   </div>
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between gap-4">
