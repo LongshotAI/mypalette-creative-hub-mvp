@@ -9,48 +9,71 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Portfolios = () => {
   const [portfolios, setPortfolios] = useState<PortfolioWithArtist[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPortfolios = async () => {
       try {
         setLoading(true);
+        setError(null);
         
-        // Debug log to track execution
         console.log('Fetching public portfolios...');
         
-        const { data, error } = await supabase
+        // First, fetch the public portfolios
+        const { data: portfolioData, error: portfolioError } = await supabase
           .from('portfolios')
-          .select(`
-            *,
-            profiles:user_id (
-              full_name,
-              username,
-              avatar_url,
-              bio,
-              instagram_url,
-              twitter_url,
-              website_url
-            )
-          `)
+          .select('*')
           .eq('is_public', true)
           .order('created_at', { ascending: false });
         
-        if (error) {
-          console.error('Error fetching portfolios:', error);
+        if (portfolioError) {
+          console.error('Error fetching portfolios:', portfolioError);
           toast.error('Failed to load portfolios');
+          setError('Failed to load portfolios: ' + portfolioError.message);
           setPortfolios([]);
-        } else {
-          console.log('Fetched portfolios:', data);
-          setPortfolios(data as PortfolioWithArtist[]);
+          return;
         }
-      } catch (error) {
+        
+        if (!portfolioData || portfolioData.length === 0) {
+          console.log('No public portfolios found');
+          setPortfolios([]);
+          setLoading(false);
+          return;
+        }
+
+        console.log('Fetched portfolios:', portfolioData);
+        
+        // Now fetch the user profiles separately for each portfolio
+        const portfoliosWithProfiles = await Promise.all(
+          portfolioData.map(async (portfolio) => {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', portfolio.user_id)
+              .single();
+              
+            if (profileError) {
+              console.warn(`Error fetching profile for user ${portfolio.user_id}:`, profileError);
+              return { ...portfolio, profiles: null };
+            }
+            
+            return { ...portfolio, profiles: profileData };
+          })
+        );
+        
+        console.log('Portfolios with profiles:', portfoliosWithProfiles);
+        setPortfolios(portfoliosWithProfiles as PortfolioWithArtist[]);
+      } catch (error: any) {
         console.error('Error fetching portfolios:', error);
         toast.error('Failed to load portfolios');
+        setError('Failed to load portfolios: ' + error.message);
+        setPortfolios([]);
       } finally {
         setLoading(false);
       }
@@ -89,6 +112,12 @@ const Portfolios = () => {
             />
           </div>
         </div>
+        
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         
         {loading ? (
           <div className="flex justify-center items-center py-20">

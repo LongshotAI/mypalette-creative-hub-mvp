@@ -10,12 +10,14 @@ import GridTemplate from '@/components/portfolio/templates/GridTemplate';
 import MasonryTemplate from '@/components/portfolio/templates/MasonryTemplate';
 import SlideshowTemplate from '@/components/portfolio/templates/SlideshowTemplate';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const PortfolioDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [portfolio, setPortfolio] = useState<PortfolioWithArtist | null>(null);
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPortfolio = async () => {
@@ -23,40 +25,53 @@ const PortfolioDetail = () => {
       
       try {
         setLoading(true);
+        setError(null);
         
-        // Fetch portfolio with artist profile information
+        console.log('Fetching portfolio details for ID:', id);
+        
+        // First fetch the portfolio
         const { data: portfolioData, error: portfolioError } = await supabase
           .from('portfolios')
-          .select(`
-            *,
-            profiles:user_id (
-              full_name,
-              username,
-              avatar_url,
-              bio,
-              instagram_url,
-              twitter_url,
-              website_url
-            )
-          `)
+          .select('*')
           .eq('id', id)
           .single();
         
         if (portfolioError) {
           console.error('Error fetching portfolio:', portfolioError);
           toast.error('Failed to load portfolio');
+          setError('Failed to load portfolio: ' + portfolioError.message);
           setLoading(false);
           return;
         }
         
         if (!portfolioData) {
           toast.error('Portfolio not found or is private');
+          setError('Portfolio not found or is private');
           setLoading(false);
           return;
         }
         
-        console.log('Fetched portfolio:', portfolioData);
-        setPortfolio(portfolioData as unknown as PortfolioWithArtist);
+        console.log('Fetched portfolio data:', portfolioData);
+        
+        // Get the user profile separately
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', portfolioData.user_id)
+          .single();
+          
+        if (profileError) {
+          console.warn(`Error fetching profile for user ${portfolioData.user_id}:`, profileError);
+        }
+        
+        // Combine portfolio with profile data
+        const portfolioWithProfile = {
+          ...portfolioData,
+          profiles: profileError ? null : profileData
+        };
+        
+        console.log('Portfolio with profile:', portfolioWithProfile);
+        setPortfolio(portfolioWithProfile as PortfolioWithArtist);
         
         // Fetch artworks for this portfolio
         const { data: artworksData, error: artworksError } = await supabase
@@ -68,13 +83,15 @@ const PortfolioDetail = () => {
         if (artworksError) {
           console.error('Error fetching artworks:', artworksError);
           toast.error('Failed to load artworks');
+          setError(`Failed to load artworks: ${artworksError.message}`);
         } else {
           console.log('Fetched artworks:', artworksData);
           setArtworks(artworksData || []);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching portfolio:', error);
         toast.error('Failed to load portfolio');
+        setError(`Failed to load portfolio: ${error.message}`);
       } finally {
         setLoading(false);
       }
@@ -105,6 +122,12 @@ const PortfolioDetail = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Portfolios
         </Link>
+        
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         
         {loading ? (
           <div className="flex justify-center items-center py-20">
