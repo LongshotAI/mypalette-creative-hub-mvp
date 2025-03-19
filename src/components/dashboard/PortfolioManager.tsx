@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -625,5 +626,276 @@ const PortfolioManager = () => {
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <h2 className="text-xl font-semibold">Portfolio Artworks</h2>
               
-              {
+              {portfolios.length > 0 && (
+                <Select 
+                  value={selectedPortfolio || ''} 
+                  onValueChange={(value) => setSelectedPortfolio(value)}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select portfolio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {portfolios.map((portfolio) => (
+                      <SelectItem key={portfolio.id} value={portfolio.id}>
+                        {portfolio.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              <Select 
+                value={sortOrder} 
+                onValueChange={(value: any) => setSortOrder(value)}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="oldest">Oldest First</SelectItem>
+                  <SelectItem value="price_high">Price: High to Low</SelectItem>
+                  <SelectItem value="price_low">Price: Low to High</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {selectedPortfolio && (
+                <Dialog open={artworkFormOpen} onOpenChange={setArtworkFormOpen}>
+                  <DialogTrigger asChild>
+                    <Button onClick={() => {
+                      setEditingArtwork(null);
+                      setArtworkForm({
+                        title: '',
+                        description: '',
+                        image_url: '',
+                        price: '',
+                        currency: 'USD',
+                        for_sale: false
+                      });
+                    }}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Artwork
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>
+                        {editingArtwork ? 'Edit Artwork' : 'Add New Artwork'}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {editingArtwork 
+                          ? 'Update your artwork details below.' 
+                          : 'Add a new artwork to your portfolio.'}
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="artwork-title">Title</Label>
+                        <Input
+                          id="artwork-title"
+                          value={artworkForm.title}
+                          onChange={(e) => setArtworkForm({...artworkForm, title: e.target.value})}
+                          placeholder="Untitled Artwork"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="artwork-description">Description</Label>
+                        <Textarea
+                          id="artwork-description"
+                          value={artworkForm.description}
+                          onChange={(e) => setArtworkForm({...artworkForm, description: e.target.value})}
+                          placeholder="Describe your artwork..."
+                          rows={3}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="artwork-image">Artwork Image</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="artwork-image"
+                            type="file"
+                            disabled={imageUploading}
+                            onChange={handleArtworkImageUpload}
+                            accept="image/jpeg,image/png,image/gif"
+                            className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                          />
+                          {imageUploading && <Loader2 className="h-4 w-4 animate-spin" />}
+                        </div>
+                        {artworkForm.image_url && (
+                          <div className="mt-2">
+                            <img
+                              src={artworkForm.image_url}
+                              alt="Artwork preview"
+                              className="max-h-40 rounded-md object-contain"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="artwork-for-sale"
+                          checked={artworkForm.for_sale}
+                          onChange={(e) => setArtworkForm({...artworkForm, for_sale: e.target.checked})}
+                          className="rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label htmlFor="artwork-for-sale">For Sale</Label>
+                      </div>
+                      
+                      {artworkForm.for_sale && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="artwork-price">Price</Label>
+                            <Input
+                              id="artwork-price"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={artworkForm.price}
+                              onChange={(e) => setArtworkForm({...artworkForm, price: e.target.value})}
+                              placeholder="0.00"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="artwork-currency">Currency</Label>
+                            <Select
+                              value={artworkForm.currency}
+                              onValueChange={(value) => setArtworkForm({...artworkForm, currency: value})}
+                            >
+                              <SelectTrigger id="artwork-currency">
+                                <SelectValue placeholder="Select currency" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="USD">USD ($)</SelectItem>
+                                <SelectItem value="EUR">EUR (€)</SelectItem>
+                                <SelectItem value="GBP">GBP (£)</SelectItem>
+                                <SelectItem value="JPY">JPY (¥)</SelectItem>
+                                <SelectItem value="ETH">ETH (Ξ)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setArtworkFormOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={editingArtwork ? handleUpdateArtwork : handleCreateArtwork}
+                        disabled={formSubmitting || !artworkForm.title || !artworkForm.image_url}
+                      >
+                        {formSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {editingArtwork ? 'Updating...' : 'Adding...'}
+                          </>
+                        ) : (
+                          editingArtwork ? 'Update Artwork' : 'Add Artwork'
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
+          </div>
+          
+          {!selectedPortfolio ? (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Please select a portfolio to view and manage artworks.
+              </AlertDescription>
+            </Alert>
+          ) : artworks.length === 0 ? (
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center">
+                  <Image className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Artworks Yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Add your first artwork to this portfolio.
+                  </p>
+                  <Button onClick={() => setArtworkFormOpen(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Add Artwork
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {artworks.map((artwork) => (
+                <Card key={artwork.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <div className="aspect-square overflow-hidden">
+                    <img 
+                      src={artwork.image_url} 
+                      alt={artwork.title}
+                      className="h-full w-full object-cover transition-transform hover:scale-105"
+                    />
+                  </div>
+                  <CardHeader className="pb-2">
+                    <CardTitle>{artwork.title}</CardTitle>
+                    {artwork.description && (
+                      <CardDescription className="line-clamp-2">
+                        {artwork.description}
+                      </CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent className="pb-2">
+                    {artwork.for_sale && artwork.price !== null && (
+                      <div className="font-medium text-primary">
+                        {artwork.currency === 'USD' && '$'}
+                        {artwork.currency === 'EUR' && '€'}
+                        {artwork.currency === 'GBP' && '£'}
+                        {artwork.currency === 'JPY' && '¥'}
+                        {artwork.currency === 'ETH' && 'Ξ '}
+                        {artwork.price}
+                        {' '}
+                        {artwork.currency !== 'USD' && 
+                          artwork.currency !== 'EUR' && 
+                          artwork.currency !== 'GBP' && 
+                          artwork.currency !== 'JPY' &&
+                          artwork.currency !== 'ETH' && 
+                          artwork.currency}
+                      </div>
+                    )}
+                  </CardContent>
+                  <CardFooter className="flex justify-end space-x-2 border-t pt-4">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => editArtwork(artwork)}
+                    >
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDeleteArtwork(artwork.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
 
+export default PortfolioManager;

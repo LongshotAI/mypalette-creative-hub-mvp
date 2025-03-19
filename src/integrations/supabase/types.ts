@@ -9,7 +9,279 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      artworks: {
+        Row: {
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          for_sale: boolean | null
+          id: string
+          image_url: string
+          portfolio_id: string
+          price: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          for_sale?: boolean | null
+          id?: string
+          image_url: string
+          portfolio_id: string
+          price?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          for_sale?: boolean | null
+          id?: string
+          image_url?: string
+          portfolio_id?: string
+          price?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artworks_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      education_favorites: {
+        Row: {
+          created_at: string | null
+          id: string
+          resource_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          resource_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          resource_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "education_favorites_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "education_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      education_resources: {
+        Row: {
+          author: string
+          category: string
+          content: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_published: boolean | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          author: string
+          category: string
+          content?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_published?: boolean | null
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          author?: string
+          category?: string
+          content?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_published?: boolean | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      open_call_submissions: {
+        Row: {
+          created_at: string | null
+          feedback: string | null
+          id: string
+          open_call_id: string
+          status: string
+          submission_data: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          open_call_id: string
+          status?: string
+          submission_data?: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          open_call_id?: string
+          status?: string
+          submission_data?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "open_call_submissions_open_call_id_fkey"
+            columns: ["open_call_id"]
+            isOneToOne: false
+            referencedRelation: "open_calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      open_calls: {
+        Row: {
+          category: string
+          created_at: string | null
+          deadline: string
+          description: string | null
+          id: string
+          image_url: string | null
+          organization: string
+          requirements: string | null
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          deadline: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          organization: string
+          requirements?: string | null
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          deadline?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          organization?: string
+          requirements?: string | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      portfolios: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_public: boolean
+          name: string
+          template: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name: string
+          template?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name?: string
+          template?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          instagram_url: string | null
+          twitter_url: string | null
+          updated_at: string | null
+          username: string | null
+          website_url: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          instagram_url?: string | null
+          twitter_url?: string | null
+          updated_at?: string | null
+          username?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          instagram_url?: string | null
+          twitter_url?: string | null
+          updated_at?: string | null
+          username?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
