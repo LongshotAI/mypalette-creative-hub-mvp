@@ -1,9 +1,17 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// These should be environment variables in production
-// For this demo, we're using public values as these are client-side anyway
-const supabaseUrl = 'https://your-supabase-url.supabase.co';
+// Replace these with your actual Supabase URL and anon key
+// Get these from your Supabase project settings → API
+const supabaseUrl = 'https://your-project-id.supabase.co';
 const supabaseAnonKey = 'your-supabase-anon-key';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Helper to check if Supabase is configured correctly
+export const isSupabaseConfigured = () => {
+  return (
+    supabaseUrl !== 'https://your-project-id.supabase.co' && 
+    supabaseAnonKey !== 'your-supabase-anon-key'
+  );
+};

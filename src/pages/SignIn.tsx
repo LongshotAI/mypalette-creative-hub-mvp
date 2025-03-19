@@ -1,24 +1,38 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DefaultLayout from '@/components/layout/DefaultLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Lock, ArrowRight, Github, Twitter, Loader2 } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Github, Twitter, Loader2, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [configError, setConfigError] = useState<boolean>(false);
   const { signIn, signInWithProvider, loading } = useAuth();
+
+  useEffect(() => {
+    // Check if Supabase is configured properly
+    if (!isSupabaseConfigured()) {
+      setConfigError(true);
+    }
+  }, []);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    
+    if (configError) {
+      setError('Supabase is not configured. Please update the URL and anon key in src/lib/supabase.ts');
+      return;
+    }
     
     if (!email || !password) {
       setError('Please fill in all fields');
@@ -33,6 +47,11 @@ const SignIn = () => {
   };
 
   const handleProviderSignIn = async (provider: 'github' | 'twitter') => {
+    if (configError) {
+      setError('Supabase is not configured. Please update the URL and anon key in src/lib/supabase.ts');
+      return;
+    }
+    
     try {
       await signInWithProvider(provider);
     } catch (err) {
@@ -52,7 +71,16 @@ const SignIn = () => {
           </div>
 
           <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-            {error && (
+            {configError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                <AlertDescription>
+                  Supabase connection is not configured. Please update the URL and anon key in <code>src/lib/supabase.ts</code>.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {error && !configError && (
               <Alert variant="destructive" className="mb-4">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
@@ -104,7 +132,7 @@ const SignIn = () => {
                 <Button 
                   type="submit" 
                   className="w-full transition-all duration-300 hover:bg-primary/90 hover:shadow-md"
-                  disabled={loading}
+                  disabled={loading || configError}
                 >
                   {loading ? (
                     <>
@@ -133,7 +161,7 @@ const SignIn = () => {
                 variant="outline" 
                 className="w-full transition-all duration-300 hover:bg-secondary/80 hover:shadow-sm"
                 onClick={() => handleProviderSignIn('github')}
-                disabled={loading}
+                disabled={loading || configError}
               >
                 <Github className="mr-2 h-4 w-4" />
                 GitHub
@@ -142,7 +170,7 @@ const SignIn = () => {
                 variant="outline" 
                 className="w-full transition-all duration-300 hover:bg-secondary/80 hover:shadow-sm"
                 onClick={() => handleProviderSignIn('twitter')}
-                disabled={loading}
+                disabled={loading || configError}
               >
                 <Twitter className="mr-2 h-4 w-4" />
                 Twitter
