@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Instagram, Twitter, Globe, Loader2, Calendar, Share, Mail, MapPin, Eye, User } from 'lucide-react';
@@ -209,7 +208,7 @@ const PortfolioDetail = () => {
           </Button>
           
           <Button variant="default" size="sm" asChild>
-            <a href={`mailto:${portfolio.profiles.contact_email || ''}`}>
+            <a href={`mailto:${portfolio.profiles.contact_email || portfolio.profiles.email || ''}`}>
               <Mail className="h-4 w-4 mr-2" />
               Contact
             </a>
