@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 const Hero: React.FC = () => {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -33,7 +34,7 @@ const Hero: React.FC = () => {
   }, []);
   
   return (
-    <section ref={heroRef} className="relative overflow-hidden py-24 lg:py-32">
+    <section ref={heroRef} className="relative overflow-hidden py-24 lg:py-32 bg-ppn-light">
       {/* Animated background elements */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-secondary/20 pointer-events-none" />
       <div className="bg-blob absolute -top-24 right-0 w-80 h-80 bg-brand-red/5 rounded-full blur-3xl" data-speed="1.5" />
@@ -42,6 +43,14 @@ const Hero: React.FC = () => {
       
       <div className="container-custom relative z-10">
         <div ref={textRef} className="max-w-3xl mx-auto text-center transition-transform duration-200">
+          <div className="mb-6 animate-pixel-in">
+            <img 
+              src="/lovable-uploads/989cbf61-b6e6-42ab-b88c-4f5184336c53.png" 
+              alt="PPN Logo" 
+              className="h-24 mx-auto mb-4"
+            />
+          </div>
+          
           <h1 className="animate-fade-up font-sans text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6">
             Create a stunning 
             <span className="relative mx-2 inline-block px-2">
@@ -57,16 +66,21 @@ const Hero: React.FC = () => {
           </p>
           
           <div className="animate-fade-up animate-delay-200 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Button size="lg" className="rounded-full px-8 py-6 font-medium bg-gradient-to-r from-brand-green to-brand-blue text-white hover:shadow-md transition-all duration-300">
-              Sign Up
-              <ArrowRight className="ml-2 h-4 w-4" />
+            <Button asChild size="lg" className="ppn-button">
+              <Link to="/sign-up">
+                Sign Up
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
             <Button 
               variant="outline" 
               size="lg" 
               className="rounded-full px-8 py-6 font-medium border-gray-200 hover:bg-gray-100"
+              asChild
             >
-              Explore Portfolios
+              <Link to="/portfolios">
+                Explore Portfolios
+              </Link>
             </Button>
           </div>
         </div>
@@ -86,10 +100,23 @@ const Hero: React.FC = () => {
                 <div className="absolute bottom-1/4 right-1/4 w-20 h-20 bg-brand-blue/50 rounded-full filter blur-xl" />
               </div>
               
-              <p className="text-center relative z-10">
-                <span className="block font-medium text-gray-500 mb-2">Portfolio Preview</span>
-                <span className="text-gray-400">Interactive portfolio showcase will appear here</span>
-              </p>
+              <div className="grid grid-cols-3 gap-4 w-full max-w-2xl">
+                <div className="col-span-1 bg-white rounded-lg shadow-md p-4 hover-pixel">
+                  <div className="bg-brand-red/10 h-32 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+                <div className="col-span-1 bg-white rounded-lg shadow-md p-4 hover-pixel">
+                  <div className="bg-brand-green/10 h-32 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+                <div className="col-span-1 bg-white rounded-lg shadow-md p-4 hover-pixel">
+                  <div className="bg-brand-blue/10 h-32 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

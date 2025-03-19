@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -24,14 +24,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      console.error('Supabase is not configured. Please update the URL and anon key in src/lib/supabase.ts');
-      setLoading(false);
-      return;
-    }
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
 
-    // Get initial session
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -40,28 +45,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
     return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      if (!isSupabaseConfigured()) {
-        toast.error("Supabase is not configured. Please update the URL and anon key.");
-        return;
-      }
-
       setLoading(true);
+      console.log('Signing in with:', email);
       const { error, data } = await supabase.auth.signInWithPassword({ email, password });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Sign in error:', error);
+        throw error;
+      }
       
+      console.log('Sign in successful:', data);
       toast.success("Successfully signed in");
       navigate('/dashboard');
     } catch (error: any) {
@@ -74,12 +72,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, name: string) => {
     try {
-      if (!isSupabaseConfigured()) {
-        toast.error("Supabase is not configured. Please update the URL and anon key.");
-        return;
-      }
-
       setLoading(true);
+      console.log('Signing up with:', email, name);
       
       // Create the user
       const { error, data } = await supabase.auth.signUp({ 
@@ -92,7 +86,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } 
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Sign up error:', error);
+        throw error;
+      }
+      
+      console.log('Sign up response:', data);
       
       // Check if email confirmation is required
       if (data?.user && data.user.identities && data.user.identities.length === 0) {
@@ -120,14 +119,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      if (!isSupabaseConfigured()) {
-        toast.error("Supabase is not configured. Please update the URL and anon key.");
-        return;
-      }
-
       setLoading(true);
+      console.log('Signing out');
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.error('Sign out error:', error);
+        throw error;
+      }
       navigate('/');
       toast.success("Successfully signed out");
     } catch (error: any) {
@@ -140,12 +138,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithProvider = async (provider: 'github' | 'twitter') => {
     try {
-      if (!isSupabaseConfigured()) {
-        toast.error("Supabase is not configured. Please update the URL and anon key.");
-        return;
-      }
-
       setLoading(true);
+      console.log(`Signing in with ${provider}`);
       const { error } = await supabase.auth.signInWithOAuth({ 
         provider,
         options: {
@@ -153,7 +147,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('OAuth sign in error:', error);
+        throw error;
+      }
     } catch (error: any) {
       console.error('OAuth sign in error:', error);
       toast.error(error.message || `Failed to sign in with ${provider}`);

@@ -1,14 +1,25 @@
 
 import React, { useState, useEffect } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut, User } from 'lucide-react';
 import Logo from '../common/Logo';
 import AnimatedLink from '../ui/AnimatedLink';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -40,10 +51,41 @@ const Header: React.FC = () => {
           <AnimatedLink to="/portfolios" label="Portfolios" />
           <AnimatedLink to="/education" label="Education Hub" />
           <AnimatedLink to="/open-calls" label="Open Calls" />
+          
           <div className="ml-4">
-            <Button asChild size="sm" variant="default" className="rounded-full px-6">
-              <a href="/sign-in">Sign In</a>
-            </Button>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="rounded-full">
+                    <User className="h-4 w-4 mr-2" />
+                    {user.user_metadata.full_name || 'Account'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard" className="cursor-pointer w-full">
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard/profile" className="cursor-pointer w-full">
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()} className="text-destructive cursor-pointer">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button asChild size="sm" className="ppn-button">
+                <Link to="/sign-in">Sign In</Link>
+              </Button>
+            )}
           </div>
         </nav>
 
@@ -88,9 +130,26 @@ const Header: React.FC = () => {
             className="text-lg py-3"
             activeClassName="font-medium"
           />
-          <Button asChild size="lg" variant="default" className="mt-4 w-full rounded-full">
-            <a href="/sign-in">Sign In</a>
-          </Button>
+          
+          {user ? (
+            <>
+              <Link to="/dashboard" className="text-lg py-3 text-primary font-medium">
+                Dashboard
+              </Link>
+              <Button 
+                onClick={() => signOut()} 
+                variant="outline" 
+                className="mt-4 w-full justify-start text-destructive"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Log out
+              </Button>
+            </>
+          ) : (
+            <Button asChild size="lg" className="ppn-button w-full mt-4">
+              <Link to="/sign-in">Sign In</Link>
+            </Button>
+          )}
         </nav>
       </div>
     </header>

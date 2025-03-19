@@ -1,9 +1,8 @@
 
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader } from 'lucide-react';
-import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,27 +10,29 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
-  const navigate = useNavigate();
+  const location = useLocation();
 
+  // Debug logging
   useEffect(() => {
-    if (!loading && !user) {
-      toast.error("Please sign in to access this page");
-      navigate('/sign-in');
-    }
-  }, [user, loading, navigate]);
+    console.log('ProtectedRoute: user =', user?.email, 'loading =', loading);
+  }, [user, loading]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center">
-          <Loader className="h-12 w-12 animate-spin text-primary" />
-          <p className="mt-4 text-lg">Loading your dashboard...</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+          <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
-  return user ? <>{children}</> : null;
+  if (!user) {
+    return <Navigate to="/sign-in" state={{ from: location }} replace />;
+  }
+
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

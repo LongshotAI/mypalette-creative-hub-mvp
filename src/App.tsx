@@ -13,6 +13,7 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/layout/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -28,7 +29,14 @@ const App = () => (
             <Route path="/portfolios" element={<Portfolios />} />
             <Route path="/education" element={<Education />} />
             <Route path="/open-calls" element={<OpenCalls />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

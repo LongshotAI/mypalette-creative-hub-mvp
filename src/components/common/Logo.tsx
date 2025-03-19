@@ -23,7 +23,7 @@ const Logo: React.FC<LogoProps> = ({
     <Link to="/" className={`inline-flex items-center ${className}`}>
       <div className="relative">
         <img 
-          src="/lovable-uploads/6cbb00ed-f6a4-4349-83e9-abd6de13f829.png" 
+          src="/lovable-uploads/989cbf61-b6e6-42ab-b88c-4f5184336c53.png" 
           alt="PPN Logo" 
           className={`${sizeClasses[size]} w-auto object-contain transition-all duration-300 hover:scale-105`}
         />
