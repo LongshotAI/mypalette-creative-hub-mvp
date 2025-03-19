@@ -55,5 +55,8 @@ export interface PortfolioWithArtist {
     twitter_url: string | null;
     website_url: string | null;
     contact_email: string | null;
+    location?: string | null;
+    artist_statement?: string | null;
+    current_exhibition?: string | null;
   };
 }

@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Instagram, Twitter, Globe, Loader2, Calendar, Share, Mail, MapPin, Eye, User } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Instagram, Twitter, Globe, Loader2, Calendar, Share, Mail, User, Star, ArrowRight, MessageCircle, MapPin, Eye, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { PortfolioWithArtist, Artwork } from '@/types/portfolio';
 import DefaultLayout from '@/components/layout/DefaultLayout';
@@ -15,14 +15,20 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent } from '@/components/ui/card';
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
+import { cn } from '@/lib/utils';
 
 const PortfolioDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [portfolio, setPortfolio] = useState<PortfolioWithArtist | null>(null);
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [artworkCount, setArtworkCount] = useState(0);
+  const [morePortfolios, setMorePortfolios] = useState<PortfolioWithArtist[]>([]);
+  const [featuredArtwork, setFeaturedArtwork] = useState<Artwork | null>(null);
 
   useEffect(() => {
     const fetchPortfolio = async () => {
@@ -93,6 +99,40 @@ const PortfolioDetail = () => {
           console.log('Fetched artworks:', artworksData);
           setArtworks(artworksData || []);
           setArtworkCount(artworksData?.length || 0);
+          
+          // Set the first artwork as featured if there are any
+          if (artworksData && artworksData.length > 0) {
+            setFeaturedArtwork(artworksData[0]);
+          }
+        }
+        
+        // Fetch more portfolios from the same artist
+        if (portfolioData.user_id) {
+          const { data: morePortfoliosData, error: morePortfoliosError } = await supabase
+            .from('portfolios')
+            .select('*, profiles(*)')
+            .eq('user_id', portfolioData.user_id)
+            .eq('is_public', true)
+            .neq('id', id)
+            .limit(3);
+            
+          if (!morePortfoliosError && morePortfoliosData) {
+            setMorePortfolios(morePortfoliosData as PortfolioWithArtist[]);
+          }
+        }
+        
+        // Fetch more public portfolios for "Browse More" section
+        if (morePortfolios.length === 0) {
+          const { data: publicPortfoliosData } = await supabase
+            .from('portfolios')
+            .select('*, profiles(*)')
+            .eq('is_public', true)
+            .neq('id', id)
+            .limit(3);
+            
+          if (publicPortfoliosData) {
+            setMorePortfolios(publicPortfoliosData as PortfolioWithArtist[]);
+          }
         }
       } catch (error: any) {
         console.error('Error fetching portfolio:', error);
@@ -151,9 +191,9 @@ const PortfolioDetail = () => {
     if (!portfolio?.profiles) return null;
 
     return (
-      <div className="bg-muted/20 rounded-lg p-6 mb-8">
+      <div className="bg-muted/20 rounded-lg p-6 mb-8 hover:shadow-md transition-all duration-300">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
-          <Avatar className="h-20 w-20 border-2 border-background">
+          <Avatar className="h-20 w-20 border-2 border-background hover-scale">
             <AvatarImage src={portfolio.profiles.avatar_url || undefined} alt={portfolio.profiles.full_name || 'Artist'} />
             <AvatarFallback>
               <User className="h-8 w-8" />
@@ -177,7 +217,7 @@ const PortfolioDetail = () => {
         
         <div className="flex flex-wrap gap-2 mt-4">
           {portfolio.profiles.instagram_url && (
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="hover-scale">
               <a href={portfolio.profiles.instagram_url} target="_blank" rel="noopener noreferrer">
                 <Instagram className="h-4 w-4 mr-2" />
                 Instagram
@@ -186,7 +226,7 @@ const PortfolioDetail = () => {
           )}
           
           {portfolio.profiles.twitter_url && (
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="hover-scale">
               <a href={portfolio.profiles.twitter_url} target="_blank" rel="noopener noreferrer">
                 <Twitter className="h-4 w-4 mr-2" />
                 Twitter
@@ -195,7 +235,7 @@ const PortfolioDetail = () => {
           )}
           
           {portfolio.profiles.website_url && (
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="hover-scale">
               <a href={portfolio.profiles.website_url} target="_blank" rel="noopener noreferrer">
                 <Globe className="h-4 w-4 mr-2" />
                 Website
@@ -203,12 +243,12 @@ const PortfolioDetail = () => {
             </Button>
           )}
           
-          <Button variant="secondary" size="sm" onClick={handleSharePortfolio}>
+          <Button variant="secondary" size="sm" onClick={handleSharePortfolio} className="hover-scale">
             <Share className="h-4 w-4 mr-2" />
             Share
           </Button>
           
-          <Button variant="default" size="sm" asChild>
+          <Button variant="default" size="sm" asChild className="hover-scale">
             <a href={`mailto:${portfolio.profiles.contact_email || ''}`}>
               <Mail className="h-4 w-4 mr-2" />
               Contact
@@ -218,11 +258,117 @@ const PortfolioDetail = () => {
       </div>
     );
   };
+  
+  const renderFeatureSection = () => {
+    if (!featuredArtwork) return null;
+    
+    return (
+      <div className="mb-8 bg-muted/10 rounded-lg overflow-hidden">
+        <div className="flex flex-col md:flex-row">
+          <div className="md:w-1/2 aspect-square overflow-hidden">
+            <img 
+              src={featuredArtwork.image_url} 
+              alt={featuredArtwork.title} 
+              className="w-full h-full object-cover hover-grow"
+            />
+          </div>
+          <div className="md:w-1/2 p-6 flex flex-col justify-center">
+            <Badge variant="outline" className="self-start mb-2">
+              <Star className="h-3 w-3 mr-1 text-amber-500" />
+              Featured Work
+            </Badge>
+            <h3 className="text-2xl font-semibold mb-3">{featuredArtwork.title}</h3>
+            {featuredArtwork.description && (
+              <p className="text-muted-foreground mb-4">{featuredArtwork.description}</p>
+            )}
+            {featuredArtwork.for_sale && featuredArtwork.price && (
+              <p className="font-medium mb-4">
+                Price: {featuredArtwork.currency} {featuredArtwork.price}
+              </p>
+            )}
+            <div className="flex items-center mt-2 text-sm text-muted-foreground">
+              <Calendar className="h-3 w-3 mr-1" />
+              <span>Created {format(new Date(featuredArtwork.created_at), 'MMM d, yyyy')}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  const renderMorePortfolios = () => {
+    if (morePortfolios.length === 0) return null;
+    
+    return (
+      <div className="mt-12 pt-8 border-t">
+        <h3 className="text-xl font-semibold mb-6">More to Explore</h3>
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {morePortfolios.map(otherPortfolio => (
+            <Card key={otherPortfolio.id} className="overflow-hidden hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+              <Link to={`/portfolio/${otherPortfolio.id}`} className="block">
+                <div className="aspect-[3/2] bg-muted/20 flex items-center justify-center">
+                  {otherPortfolio.profiles?.avatar_url ? (
+                    <img 
+                      src={otherPortfolio.profiles.avatar_url} 
+                      alt={otherPortfolio.profiles.full_name || 'Artist'}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-12 w-12 text-muted-foreground" />
+                  )}
+                </div>
+                <CardContent className="p-4">
+                  <h4 className="font-semibold mb-1">{otherPortfolio.name}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    By {otherPortfolio.profiles?.full_name || 'Anonymous Artist'}
+                  </p>
+                </CardContent>
+              </Link>
+            </Card>
+          ))}
+        </div>
+        <div className="flex justify-center mt-6">
+          <Button variant="outline" asChild className="hover-scale">
+            <Link to="/portfolios">
+              Browse All Portfolios
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  };
+  
+  const renderNavigationButtons = () => {
+    if (!portfolio) return null;
+    
+    return (
+      <div className="flex justify-between mt-12 pt-6 border-t">
+        <Button variant="ghost" size="sm" asChild className="hover-scale">
+          <Link to="/portfolios">
+            <ArrowLeft className="mr-2 h-4 w-4" /> 
+            All Portfolios
+          </Link>
+        </Button>
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <Button variant="ghost" size="sm" onClick={handleSharePortfolio} className="hover-scale">
+              <Share className="mr-2 h-4 w-4" />
+              Share
+            </Button>
+          </HoverCardTrigger>
+          <HoverCardContent>
+            Share this portfolio with others via email, social media, or by copying the link.
+          </HoverCardContent>
+        </HoverCard>
+      </div>
+    );
+  };
 
   return (
     <DefaultLayout>
       <div className="container mx-auto py-8 px-4">
-        <Link to="/portfolios" className="inline-flex items-center text-primary mb-6 hover:underline">
+        <Link to="/portfolios" className="inline-flex items-center text-primary mb-6 hover:underline hover-scale">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Portfolios
         </Link>
@@ -241,7 +387,7 @@ const PortfolioDetail = () => {
           <div className="text-center py-20">
             <h2 className="text-2xl font-bold mb-4">Portfolio not found</h2>
             <p className="text-muted-foreground mb-6">This portfolio may be private or doesn't exist.</p>
-            <Button asChild>
+            <Button asChild className="hover-scale">
               <Link to="/portfolios">View Other Portfolios</Link>
             </Button>
           </div>
@@ -251,7 +397,7 @@ const PortfolioDetail = () => {
             <div className="md:w-1/3 lg:w-1/4">
               {renderArtistProfile()}
               
-              <div className="bg-muted/20 rounded-lg p-6">
+              <div className="bg-muted/20 rounded-lg p-6 hover:shadow-md transition-all duration-300">
                 <h3 className="text-lg font-medium mb-4">Portfolio Details</h3>
                 
                 <div className="space-y-3 text-sm">
@@ -287,7 +433,7 @@ const PortfolioDetail = () => {
                   <h1 className="text-3xl font-bold">{portfolio.name}</h1>
                   
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={handleSharePortfolio}>
+                    <Button variant="outline" size="sm" onClick={handleSharePortfolio} className="hover-scale">
                       <Share className="h-4 w-4 mr-2" />
                       Share
                     </Button>
@@ -301,6 +447,9 @@ const PortfolioDetail = () => {
                 )}
               </div>
               
+              {/* Featured Artwork Section */}
+              {artworks.length > 0 && renderFeatureSection()}
+              
               {artworks.length === 0 ? (
                 <div className="text-center py-10">
                   <p className="text-muted-foreground">No artworks in this portfolio yet.</p>
@@ -310,6 +459,12 @@ const PortfolioDetail = () => {
                   {renderTemplate()}
                 </div>
               )}
+              
+              {/* Navigation buttons */}
+              {renderNavigationButtons()}
+              
+              {/* More portfolios section */}
+              {renderMorePortfolios()}
             </div>
           </div>
         )}

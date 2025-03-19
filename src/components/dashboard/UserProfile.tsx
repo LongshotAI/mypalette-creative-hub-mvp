@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Instagram, Twitter, Globe, Upload, Loader2 } from 'lucide-react';
+import { Instagram, Twitter, Globe, Upload, Loader2, Mail, Briefcase, User, MapPin } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase, getUserProfile } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { Separator } from '@/components/ui/separator';
 
 interface UserProfileData {
   id: string;
@@ -20,6 +21,10 @@ interface UserProfileData {
   website_url: string;
   instagram_url: string;
   twitter_url: string;
+  contact_email: string;
+  location: string;
+  artist_statement: string;
+  current_exhibition: string;
 }
 
 const UserProfile = () => {
@@ -35,7 +40,11 @@ const UserProfile = () => {
     avatar_url: '',
     website_url: '',
     instagram_url: '',
-    twitter_url: ''
+    twitter_url: '',
+    contact_email: '',
+    location: '',
+    artist_statement: '',
+    current_exhibition: ''
   });
 
   useEffect(() => {
@@ -56,7 +65,11 @@ const UserProfile = () => {
             avatar_url: profile.avatar_url || '',
             website_url: profile.website_url || '',
             instagram_url: profile.instagram_url || '',
-            twitter_url: profile.twitter_url || ''
+            twitter_url: profile.twitter_url || '',
+            contact_email: profile.contact_email || user.email || '',
+            location: profile.location || '',
+            artist_statement: profile.artist_statement || '',
+            current_exhibition: profile.current_exhibition || ''
           });
         } else {
           // Initialize with user metadata if available
@@ -68,7 +81,11 @@ const UserProfile = () => {
             avatar_url: '',
             website_url: '',
             instagram_url: '',
-            twitter_url: ''
+            twitter_url: '',
+            contact_email: user.email || '',
+            location: '',
+            artist_statement: '',
+            current_exhibition: ''
           });
         }
       } catch (error) {
@@ -99,6 +116,10 @@ const UserProfile = () => {
           website_url: profileData.website_url,
           instagram_url: profileData.instagram_url,
           twitter_url: profileData.twitter_url,
+          contact_email: profileData.contact_email,
+          location: profileData.location,
+          artist_statement: profileData.artist_statement,
+          current_exhibition: profileData.current_exhibition,
           updated_at: new Date()
         }, { onConflict: 'id' });
         
@@ -181,7 +202,7 @@ const UserProfile = () => {
   }
 
   return (
-    <Card>
+    <Card className="hover:shadow-md transition-all duration-300">
       <CardHeader>
         <CardTitle>Your Profile</CardTitle>
         <CardDescription>Manage your public profile information</CardDescription>
@@ -191,7 +212,7 @@ const UserProfile = () => {
           {/* Avatar Section */}
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="relative">
-              <Avatar className="h-24 w-24">
+              <Avatar className="h-24 w-24 hover-scale">
                 <AvatarImage src={profileData.avatar_url} />
                 <AvatarFallback className="text-lg">
                   {profileData.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
@@ -226,6 +247,7 @@ const UserProfile = () => {
                   value={profileData.full_name}
                   onChange={(e) => setProfileData({...profileData, full_name: e.target.value})}
                   placeholder="Your full name"
+                  className="hover:border-primary/50 transition-colors"
                 />
               </div>
               
@@ -236,6 +258,42 @@ const UserProfile = () => {
                   value={profileData.username}
                   onChange={(e) => setProfileData({...profileData, username: e.target.value})}
                   placeholder="Choose a unique username"
+                  className="hover:border-primary/50 transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Contact Information */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">Contact Information</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <Mail className="h-5 w-5 text-gray-400 mr-2" />
+                  <Label htmlFor="contact_email">Public Email</Label>
+                </div>
+                <Input
+                  id="contact_email"
+                  value={profileData.contact_email}
+                  onChange={(e) => setProfileData({...profileData, contact_email: e.target.value})}
+                  placeholder="Public contact email"
+                  className="hover:border-primary/50 transition-colors"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <MapPin className="h-5 w-5 text-gray-400 mr-2" />
+                  <Label htmlFor="location">Location</Label>
+                </div>
+                <Input
+                  id="location"
+                  value={profileData.location}
+                  onChange={(e) => setProfileData({...profileData, location: e.target.value})}
+                  placeholder="City, Country"
+                  className="hover:border-primary/50 transition-colors"
                 />
               </div>
             </div>
@@ -249,9 +307,40 @@ const UserProfile = () => {
               value={profileData.bio}
               onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
               placeholder="Tell others about yourself and your art"
-              rows={4}
+              rows={3}
+              className="hover:border-primary/50 transition-colors"
             />
           </div>
+          
+          {/* Artist Statement */}
+          <div className="space-y-2">
+            <Label htmlFor="artist_statement">Artist Statement</Label>
+            <Textarea
+              id="artist_statement"
+              value={profileData.artist_statement}
+              onChange={(e) => setProfileData({...profileData, artist_statement: e.target.value})}
+              placeholder="Share your artistic philosophy and approach to your work"
+              rows={5}
+              className="hover:border-primary/50 transition-colors"
+            />
+          </div>
+          
+          {/* Current Exhibition */}
+          <div className="space-y-2">
+            <div className="flex items-center">
+              <Briefcase className="h-5 w-5 text-gray-400 mr-2" />
+              <Label htmlFor="current_exhibition">Currently Exhibiting</Label>
+            </div>
+            <Input
+              id="current_exhibition"
+              value={profileData.current_exhibition}
+              onChange={(e) => setProfileData({...profileData, current_exhibition: e.target.value})}
+              placeholder="Share information about your current exhibition or project"
+              className="hover:border-primary/50 transition-colors"
+            />
+          </div>
+          
+          <Separator />
           
           {/* Social Links */}
           <div className="space-y-4">
@@ -266,6 +355,7 @@ const UserProfile = () => {
                   value={profileData.website_url}
                   onChange={(e) => setProfileData({...profileData, website_url: e.target.value})}
                   placeholder="Your website URL"
+                  className="hover:border-primary/50 transition-colors"
                 />
               </div>
             </div>
@@ -279,6 +369,7 @@ const UserProfile = () => {
                   value={profileData.instagram_url}
                   onChange={(e) => setProfileData({...profileData, instagram_url: e.target.value})}
                   placeholder="Instagram username"
+                  className="hover:border-primary/50 transition-colors"
                 />
               </div>
             </div>
@@ -292,6 +383,7 @@ const UserProfile = () => {
                   value={profileData.twitter_url}
                   onChange={(e) => setProfileData({...profileData, twitter_url: e.target.value})}
                   placeholder="Twitter username"
+                  className="hover:border-primary/50 transition-colors"
                 />
               </div>
             </div>
@@ -302,7 +394,7 @@ const UserProfile = () => {
             <Button 
               onClick={handleSaveProfile} 
               disabled={saving}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto hover-scale"
             >
               {saving ? (
                 <>
