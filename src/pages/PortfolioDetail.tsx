@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Instagram, Twitter, Globe, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { PortfolioWithArtist, Artwork } from '@/types/portfolio';
 import DefaultLayout from '@/components/layout/DefaultLayout';
 import { Button } from '@/components/ui/button';
@@ -40,10 +40,14 @@ const PortfolioDetail = () => {
             )
           `)
           .eq('id', id)
-          .eq('is_public', true)
           .single();
         
-        if (portfolioError) throw portfolioError;
+        if (portfolioError) {
+          console.error('Error fetching portfolio:', portfolioError);
+          toast.error('Failed to load portfolio');
+          setLoading(false);
+          return;
+        }
         
         if (!portfolioData) {
           toast.error('Portfolio not found or is private');
@@ -51,6 +55,7 @@ const PortfolioDetail = () => {
           return;
         }
         
+        console.log('Fetched portfolio:', portfolioData);
         setPortfolio(portfolioData as unknown as PortfolioWithArtist);
         
         // Fetch artworks for this portfolio
@@ -60,9 +65,13 @@ const PortfolioDetail = () => {
           .eq('portfolio_id', id)
           .order('created_at', { ascending: false });
         
-        if (artworksError) throw artworksError;
-        
-        setArtworks(artworksData);
+        if (artworksError) {
+          console.error('Error fetching artworks:', artworksError);
+          toast.error('Failed to load artworks');
+        } else {
+          console.log('Fetched artworks:', artworksData);
+          setArtworks(artworksData || []);
+        }
       } catch (error) {
         console.error('Error fetching portfolio:', error);
         toast.error('Failed to load portfolio');
@@ -115,11 +124,11 @@ const PortfolioDetail = () => {
               <h1 className="text-3xl font-bold mb-4">{portfolio.name}</h1>
               <div className="flex flex-wrap items-center gap-4 mb-4">
                 <div className="text-lg font-medium">
-                  By {portfolio.profiles.full_name}
+                  By {portfolio.profiles?.full_name || 'Anonymous Artist'}
                 </div>
                 
                 <div className="flex space-x-2">
-                  {portfolio.profiles.instagram_url && (
+                  {portfolio.profiles?.instagram_url && (
                     <Button variant="ghost" size="icon" asChild>
                       <a href={portfolio.profiles.instagram_url} target="_blank" rel="noopener noreferrer">
                         <Instagram className="h-5 w-5" />
@@ -128,7 +137,7 @@ const PortfolioDetail = () => {
                     </Button>
                   )}
                   
-                  {portfolio.profiles.twitter_url && (
+                  {portfolio.profiles?.twitter_url && (
                     <Button variant="ghost" size="icon" asChild>
                       <a href={portfolio.profiles.twitter_url} target="_blank" rel="noopener noreferrer">
                         <Twitter className="h-5 w-5" />
@@ -137,7 +146,7 @@ const PortfolioDetail = () => {
                     </Button>
                   )}
                   
-                  {portfolio.profiles.website_url && (
+                  {portfolio.profiles?.website_url && (
                     <Button variant="ghost" size="icon" asChild>
                       <a href={portfolio.profiles.website_url} target="_blank" rel="noopener noreferrer">
                         <Globe className="h-5 w-5" />
@@ -154,7 +163,7 @@ const PortfolioDetail = () => {
                 </div>
               )}
               
-              {portfolio.profiles.bio && (
+              {portfolio.profiles?.bio && (
                 <div className="mt-4 border-t pt-4 max-w-3xl">
                   <h3 className="text-lg font-medium mb-2">About the Artist</h3>
                   <p className="text-muted-foreground">{portfolio.profiles.bio}</p>

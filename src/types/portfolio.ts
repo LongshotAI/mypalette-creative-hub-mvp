@@ -47,7 +47,7 @@ export interface PortfolioWithArtist {
   user_id: string;
   created_at: string;
   profiles: {
-    full_name: string;
+    full_name: string | null;
     username: string | null;
     avatar_url: string | null;
     bio: string | null;

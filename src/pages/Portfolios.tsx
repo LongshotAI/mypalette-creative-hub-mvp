@@ -2,12 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, Search, User, Image } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { PortfolioWithArtist } from '@/types/portfolio';
 import DefaultLayout from '@/components/layout/DefaultLayout';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 const Portfolios = () => {
   const [portfolios, setPortfolios] = useState<PortfolioWithArtist[]>([]);
@@ -36,11 +37,17 @@ const Portfolios = () => {
           .eq('is_public', true)
           .order('created_at', { ascending: false });
         
-        if (error) throw error;
-        
-        setPortfolios(data as unknown as PortfolioWithArtist[]);
+        if (error) {
+          console.error('Error fetching portfolios:', error);
+          toast.error('Failed to load portfolios');
+          setPortfolios([]);
+        } else {
+          console.log('Fetched portfolios:', data);
+          setPortfolios(data as unknown as PortfolioWithArtist[]);
+        }
       } catch (error) {
         console.error('Error fetching portfolios:', error);
+        toast.error('Failed to load portfolios');
       } finally {
         setLoading(false);
       }
@@ -106,7 +113,7 @@ const Portfolios = () => {
                         <h2 className="text-xl font-semibold mb-1">{portfolio.name}</h2>
                         <div className="flex items-center text-muted-foreground text-sm mb-3">
                           <User className="h-3 w-3 mr-1" />
-                          <span>{portfolio.profiles.full_name}</span>
+                          <span>{portfolio.profiles?.full_name || 'Anonymous Artist'}</span>
                         </div>
                       </div>
                     </div>
