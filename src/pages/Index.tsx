@@ -3,6 +3,7 @@ import React from 'react';
 import DefaultLayout from '@/components/layout/DefaultLayout';
 import Hero from '@/components/home/Hero';
 import FeaturedArtists from '@/components/home/FeaturedArtists';
+import WhyChooseSection from '@/components/home/WhyChooseSection';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 
@@ -11,6 +12,9 @@ const Index = () => {
     <DefaultLayout>
       <Hero />
       <FeaturedArtists />
+      
+      {/* Why Choose MyPalette Section */}
+      <WhyChooseSection />
       
       {/* Features Section */}
       <section className="py-24">
@@ -27,7 +31,7 @@ const Index = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="bg-white p-8 rounded-lg border border-gray-100 shadow-sm animate-fade-up">
+            <div className="bg-white p-8 rounded-lg border border-gray-100 shadow-sm animate-fade-up hover:shadow-md hover:-translate-y-1 transition-all duration-300">
               <div className="w-12 h-12 bg-brand-red/10 rounded-full flex items-center justify-center mb-6">
                 <span className="text-brand-red font-bold">1</span>
               </div>
@@ -42,7 +46,7 @@ const Index = () => {
             </div>
             
             {/* Feature 2 */}
-            <div className="bg-white p-8 rounded-lg border border-gray-100 shadow-sm animate-fade-up animate-delay-100">
+            <div className="bg-white p-8 rounded-lg border border-gray-100 shadow-sm animate-fade-up animate-delay-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
               <div className="w-12 h-12 bg-brand-green/10 rounded-full flex items-center justify-center mb-6">
                 <span className="text-brand-green font-bold">2</span>
               </div>
@@ -57,7 +61,7 @@ const Index = () => {
             </div>
             
             {/* Feature 3 */}
-            <div className="bg-white p-8 rounded-lg border border-gray-100 shadow-sm animate-fade-up animate-delay-200">
+            <div className="bg-white p-8 rounded-lg border border-gray-100 shadow-sm animate-fade-up animate-delay-200 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
               <div className="w-12 h-12 bg-brand-blue/10 rounded-full flex items-center justify-center mb-6">
                 <span className="text-brand-blue font-bold">3</span>
               </div>
@@ -77,14 +81,14 @@ const Index = () => {
       {/* CTA Section */}
       <section className="py-24 bg-gradient-to-r from-gray-50 to-white">
         <div className="container-custom">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 md:p-12 max-w-4xl mx-auto text-center">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 md:p-12 max-w-4xl mx-auto text-center glass-panel">
             <h2 className="text-3xl font-bold tracking-tight mb-3">Ready to showcase your art?</h2>
             <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
               Join a community of artists and creators on MyPalette. Create your portfolio, connect with
               opportunities, and take your art to the next level.
             </p>
-            <Button size="lg" className="rounded-full px-8 py-6 font-medium">
-              Get Started Now
+            <Button size="lg" className="rounded-full px-8 py-6 font-medium bg-gradient-to-r from-brand-green to-brand-blue text-white hover:shadow-md transition-all duration-300">
+              Sign Up Now
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>

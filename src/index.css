@@ -90,11 +90,15 @@
   }
   
   .glass-panel {
-    @apply bg-white/70 backdrop-blur-lg border border-white/20 rounded-2xl shadow-lg;
+    @apply bg-white/70 backdrop-blur-lg border border-white/20 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl;
   }
   
   .pixel-transition {
     transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-r from-brand-blue via-brand-green to-brand-red bg-clip-text text-transparent;
   }
 }
 
@@ -118,5 +122,13 @@
   
   .animate-delay-500 {
     animation-delay: 500ms;
+  }
+  
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-1;
+  }
+  
+  .hover-grow {
+    @apply transition-transform duration-300 hover:scale-105;
   }
 }

@@ -42,7 +42,7 @@ const Header: React.FC = () => {
           <AnimatedLink to="/open-calls" label="Open Calls" />
           <div className="ml-4">
             <Button asChild size="sm" variant="default" className="rounded-full px-6">
-              <a href="/dashboard">Creator Dashboard</a>
+              <a href="/sign-in">Sign In</a>
             </Button>
           </div>
         </nav>
@@ -89,7 +89,7 @@ const Header: React.FC = () => {
             activeClassName="font-medium"
           />
           <Button asChild size="lg" variant="default" className="mt-4 w-full rounded-full">
-            <a href="/dashboard">Creator Dashboard</a>
+            <a href="/sign-in">Sign In</a>
           </Button>
         </nav>
       </div>
