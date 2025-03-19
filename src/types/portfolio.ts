@@ -36,3 +36,23 @@ export interface ArtworkFormData {
   currency: string;
   for_sale: boolean;
 }
+
+// Added new interface for the portfolio with artist information
+export interface PortfolioWithArtist {
+  id: string;
+  name: string;
+  description: string;
+  template: string;
+  is_public: boolean;
+  user_id: string;
+  created_at: string;
+  profiles: {
+    full_name: string;
+    username: string | null;
+    avatar_url: string | null;
+    bio: string | null;
+    instagram_url: string | null;
+    twitter_url: string | null;
+    website_url: string | null;
+  };
+}
