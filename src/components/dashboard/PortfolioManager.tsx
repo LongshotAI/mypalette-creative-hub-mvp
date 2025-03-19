@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Image, Plus, Edit, Trash2, Loader2 } from 'lucide-react';
+import { AlertCircle, Image, Plus, Edit, Trash2, Loader2, Upload } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase, getUserPortfolios } from '@/lib/supabase';
@@ -48,7 +47,6 @@ const PortfolioManager = () => {
   const [imageUploading, setImageUploading] = useState(false);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'price_high' | 'price_low'>('newest');
   
-  // Form States
   const [portfolioForm, setPortfolioForm] = useState({
     name: '',
     description: '',
@@ -88,7 +86,6 @@ const PortfolioManager = () => {
       const portfolioData = await getUserPortfolios(user.id);
       setPortfolios(portfolioData);
       
-      // Set the first portfolio as selected if there is one
       if (portfolioData.length > 0 && !selectedPortfolio) {
         setSelectedPortfolio(portfolioData[0].id);
       }
@@ -107,7 +104,6 @@ const PortfolioManager = () => {
         .select('*')
         .eq('portfolio_id', portfolioId);
       
-      // Apply sorting
       switch (sortOrder) {
         case 'newest':
           query = query.order('created_at', { ascending: false });
@@ -158,7 +154,6 @@ const PortfolioManager = () => {
       toast.success('Portfolio created successfully');
       setPortfolioFormOpen(false);
       
-      // Reset form
       setPortfolioForm({
         name: '',
         description: '',
@@ -166,10 +161,8 @@ const PortfolioManager = () => {
         is_public: true
       });
       
-      // Refresh portfolios
       await loadUserPortfolios();
       
-      // Select the new portfolio
       if (data && data.length > 0) {
         setSelectedPortfolio(data[0].id);
       }
@@ -202,7 +195,6 @@ const PortfolioManager = () => {
       toast.success('Portfolio updated successfully');
       setPortfolioFormOpen(false);
       
-      // Reset form and editing state
       setPortfolioForm({
         name: '',
         description: '',
@@ -212,7 +204,6 @@ const PortfolioManager = () => {
       
       setEditingPortfolio(null);
       
-      // Refresh portfolios
       await loadUserPortfolios();
     } catch (error) {
       console.error('Error updating portfolio:', error);
@@ -237,10 +228,8 @@ const PortfolioManager = () => {
       
       toast.success('Portfolio deleted successfully');
       
-      // Refresh portfolios
       await loadUserPortfolios();
       
-      // If the deleted portfolio was selected, select another one
       if (selectedPortfolio === portfolioId) {
         if (portfolios.length > 0) {
           setSelectedPortfolio(portfolios[0].id);
@@ -253,19 +242,17 @@ const PortfolioManager = () => {
       toast.error('Failed to delete portfolio');
     }
   };
-  
+
   const handleArtworkImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0] || !user) return;
     
     const file = e.target.files[0];
     
-    // Validate file size (max 15MB)
     if (file.size > 15 * 1024 * 1024) {
       toast.error('Image must be less than 15MB');
       return;
     }
     
-    // Validate file type
     const fileExt = file.name.split('.').pop()?.toLowerCase();
     if (!['jpg', 'jpeg', 'png', 'gif'].includes(fileExt || '')) {
       toast.error('File must be an image (JPG, PNG, or GIF)');
@@ -278,7 +265,6 @@ const PortfolioManager = () => {
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
       
-      // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('artworks')
         .upload(fileName, file, {
@@ -288,12 +274,10 @@ const PortfolioManager = () => {
         
       if (uploadError) throw uploadError;
       
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('artworks')
         .getPublicUrl(fileName);
       
-      // Update form state
       setArtworkForm({
         ...artworkForm,
         image_url: publicUrl
@@ -339,7 +323,6 @@ const PortfolioManager = () => {
       toast.success('Artwork added successfully');
       setArtworkFormOpen(false);
       
-      // Reset form
       setArtworkForm({
         title: '',
         description: '',
@@ -349,7 +332,6 @@ const PortfolioManager = () => {
         for_sale: false
       });
       
-      // Refresh artworks
       await loadPortfolioArtworks(selectedPortfolio);
     } catch (error) {
       console.error('Error creating artwork:', error);
@@ -382,7 +364,6 @@ const PortfolioManager = () => {
       toast.success('Artwork updated successfully');
       setArtworkFormOpen(false);
       
-      // Reset form and editing state
       setArtworkForm({
         title: '',
         description: '',
@@ -394,7 +375,6 @@ const PortfolioManager = () => {
       
       setEditingArtwork(null);
       
-      // Refresh artworks
       await loadPortfolioArtworks(selectedPortfolio!);
     } catch (error) {
       console.error('Error updating artwork:', error);
@@ -419,7 +399,6 @@ const PortfolioManager = () => {
       
       toast.success('Artwork deleted successfully');
       
-      // Refresh artworks
       await loadPortfolioArtworks(selectedPortfolio!);
     } catch (error) {
       console.error('Error deleting artwork:', error);
@@ -473,7 +452,6 @@ const PortfolioManager = () => {
         </TabsList>
         
         <TabsContent value="portfolios" className="space-y-4 pt-4">
-          {/* Portfolio Management */}
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Your Portfolios</h2>
             
@@ -643,298 +621,9 @@ const PortfolioManager = () => {
         </TabsContent>
         
         <TabsContent value="artworks" className="space-y-6 pt-4">
-          {/* Artwork Management */}
           <div className="flex justify-between items-center flex-wrap gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <h2 className="text-xl font-semibold">Portfolio Artworks</h2>
               
-              {/* Portfolio Selector */}
-              {portfolios.length > 0 && (
-                <Select
-                  value={selectedPortfolio || undefined}
-                  onValueChange={setSelectedPortfolio}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Select a portfolio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {portfolios.map((portfolio) => (
-                      <SelectItem key={portfolio.id} value={portfolio.id}>
-                        {portfolio.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              
-              {/* Sort Order */}
-              <Select
-                value={sortOrder}
-                onValueChange={(value: any) => setSortOrder(value)}
-              >
-                <SelectTrigger className="w-[170px]">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="price_high">Price: High to Low</SelectItem>
-                  <SelectItem value="price_low">Price: Low to High</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {selectedPortfolio && (
-              <Dialog open={artworkFormOpen} onOpenChange={setArtworkFormOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => {
-                    setEditingArtwork(null);
-                    setArtworkForm({
-                      title: '',
-                      description: '',
-                      image_url: '',
-                      price: '',
-                      currency: 'USD',
-                      for_sale: false
-                    });
-                  }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Artwork
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingArtwork ? 'Edit Artwork' : 'Add New Artwork'}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {editingArtwork 
-                        ? 'Update your artwork details below.' 
-                        : 'Add a new artwork to your portfolio.'}
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="space-y-4 py-4">
-                    {/* Image Upload */}
-                    <div className="space-y-2">
-                      <Label>Artwork Image</Label>
-                      {artworkForm.image_url ? (
-                        <div className="relative aspect-square w-full max-w-sm mx-auto overflow-hidden rounded-md border">
-                          <img 
-                            src={artworkForm.image_url} 
-                            alt="Artwork preview" 
-                            className="h-full w-full object-cover"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1"
-                            onClick={() => setArtworkForm({...artworkForm, image_url: ''})}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md">
-                          <Image className="h-10 w-10 text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground mb-2">
-                            JPG, PNG, GIF (max 15MB)
-                          </p>
-                          <label htmlFor="artwork-image" className="cursor-pointer">
-                            <Button
-                              variant="secondary"
-                              disabled={imageUploading}
-                              className="relative"
-                              onClick={(e) => e.preventDefault()}
-                            >
-                              {imageUploading ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Uploading...
-                                </>
-                              ) : (
-                                <>
-                                  <Upload className="mr-2 h-4 w-4" />
-                                  Upload Image
-                                </>
-                              )}
-                            </Button>
-                            <input
-                              id="artwork-image"
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={handleArtworkImageUpload}
-                              disabled={imageUploading}
-                            />
-                          </label>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="artwork-title">Title</Label>
-                      <Input
-                        id="artwork-title"
-                        value={artworkForm.title}
-                        onChange={(e) => setArtworkForm({...artworkForm, title: e.target.value})}
-                        placeholder="Untitled Masterpiece"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="artwork-description">Description</Label>
-                      <Textarea
-                        id="artwork-description"
-                        value={artworkForm.description}
-                        onChange={(e) => setArtworkForm({...artworkForm, description: e.target.value})}
-                        placeholder="Describe your artwork..."
-                        rows={3}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="artwork-for-sale"
-                        checked={artworkForm.for_sale}
-                        onChange={(e) => setArtworkForm({...artworkForm, for_sale: e.target.checked})}
-                        className="rounded border-gray-300 text-primary focus:ring-primary"
-                      />
-                      <Label htmlFor="artwork-for-sale">Artwork For Sale</Label>
-                    </div>
-                    
-                    {artworkForm.for_sale && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="artwork-price">Price</Label>
-                          <Input
-                            id="artwork-price"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={artworkForm.price}
-                            onChange={(e) => setArtworkForm({...artworkForm, price: e.target.value})}
-                            placeholder="0.00"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="artwork-currency">Currency</Label>
-                          <Select
-                            value={artworkForm.currency}
-                            onValueChange={(value) => setArtworkForm({...artworkForm, currency: value})}
-                          >
-                            <SelectTrigger id="artwork-currency">
-                              <SelectValue placeholder="Select currency" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="USD">USD ($)</SelectItem>
-                              <SelectItem value="EUR">EUR (€)</SelectItem>
-                              <SelectItem value="GBP">GBP (£)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setArtworkFormOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={editingArtwork ? handleUpdateArtwork : handleCreateArtwork}
-                      disabled={formSubmitting || !artworkForm.title || !artworkForm.image_url}
-                    >
-                      {formSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {editingArtwork ? 'Updating...' : 'Adding...'}
-                        </>
-                      ) : (
-                        editingArtwork ? 'Update Artwork' : 'Add Artwork'
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
-          
-          {!selectedPortfolio ? (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {portfolios.length === 0 
-                  ? 'Create a portfolio first to add artworks.'
-                  : 'Please select a portfolio to manage artworks.'}
-              </AlertDescription>
-            </Alert>
-          ) : artworks.length === 0 ? (
-            <Card>
-              <CardContent className="py-8">
-                <div className="text-center">
-                  <Image className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No Artworks Yet</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Add your first artwork to this portfolio.
-                  </p>
-                  <Button onClick={() => setArtworkFormOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Artwork
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {artworks.map((artwork) => (
-                <Card key={artwork.id} className="overflow-hidden hover:shadow-md transition-shadow group">
-                  <div className="aspect-square relative overflow-hidden">
-                    <img 
-                      src={artwork.image_url} 
-                      alt={artwork.title}
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105 duration-300"
-                    />
-                    {artwork.for_sale && (
-                      <div className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 text-xs rounded-full">
-                        {artwork.price} {artwork.currency}
-                      </div>
-                    )}
-                  </div>
-                  <CardContent className="py-3">
-                    <h3 className="font-medium line-clamp-1">{artwork.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                      {artwork.description || 'No description provided.'}
-                    </p>
-                  </CardContent>
-                  <CardFooter className="flex justify-end border-t pt-3 gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => editArtwork(artwork)}
-                    >
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleDeleteArtwork(artwork.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-};
+              {
 
-export default PortfolioManager;
