@@ -69,7 +69,8 @@ const Admin = () => {
   }
 
   // Get the AdminUsers component from the module
-  const AdminUsers = AdminUsersModule.default || Object.values(AdminUsersModule)[0];
+  // Since the module doesn't have a default export, we need to extract the component differently
+  const AdminUsers = Object.values(AdminUsersModule)[0] as React.ComponentType;
 
   return (
     <div className="container mx-auto py-8">
