@@ -34,8 +34,12 @@ export const getAllAdmins = async () => {
     .not('admin_type', 'is', null)
     .order('created_at', { ascending: false });
     
-  if (error || !data) {
+  if (error) {
     console.error('Error fetching admins:', error);
+    return [];
+  }
+  
+  if (!data) {
     return [];
   }
   
@@ -46,7 +50,7 @@ export const getAllAdmins = async () => {
   
   if (usersResponse.error) {
     console.error('Error fetching user emails:', usersResponse.error);
-    return data as AdminProfile[]; // Add type assertion here too
+    return []; // Return empty array instead of data with type assertion
   }
 
   // Type assertion for the admin data
