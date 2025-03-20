@@ -50,3 +50,14 @@ export function getReadableDate(isoString: string): string {
     day: 'numeric' 
   });
 }
+
+// Safe access to user ID (handles null/undefined)
+export function safeUserId(userId: string | undefined | null): string | undefined {
+  if (!userId) return undefined;
+  return userId;
+}
+
+// Remove duplicates from an array
+export function removeDuplicates<T>(array: T[]): T[] {
+  return [...new Set(array)];
+}
