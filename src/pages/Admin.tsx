@@ -12,6 +12,7 @@ import AdminSettings from '@/components/admin/AdminSettings';
 import AdminEducation from '@/components/admin/AdminEducation';
 import AdminStats from '@/components/admin/AdminStats';
 import AdminOpenCalls from '@/components/admin/AdminOpenCalls';
+import AdminTemplates from '@/components/admin/AdminTemplates';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -157,6 +158,7 @@ const Admin = () => {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="portfolios">Portfolios</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="education">Education</TabsTrigger>
           <TabsTrigger value="opencalls">Open Calls</TabsTrigger>
           <TabsTrigger value="settings">Platform Settings</TabsTrigger>
@@ -202,6 +204,9 @@ const Admin = () => {
         </TabsContent>
         <TabsContent value="portfolios">
           <AdminPortfolios />
+        </TabsContent>
+        <TabsContent value="templates">
+          <AdminTemplates />
         </TabsContent>
         <TabsContent value="education">
           <AdminEducation />

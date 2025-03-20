@@ -79,12 +79,24 @@ const UserProfile = () => {
 
   return (
     <DefaultLayout>
+      {/* Banner Image */}
+      <div 
+        className="w-full h-64 bg-gradient-to-r from-gray-100 to-gray-200 relative overflow-hidden" 
+        style={profile.banner_image_url ? {
+          backgroundImage: `url(${profile.banner_image_url})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        } : {}}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
+      </div>
+
       <div className="container mx-auto py-8">
-        <Card className="mb-8">
+        <Card className="mb-8 -mt-20 relative z-10 border shadow-md">
           <CardHeader className="flex flex-col md:flex-row md:items-center">
             <div className="flex-1">
               <div className="flex items-center space-x-4">
-                <Avatar className="h-20 w-20">
+                <Avatar className="h-24 w-24 border-4 border-background">
                   <AvatarImage src={profile.avatar_url} />
                   <AvatarFallback className="text-lg">
                     {profile.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,7 +7,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Plus } from 'lucide-react';
-import { PortfolioFormData, Portfolio } from '@/types/portfolio';
+import { PortfolioFormData, Portfolio, PortfolioTemplate } from '@/types/portfolio';
+import { supabase } from '@/integrations/supabase/client';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 
 interface PortfolioFormProps {
   open: boolean;
@@ -28,6 +31,33 @@ const PortfolioForm = ({
   isSubmitting,
   isEditing
 }: PortfolioFormProps) => {
+  const [templates, setTemplates] = useState<PortfolioTemplate[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('portfolio_templates')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+          
+        if (error) throw error;
+        setTemplates(data || []);
+      } catch (err) {
+        console.error('Error fetching templates:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (open) {
+      fetchTemplates();
+    }
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
@@ -36,7 +66,7 @@ const PortfolioForm = ({
           Create New Portfolio
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? 'Edit Portfolio' : 'Create New Portfolio'}
@@ -70,19 +100,76 @@ const PortfolioForm = ({
             />
           </div>
           
+          <div className="space-y-3">
+            <Label>Layout Template</Label>
+            {loading ? (
+              <div className="py-4 flex justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <RadioGroup
+                value={portfolioForm.template}
+                onValueChange={(value) => setPortfolioForm({...portfolioForm, template: value})}
+                className="grid grid-cols-1 md:grid-cols-3 gap-4"
+              >
+                {templates.map((template) => (
+                  <div key={template.slug} className="relative">
+                    <RadioGroupItem
+                      value={template.slug}
+                      id={`template-${template.slug}`}
+                      className="sr-only"
+                    />
+                    <Label
+                      htmlFor={`template-${template.slug}`}
+                      className="cursor-pointer"
+                    >
+                      <Card className={`overflow-hidden hover:border-primary/50 transition-colors ${
+                        portfolioForm.template === template.slug ? 'border-primary ring-2 ring-primary/20' : ''
+                      }`}>
+                        <div className="aspect-video bg-muted relative overflow-hidden">
+                          {template.preview_image_url ? (
+                            <img 
+                              src={template.preview_image_url} 
+                              alt={template.name} 
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+                              <span className="text-muted-foreground">{template.name}</span>
+                            </div>
+                          )}
+                        </div>
+                        <CardContent className="p-3">
+                          <div className="font-medium text-sm">{template.name}</div>
+                          {template.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {template.description}
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            )}
+          </div>
+          
           <div className="space-y-2">
-            <Label htmlFor="portfolio-template">Display Template</Label>
+            <Label htmlFor="portfolio-theme">Color Theme</Label>
             <Select
-              value={portfolioForm.template}
-              onValueChange={(value) => setPortfolioForm({...portfolioForm, template: value})}
+              value={portfolioForm.theme}
+              onValueChange={(value) => setPortfolioForm({...portfolioForm, theme: value})}
             >
-              <SelectTrigger id="portfolio-template">
-                <SelectValue placeholder="Select a template" />
+              <SelectTrigger id="portfolio-theme">
+                <SelectValue placeholder="Select a theme" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="grid">Grid Layout</SelectItem>
-                <SelectItem value="masonry">Masonry Layout</SelectItem>
-                <SelectItem value="slideshow">Slideshow</SelectItem>
+                <SelectItem value="default">Default</SelectItem>
+                <SelectItem value="minimal">Minimal</SelectItem>
+                <SelectItem value="bold">Bold Colors</SelectItem>
+                <SelectItem value="elegant">Elegant</SelectItem>
+                <SelectItem value="dark">Dark</SelectItem>
               </SelectContent>
             </Select>
           </div>

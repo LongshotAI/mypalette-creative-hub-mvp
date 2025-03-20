@@ -4,6 +4,7 @@ export interface Portfolio {
   name: string;
   description: string;
   template: string;
+  theme: string;
   is_public: boolean;
   user_id: string;
   created_at: string;
@@ -13,6 +14,7 @@ export interface PortfolioFormData {
   name: string;
   description: string;
   template: string;
+  theme: string;
   is_public: boolean;
 }
 
@@ -43,6 +45,7 @@ export interface PortfolioWithArtist {
   name: string;
   description: string;
   template: string;
+  theme: string;
   is_public: boolean;
   user_id: string;
   created_at: string;
@@ -50,6 +53,7 @@ export interface PortfolioWithArtist {
     full_name: string | null;
     username: string | null;
     avatar_url: string | null;
+    banner_image_url: string | null;
     bio: string | null;
     instagram_url: string | null;
     twitter_url: string | null;
@@ -59,4 +63,15 @@ export interface PortfolioWithArtist {
     artist_statement: string | null;
     current_exhibition: string | null;
   };
+}
+
+export interface PortfolioTemplate {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  preview_image_url: string | null;
+  settings: Record<string, any>;
+  is_active: boolean;
+  created_at: string;
 }

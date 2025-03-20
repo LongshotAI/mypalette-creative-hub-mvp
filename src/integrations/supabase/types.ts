@@ -249,6 +249,39 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_templates: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          preview_image_url: string | null
+          settings: Json | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          preview_image_url?: string | null
+          settings?: Json | null
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          preview_image_url?: string | null
+          settings?: Json | null
+          slug?: string
+        }
+        Relationships: []
+      }
       portfolios: {
         Row: {
           created_at: string | null
@@ -257,6 +290,7 @@ export type Database = {
           is_public: boolean
           name: string
           template: string
+          theme: string | null
           updated_at: string | null
           user_id: string
         }
@@ -267,6 +301,7 @@ export type Database = {
           is_public?: boolean
           name: string
           template?: string
+          theme?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -277,6 +312,7 @@ export type Database = {
           is_public?: boolean
           name?: string
           template?: string
+          theme?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -287,6 +323,7 @@ export type Database = {
           admin_type: string | null
           artist_statement: string | null
           avatar_url: string | null
+          banner_image_url: string | null
           bio: string | null
           contact_email: string | null
           created_at: string | null
@@ -304,6 +341,7 @@ export type Database = {
           admin_type?: string | null
           artist_statement?: string | null
           avatar_url?: string | null
+          banner_image_url?: string | null
           bio?: string | null
           contact_email?: string | null
           created_at?: string | null
@@ -321,6 +359,7 @@ export type Database = {
           admin_type?: string | null
           artist_statement?: string | null
           avatar_url?: string | null
+          banner_image_url?: string | null
           bio?: string | null
           contact_email?: string | null
           created_at?: string | null

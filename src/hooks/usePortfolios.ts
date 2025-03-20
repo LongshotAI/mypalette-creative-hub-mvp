@@ -16,6 +16,7 @@ export const usePortfolios = (userId: string) => {
     name: '',
     description: '',
     template: 'grid',
+    theme: 'default',
     is_public: true
   });
 
@@ -55,6 +56,7 @@ export const usePortfolios = (userId: string) => {
         name: portfolioForm.name,
         description: portfolioForm.description,
         template: portfolioForm.template,
+        theme: portfolioForm.theme,
         is_public: portfolioForm.is_public
       };
       
@@ -72,6 +74,7 @@ export const usePortfolios = (userId: string) => {
         name: '',
         description: '',
         template: 'grid',
+        theme: 'default',
         is_public: true
       });
       
@@ -100,6 +103,7 @@ export const usePortfolios = (userId: string) => {
           name: portfolioForm.name,
           description: portfolioForm.description,
           template: portfolioForm.template,
+          theme: portfolioForm.theme,
           is_public: portfolioForm.is_public
         })
         .eq('id', editingPortfolio.id);
@@ -113,6 +117,7 @@ export const usePortfolios = (userId: string) => {
         name: '',
         description: '',
         template: 'grid',
+        theme: 'default',
         is_public: true
       });
       
@@ -163,6 +168,7 @@ export const usePortfolios = (userId: string) => {
       name: portfolio.name,
       description: portfolio.description,
       template: portfolio.template,
+      theme: portfolio.theme || 'default',
       is_public: portfolio.is_public
     });
     setPortfolioFormOpen(true);
@@ -174,6 +180,7 @@ export const usePortfolios = (userId: string) => {
       name: '',
       description: '',
       template: 'grid',
+      theme: 'default',
       is_public: true
     });
   };

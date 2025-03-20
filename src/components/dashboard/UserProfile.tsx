@@ -18,6 +18,7 @@ interface UserProfileData {
   full_name: string;
   bio: string;
   avatar_url: string;
+  banner_image_url: string;
   website_url: string;
   instagram_url: string;
   twitter_url: string;
@@ -32,12 +33,14 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [profileData, setProfileData] = useState<UserProfileData>({
     id: '',
     username: '',
     full_name: '',
     bio: '',
     avatar_url: '',
+    banner_image_url: '',
     website_url: '',
     instagram_url: '',
     twitter_url: '',
@@ -63,6 +66,7 @@ const UserProfile = () => {
             full_name: profile.full_name || user.user_metadata?.full_name || '',
             bio: profile.bio || '',
             avatar_url: profile.avatar_url || '',
+            banner_image_url: profile.banner_image_url || '',
             website_url: profile.website_url || '',
             instagram_url: profile.instagram_url || '',
             twitter_url: profile.twitter_url || '',
@@ -79,6 +83,7 @@ const UserProfile = () => {
             full_name: user.user_metadata?.full_name || '',
             bio: '',
             avatar_url: '',
+            banner_image_url: '',
             website_url: '',
             instagram_url: '',
             twitter_url: '',
@@ -113,6 +118,7 @@ const UserProfile = () => {
           full_name: profileData.full_name,
           bio: profileData.bio,
           avatar_url: profileData.avatar_url,
+          banner_image_url: profileData.banner_image_url,
           website_url: profileData.website_url,
           instagram_url: profileData.instagram_url,
           twitter_url: profileData.twitter_url,
@@ -188,6 +194,60 @@ const UserProfile = () => {
     }
   };
 
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0] || !user) return;
+    
+    const file = e.target.files[0];
+    
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Banner image must be less than 10MB');
+      return;
+    }
+    
+    // Validate file type
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    if (!['jpg', 'jpeg', 'png'].includes(fileExt || '')) {
+      toast.error('Banner must be an image file (JPG or PNG)');
+      return;
+    }
+    
+    setUploadingBanner(true);
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/banner.${fileExt}`;
+      
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+        
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+      
+      // Update profile data state
+      setProfileData({
+        ...profileData,
+        banner_image_url: publicUrl
+      });
+      
+      toast.success('Banner uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading banner:', error);
+      toast.error('Failed to upload banner');
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -209,6 +269,48 @@ const UserProfile = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
+          {/* Banner Image */}
+          <div className="space-y-2">
+            <Label>Profile Banner</Label>
+            <div className="relative w-full h-48 rounded-lg overflow-hidden bg-muted">
+              {profileData.banner_image_url ? (
+                <img 
+                  src={profileData.banner_image_url} 
+                  alt="Profile banner" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full bg-gradient-to-r from-gray-100 to-gray-200">
+                  <p className="text-muted-foreground">No banner image</p>
+                </div>
+              )}
+              <label
+                htmlFor="banner-upload"
+                className="absolute bottom-4 right-4 bg-primary text-white p-2 rounded-md cursor-pointer hover:bg-primary/80 transition-colors"
+              >
+                {uploadingBanner ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-2 inline-block" />
+                    <span>Upload Banner</span>
+                  </>
+                )}
+              </label>
+              <input
+                id="banner-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleBannerUpload}
+                disabled={uploadingBanner}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Recommended size: 1200x400px. Max size: 10MB.
+            </p>
+          </div>
+
           {/* Avatar Section */}
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="relative">
