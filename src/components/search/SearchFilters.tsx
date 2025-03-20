@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CheckIcon, Filter } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -10,14 +9,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SearchFilters } from '@/lib/searchService';
+import type { SearchFilters as SearchFiltersType } from '@/lib/searchService';
 
-interface SearchFiltersProps {
-  filters: SearchFilters;
-  onFilterChange: (filters: SearchFilters) => void;
+interface SearchFiltersComponentProps {
+  filters: SearchFiltersType;
+  onFilterChange: (filters: SearchFiltersType) => void;
 }
 
-const SearchFilters = ({ filters, onFilterChange }: SearchFiltersProps) => {
+const SearchFilters = ({ filters, onFilterChange }: SearchFiltersComponentProps) => {
   const handleTypeChange = (type: string) => {
     onFilterChange({ ...filters, type });
   };

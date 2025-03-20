@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { searchAll, SearchResult, SearchFilters } from '@/lib/searchService';
+import { searchAll, SearchResult, SearchFilters as SearchFiltersType } from '@/lib/searchService';
 import SearchBar from '@/components/search/SearchBar';
 import SearchFilters from '@/components/search/SearchFilters';
 import SearchResultCard from '@/components/search/SearchResultCard';
@@ -16,7 +15,7 @@ const Search = () => {
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState<SearchFilters>({
+  const [filters, setFilters] = useState<SearchFiltersType>({
     type: initialType,
     category: 'all'
   });
@@ -36,7 +35,7 @@ const Search = () => {
     }
   }, [searchParams]);
   
-  const performSearch = async (searchQuery: string, searchFilters: SearchFilters) => {
+  const performSearch = async (searchQuery: string, searchFilters: SearchFiltersType) => {
     if (!searchQuery || searchQuery.trim().length < 2) {
       setResults([]);
       return;
@@ -65,7 +64,7 @@ const Search = () => {
     setSearchParams(newParams);
   };
   
-  const handleFilterChange = (newFilters: SearchFilters) => {
+  const handleFilterChange = (newFilters: SearchFiltersType) => {
     setFilters(newFilters);
     
     // Update URL params

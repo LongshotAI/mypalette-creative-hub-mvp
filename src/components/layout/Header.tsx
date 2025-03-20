@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,7 +27,6 @@ const Header = () => {
     }
   };
 
-  // Get user's initials for avatar fallback
   const getUserInitials = () => {
     if (!user || !user.user_metadata?.full_name) return 'U';
     
@@ -47,14 +45,13 @@ const Header = () => {
           </Link>
           
           <nav className="hidden md:flex space-x-6">
-            <AnimatedLink to="/portfolios">Portfolios</AnimatedLink>
-            <AnimatedLink to="/education">Education</AnimatedLink>
-            <AnimatedLink to="/open-calls">Open Calls</AnimatedLink>
+            <AnimatedLink to="/portfolios" label="Portfolios" />
+            <AnimatedLink to="/education" label="Education" />
+            <AnimatedLink to="/open-calls" label="Open Calls" />
           </nav>
         </div>
         
         <div className="flex items-center space-x-4">
-          {/* Add search button */}
           <HeaderSearch />
           
           {user ? (
