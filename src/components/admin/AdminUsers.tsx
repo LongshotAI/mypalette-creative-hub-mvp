@@ -2,26 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Shield, UserX, Plus, UserCog } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -29,16 +19,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from 'sonner';
+import AdminUsersList from './users/AdminUsersList';
+import AdminUsersForm from './users/AdminUsersForm';
 
 const AdminUsers = () => {
   const { user } = useAuth();
@@ -47,8 +31,7 @@ const AdminUsers = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
-  const [newAdminEmail, setNewAdminEmail] = useState('');
-  const [newAdminType, setNewAdminType] = useState('admin');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteAdminId, setDeleteAdminId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -102,38 +85,42 @@ const AdminUsers = () => {
       )
     : users;
 
-  const handleAddAdmin = async () => {
-    if (!newAdminEmail) {
+  const handleAddAdmin = async (email: string, adminType: string) => {
+    if (!email) {
       toast.error('Please enter an email address');
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       // First find the user by email (if they exist in auth)
       const { data: usersByEmail, error: userQueryError } = await supabase
         .from('profiles')
         .select('id, email, full_name')
-        .eq('contact_email', newAdminEmail)
+        .eq('contact_email', email)
         .single();
 
       if (userQueryError || !usersByEmail) {
         toast.error('User not found with that email address');
+        setIsSubmitting(false);
         return;
       }
 
       // Update the user's admin_type
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ admin_type: newAdminType })
+        .update({ admin_type: adminType })
         .eq('id', usersByEmail.id);
 
       if (updateError) {
         console.error('Error updating user:', updateError);
         toast.error('Failed to update user role');
+        setIsSubmitting(false);
         return;
       }
 
-      toast.success(`Successfully made ${usersByEmail.full_name || newAdminEmail} an ${newAdminType}`);
+      toast.success(`Successfully made ${usersByEmail.full_name || email} an ${adminType}`);
       
       // Refresh the user list
       const { data: updatedUsers } = await supabase
@@ -143,11 +130,11 @@ const AdminUsers = () => {
         
       setUsers(updatedUsers || []);
       setIsAddUserDialogOpen(false);
-      setNewAdminEmail('');
-      setNewAdminType('admin');
     } catch (error) {
       console.error('Error adding admin:', error);
       toast.error('Failed to add admin');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -246,53 +233,17 @@ const AdminUsers = () => {
               </svg>
             </div>
             
-            <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Admin
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New Admin</DialogTitle>
-                  <DialogDescription>
-                    Enter the email of an existing user to grant them admin privileges.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">User Email</Label>
-                    <Input
-                      id="email"
-                      placeholder="user@example.com"
-                      value={newAdminEmail}
-                      onChange={(e) => setNewAdminEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="adminType">Admin Type</Label>
-                    <Select value={newAdminType} onValueChange={setNewAdminType}>
-                      <SelectTrigger id="adminType">
-                        <SelectValue placeholder="Select admin type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Regular Admin</SelectItem>
-                        <SelectItem value="super_admin">Super Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddUserDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddAdmin}>
-                    Add Admin
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button onClick={() => setIsAddUserDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Admin
+            </Button>
+            
+            <AdminUsersForm
+              isOpen={isAddUserDialogOpen}
+              onClose={() => setIsAddUserDialogOpen(false)}
+              onAddAdmin={handleAddAdmin}
+              isSubmitting={isSubmitting}
+            />
             
             <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <DialogContent>
@@ -314,51 +265,11 @@ const AdminUsers = () => {
             </Dialog>
           </div>
           
-          {filteredUsers.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Last Active</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((admin) => (
-                  <TableRow key={admin.id}>
-                    <TableCell className="font-medium">{admin.full_name || 'Unknown'}</TableCell>
-                    <TableCell>{admin.contact_email || 'No email'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <Shield className={`mr-2 h-4 w-4 ${admin.admin_type === 'super_admin' ? 'text-red-500' : 'text-primary'}`} />
-                        {admin.admin_type === 'super_admin' ? 'Super Admin' : 'Admin'}
-                      </div>
-                    </TableCell>
-                    <TableCell>{admin.location || 'Unknown'}</TableCell>
-                    <TableCell>{new Date(admin.updated_at).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => confirmDeleteAdmin(admin.id)}
-                        disabled={admin.id === user?.id} // Prevent removing yourself
-                        title={admin.id === user?.id ? "You cannot remove your own admin privileges" : "Remove admin privileges"}
-                      >
-                        <UserX className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-6">
-              <p className="text-muted-foreground">No admin users found</p>
-            </div>
-          )}
+          <AdminUsersList 
+            users={filteredUsers}
+            currentUserId={user?.id}
+            onDeleteAdmin={confirmDeleteAdmin}
+          />
         </CardContent>
       </Card>
     </div>

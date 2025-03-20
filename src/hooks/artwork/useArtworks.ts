@@ -1,13 +1,13 @@
 
-import { useEffect } from 'react';
-import { Artwork } from '@/types/portfolio';
 import { useArtworkList } from './useArtworkList';
 import { useArtworkForm } from './useArtworkForm';
 import { useArtworkUpload } from './useArtworkUpload';
-import { useArtworkSort } from './useArtworkSort';
 import { useArtworkDelete } from './useArtworkDelete';
+import { useArtworkSort } from './useArtworkSort';
 
 export const useArtworks = (userId: string | undefined) => {
+  const { sortOrder, setSortOrder } = useArtworkSort();
+
   const {
     artworks,
     setArtworks,
@@ -16,13 +16,8 @@ export const useArtworks = (userId: string | undefined) => {
   } = useArtworkList();
 
   const {
-    sortOrder,
-    setSortOrder
-  } = useArtworkSort();
-
-  const {
-    imageUploading,
-    handleArtworkImageUpload
+    handleArtworkImageUpload,
+    imageUploading
   } = useArtworkUpload();
 
   const {
@@ -32,41 +27,16 @@ export const useArtworks = (userId: string | undefined) => {
     editingArtwork,
     artworkForm,
     setArtworkForm,
-    handleCreateArtwork,
-    handleUpdateArtwork,
+    createArtwork,
+    updateArtwork,
     editArtwork,
     resetArtworkForm
-  } = useArtworkForm((portfolioId) => loadPortfolioArtworks(portfolioId, sortOrder));
+  } = useArtworkForm(userId, loadPortfolioArtworks);
 
   const {
     deleteLoading,
     handleDeleteArtwork
-  } = useArtworkDelete((portfolioId) => loadPortfolioArtworks(portfolioId, sortOrder));
-
-  // Custom wrapper functions that maintain the original hook API
-  const createArtwork = (portfolioId: string) => {
-    handleCreateArtwork(portfolioId);
-  };
-
-  const updateArtwork = (portfolioId: string) => {
-    handleUpdateArtwork(portfolioId);
-  };
-
-  const deleteArtwork = (artworkId: string, portfolioId: string) => {
-    handleDeleteArtwork(artworkId, portfolioId);
-  };
-
-  // Custom wrapper for the image upload that matches the original API
-  const handleArtworkImageUploadWrapper = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (userId) {
-      handleArtworkImageUpload(e, userId, (imageUrl) => {
-        setArtworkForm({
-          ...artworkForm,
-          image_url: imageUrl
-        });
-      });
-    }
-  };
+  } = useArtworkDelete(loadPortfolioArtworks);
 
   return {
     // From useArtworkList
@@ -80,8 +50,8 @@ export const useArtworks = (userId: string | undefined) => {
     setSortOrder,
     
     // From useArtworkUpload
+    handleArtworkImageUpload,
     imageUploading,
-    handleArtworkImageUpload: handleArtworkImageUploadWrapper,
     
     // From useArtworkForm
     artworkFormOpen,
@@ -97,6 +67,6 @@ export const useArtworks = (userId: string | undefined) => {
     
     // From useArtworkDelete
     deleteLoading,
-    deleteArtwork
+    handleDeleteArtwork
   };
 };
