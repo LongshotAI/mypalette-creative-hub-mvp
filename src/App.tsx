@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
+import Admin from "./pages/Admin";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 
@@ -36,6 +37,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute>
+                  <Admin />
                 </ProtectedRoute>
               } 
             />

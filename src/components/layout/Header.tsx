@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Menu, X, LogOut, User } from 'lucide-react';
+import { Menu, X, LogOut, User, Shield } from 'lucide-react';
 import Logo from '../common/Logo';
 import AnimatedLink from '../ui/AnimatedLink';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +20,7 @@ import {
 const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { user, signOut } = useAuth();
 
   useEffect(() => {
@@ -29,6 +31,26 @@ const Header: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase.rpc('is_admin');
+        if (error) {
+          console.error('Error checking admin status:', error);
+          return;
+        }
+        
+        setIsAdmin(data);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+    
+    checkAdminStatus();
+  }, [user]);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -74,6 +96,17 @@ const Header: React.FC = () => {
                       Profile
                     </Link>
                   </DropdownMenuItem>
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="cursor-pointer w-full">
+                          <Shield className="h-4 w-4 mr-2" />
+                          Admin Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut()} className="text-destructive cursor-pointer">
                     <LogOut className="h-4 w-4 mr-2" />
@@ -136,6 +169,12 @@ const Header: React.FC = () => {
               <Link to="/dashboard" className="text-lg py-3 text-primary font-medium">
                 Dashboard
               </Link>
+              {isAdmin && (
+                <Link to="/admin" className="text-lg py-3 flex items-center text-primary font-medium">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Admin Dashboard
+                </Link>
+              )}
               <Button 
                 onClick={() => signOut()} 
                 variant="outline" 
