@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Use the correct Supabase URL and anon key from the client.ts file
@@ -91,15 +90,28 @@ export const uploadArtworkImage = async (file: File, userId: string) => {
   return publicUrl;
 };
 
-// Helper for fetching education resources with search
-export const getEducationResources = async (search: string = '') => {
+// Helper for fetching education resources with search and filters
+export const getEducationResources = async (
+  searchQuery: string = '', 
+  resourceType: string = 'all',
+  category: string = 'all'
+) => {
   let query = supabase
     .from('education_resources')
     .select('*')
+    .eq('is_published', true)
     .order('created_at', { ascending: false });
   
-  if (search) {
-    query = query.ilike('title', `%${search}%`);
+  if (searchQuery) {
+    query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,author.ilike.%${searchQuery}%`);
+  }
+  
+  if (resourceType !== 'all') {
+    query = query.eq('type', resourceType);
+  }
+  
+  if (category !== 'all') {
+    query = query.eq('category', category);
   }
   
   const { data, error } = await query;
@@ -114,35 +126,42 @@ export const getEducationResources = async (search: string = '') => {
 
 // Toggle favorite status for education resources
 export const toggleFavoriteResource = async (resourceId: string, userId: string, isFavorite: boolean) => {
-  if (isFavorite) {
-    // Remove favorite
-    const { error } = await supabase
-      .from('education_favorites')
-      .delete()
-      .eq('user_id', userId)
-      .eq('resource_id', resourceId);
-      
-    if (error) {
-      console.error('Error removing favorite:', error);
-      return false;
+  try {
+    if (isFavorite) {
+      // Remove favorite
+      const { error } = await supabase
+        .from('education_favorites')
+        .delete()
+        .eq('user_id', userId)
+        .eq('resource_id', resourceId);
+        
+      if (error) {
+        console.error('Error removing favorite:', error);
+        return false;
+      }
+    } else {
+      // Add favorite
+      const { error } = await supabase
+        .from('education_favorites')
+        .insert([{ user_id: userId, resource_id: resourceId }]);
+        
+      if (error) {
+        console.error('Error adding favorite:', error);
+        return false;
+      }
     }
-  } else {
-    // Add favorite
-    const { error } = await supabase
-      .from('education_favorites')
-      .insert([{ user_id: userId, resource_id: resourceId }]);
-      
-    if (error) {
-      console.error('Error adding favorite:', error);
-      return false;
-    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error toggling favorite:', error);
+    return false;
   }
-  
-  return true;
 };
 
 // Get user's favorite resources
 export const getUserFavorites = async (userId: string) => {
+  if (!userId) return [];
+  
   const { data, error } = await supabase
     .from('education_favorites')
     .select('resource_id')

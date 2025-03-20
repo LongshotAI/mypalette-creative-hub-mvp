@@ -2,10 +2,9 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Book, Video, FileText, Star } from 'lucide-react';
+import { Book, Video, FileText, Star, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { toggleFavoriteResource } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ResourceCardProps {
@@ -15,8 +14,9 @@ interface ResourceCardProps {
   category: string;
   imageUrl: string;
   author: string;
+  externalUrl?: string;
   isFavorite?: boolean;
-  onFavoriteToggle?: (id: string, newState: boolean) => void;
+  onFavoriteToggle?: (id: string, isFavorite: boolean) => void;
 }
 
 const ResourceCard = ({
@@ -26,6 +26,7 @@ const ResourceCard = ({
   category,
   imageUrl,
   author,
+  externalUrl,
   isFavorite = false,
   onFavoriteToggle
 }: ResourceCardProps) => {
@@ -50,17 +51,9 @@ const ResourceCard = ({
     setFavoriteLoading(true);
     
     try {
-      const success = await toggleFavoriteResource(id, user.id, isFavorite);
-      
-      if (success) {
-        // Update UI state via the parent component
-        if (onFavoriteToggle) {
-          onFavoriteToggle(id, !isFavorite);
-        }
-        
-        toast.success(isFavorite ? 'Removed from favorites' : 'Added to favorites');
-      } else {
-        throw new Error('Failed to update favorite');
+      // Update UI via the parent component
+      if (onFavoriteToggle) {
+        onFavoriteToggle(id, isFavorite);
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
@@ -70,8 +63,20 @@ const ResourceCard = ({
     }
   };
 
+  const handleCardClick = () => {
+    if (externalUrl) {
+      window.open(externalUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
-    <Card className="group bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+    <Card 
+      className={cn(
+        "group bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 transition-all duration-300 hover:shadow-md hover:-translate-y-1",
+        externalUrl && "cursor-pointer"
+      )}
+      onClick={externalUrl ? handleCardClick : undefined}
+    >
       <div className="aspect-video bg-gray-100 overflow-hidden relative">
         <div 
           className="w-full h-full bg-gray-200 flex items-center justify-center"
@@ -107,6 +112,23 @@ const ResourceCard = ({
             <Star className={cn("h-5 w-5", isFavorite ? "fill-yellow-500" : "")} />
             <span className="sr-only">{isFavorite ? 'Remove from favorites' : 'Add to favorites'}</span>
           </Button>
+        )}
+        
+        {externalUrl && (
+          <div className="absolute bottom-3 right-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="bg-white/90 backdrop-blur-sm rounded-full h-8 w-8 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(externalUrl, '_blank', 'noopener,noreferrer');
+              }}
+            >
+              <ExternalLink className="h-4 w-4" />
+              <span className="sr-only">Open external link</span>
+            </Button>
+          </div>
         )}
       </div>
       

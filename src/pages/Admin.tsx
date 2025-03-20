@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import AdminUsers from '@/components/admin/AdminUsers';
 import AdminPortfolios from '@/components/admin/AdminPortfolios';
 import AdminSettings from '@/components/admin/AdminSettings';
+import AdminEducation from '@/components/admin/AdminEducation';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -75,6 +76,7 @@ const Admin = () => {
         <TabsList className="mb-6">
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="portfolios">Portfolios</TabsTrigger>
+          <TabsTrigger value="education">Education</TabsTrigger>
           <TabsTrigger value="settings">Platform Settings</TabsTrigger>
         </TabsList>
         <TabsContent value="users">
@@ -82,6 +84,9 @@ const Admin = () => {
         </TabsContent>
         <TabsContent value="portfolios">
           <AdminPortfolios />
+        </TabsContent>
+        <TabsContent value="education">
+          <AdminEducation />
         </TabsContent>
         <TabsContent value="settings">
           <AdminSettings />
