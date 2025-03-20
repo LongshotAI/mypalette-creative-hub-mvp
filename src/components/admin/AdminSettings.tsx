@@ -7,9 +7,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { getPublicPortfolios } from '@/lib/supabase';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface PlatformSettings {
   siteName: string;
@@ -17,24 +25,31 @@ interface PlatformSettings {
   maintenanceMode: boolean;
   featuredArtistsLimit: string;
   registrationOpen: boolean;
+  featuredPortfolios: string[];
 }
 
 const AdminSettings = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [publicPortfolios, setPublicPortfolios] = useState<any[]>([]);
   const [settings, setSettings] = useState<PlatformSettings>({
     siteName: 'MyPalette',
     siteDescription: 'The digital portfolio platform for artists',
     maintenanceMode: false,
     featuredArtistsLimit: '6',
     registrationOpen: true,
+    featuredPortfolios: []
   });
 
   useEffect(() => {
-    // Fetch current settings
-    const fetchSettings = async () => {
+    // Fetch current settings and portfolios
+    const fetchData = async () => {
       try {
         setInitialLoading(true);
+        
+        // Get all public portfolios
+        const portfolios = await getPublicPortfolios(100);
+        setPublicPortfolios(portfolios);
         
         // Try to get settings from the settings table
         const { data, error } = await supabase
@@ -56,6 +71,7 @@ const AdminSettings = () => {
             maintenanceMode: data.maintenance_mode || false,
             featuredArtistsLimit: data.featured_artists_limit?.toString() || '6',
             registrationOpen: data.registration_open || true,
+            featuredPortfolios: data.featured_portfolios || []
           });
           console.log('Loaded settings:', data);
         } else {
@@ -63,7 +79,7 @@ const AdminSettings = () => {
           await createDefaultSettings();
         }
       } catch (error) {
-        console.error('Error in fetchSettings:', error);
+        console.error('Error in fetchData:', error);
         toast.error('An error occurred while loading settings');
       } finally {
         setInitialLoading(false);
@@ -81,6 +97,7 @@ const AdminSettings = () => {
             maintenance_mode: settings.maintenanceMode,
             featured_artists_limit: parseInt(settings.featuredArtistsLimit),
             registration_open: settings.registrationOpen,
+            featured_portfolios: []
           }]);
           
         if (error) {
@@ -94,7 +111,7 @@ const AdminSettings = () => {
       }
     };
 
-    fetchSettings();
+    fetchData();
   }, []);
 
   const handleSaveSettings = async () => {
@@ -119,6 +136,7 @@ const AdminSettings = () => {
             maintenance_mode: settings.maintenanceMode,
             featured_artists_limit: parseInt(settings.featuredArtistsLimit),
             registration_open: settings.registrationOpen,
+            featured_portfolios: settings.featuredPortfolios
           }]);
           
         if (insertError) {
@@ -134,6 +152,7 @@ const AdminSettings = () => {
             maintenance_mode: settings.maintenanceMode,
             featured_artists_limit: parseInt(settings.featuredArtistsLimit),
             registration_open: settings.registrationOpen,
+            featured_portfolios: settings.featuredPortfolios,
             updated_at: new Date().toISOString()
           })
           .eq('id', 1);
@@ -148,6 +167,7 @@ const AdminSettings = () => {
               maintenance_mode: settings.maintenanceMode,
               featured_artists_limit: parseInt(settings.featuredArtistsLimit),
               registration_open: settings.registrationOpen,
+              featured_portfolios: settings.featuredPortfolios
             }]);
             
           if (insertError) {
@@ -172,6 +192,27 @@ const AdminSettings = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const addFeaturedPortfolio = (portfolioId: string) => {
+    if (!settings.featuredPortfolios.includes(portfolioId)) {
+      setSettings({
+        ...settings,
+        featuredPortfolios: [...settings.featuredPortfolios, portfolioId]
+      });
+    }
+  };
+
+  const removeFeaturedPortfolio = (portfolioId: string) => {
+    setSettings({
+      ...settings,
+      featuredPortfolios: settings.featuredPortfolios.filter(id => id !== portfolioId)
+    });
+  };
+
+  // Get portfolio details by ID
+  const getPortfolioById = (id: string) => {
+    return publicPortfolios.find(portfolio => portfolio.id === id);
   };
 
   if (initialLoading) {
@@ -260,6 +301,62 @@ const AdminSettings = () => {
               <p className="text-sm text-muted-foreground">
                 Maximum number of featured artists to display on the homepage.
               </p>
+            </div>
+
+            <Separator className="my-4" />
+
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium mb-2">Featured Portfolios</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Select portfolios to feature on the homepage.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  {settings.featuredPortfolios.map(portfolioId => {
+                    const portfolio = getPortfolioById(portfolioId);
+                    return portfolio ? (
+                      <div key={portfolioId} className="flex items-center justify-between p-3 border rounded-md">
+                        <div>
+                          <p className="font-medium">{portfolio.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {portfolio.profiles?.full_name || 'Unknown artist'}
+                          </p>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => removeFeaturedPortfolio(portfolioId)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+                
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <Label htmlFor="newFeaturedPortfolio" className="mb-2 block">
+                      Add Featured Portfolio
+                    </Label>
+                    <Select onValueChange={addFeaturedPortfolio}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a portfolio" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {publicPortfolios
+                          .filter(p => !settings.featuredPortfolios.includes(p.id))
+                          .map(portfolio => (
+                            <SelectItem key={portfolio.id} value={portfolio.id}>
+                              {portfolio.name} ({portfolio.profiles?.full_name || 'Unknown'})
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
             </div>
             
             <Button 

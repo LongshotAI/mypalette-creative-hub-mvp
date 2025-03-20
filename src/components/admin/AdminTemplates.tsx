@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { PortfolioTemplate } from '@/types/portfolio';
 import {
   Table,
@@ -15,10 +15,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Plus, Trash, Pencil, EyeOff, Eye } from 'lucide-react';
+import { Loader2, Plus, Trash, Pencil, EyeOff, Eye, Code } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  updatePortfolioTemplate,
+  addPortfolioTemplate,
+  deletePortfolioTemplate
+} from '@/lib/supabase';
 
 const AdminTemplates = () => {
   const [templates, setTemplates] = useState<PortfolioTemplate[]>([]);
@@ -44,7 +49,13 @@ const AdminTemplates = () => {
         
       if (error) throw error;
       
-      setTemplates(data || []);
+      // Ensure settings is treated as Record<string, any>
+      const templatesWithSettings = data?.map(template => ({
+        ...template,
+        settings: template.settings as Record<string, any>
+      })) as PortfolioTemplate[];
+      
+      setTemplates(templatesWithSettings);
     } catch (error) {
       console.error('Error fetching templates:', error);
       toast.error('Failed to load templates');
@@ -68,32 +79,28 @@ const AdminTemplates = () => {
     try {
       if (editing) {
         // Update existing template
-        const { error } = await supabase
-          .from('portfolio_templates')
-          .update({
-            name: formData.name,
-            description: formData.description,
-            preview_image_url: formData.preview_image_url,
-            is_active: formData.is_active
-          })
-          .eq('id', editing.id);
-          
-        if (error) throw error;
+        const result = await updatePortfolioTemplate(editing.id, {
+          name: formData.name,
+          description: formData.description,
+          preview_image_url: formData.preview_image_url || null,
+          is_active: formData.is_active
+        });
+        
+        if (!result) throw new Error('Error updating template');
         
         toast.success('Template updated successfully');
       } else {
         // Create new template
-        const { error } = await supabase
-          .from('portfolio_templates')
-          .insert([{
-            name: formData.name,
-            slug: formData.slug,
-            description: formData.description,
-            preview_image_url: formData.preview_image_url,
-            is_active: formData.is_active
-          }]);
-          
-        if (error) throw error;
+        const result = await addPortfolioTemplate({
+          name: formData.name,
+          slug: formData.slug,
+          description: formData.description,
+          preview_image_url: formData.preview_image_url || null,
+          is_active: formData.is_active,
+          settings: {}
+        });
+        
+        if (!result) throw new Error('Error creating template');
         
         toast.success('Template created successfully');
       }
@@ -124,12 +131,11 @@ const AdminTemplates = () => {
 
   const handleToggleActive = async (template: PortfolioTemplate) => {
     try {
-      const { error } = await supabase
-        .from('portfolio_templates')
-        .update({ is_active: !template.is_active })
-        .eq('id', template.id);
-        
-      if (error) throw error;
+      const result = await updatePortfolioTemplate(template.id, { 
+        is_active: !template.is_active 
+      });
+      
+      if (!result) throw new Error('Failed to update template status');
       
       toast.success(`Template ${template.is_active ? 'disabled' : 'enabled'}`);
       fetchTemplates();
@@ -145,12 +151,9 @@ const AdminTemplates = () => {
     }
     
     try {
-      const { error } = await supabase
-        .from('portfolio_templates')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
+      const success = await deletePortfolioTemplate(id);
+      
+      if (!success) throw new Error('Failed to delete template');
       
       toast.success('Template deleted successfully');
       fetchTemplates();
@@ -169,6 +172,10 @@ const AdminTemplates = () => {
       preview_image_url: '',
       is_active: true
     });
+  };
+
+  const openTemplateCodeEditor = (template: PortfolioTemplate) => {
+    toast.info(`Template code editing for "${template.name}" is not yet implemented. It will allow customizing the template's appearance and behavior.`);
   };
 
   return (
@@ -238,6 +245,7 @@ const AdminTemplates = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => handleEdit(template)}
+                              title="Edit template details"
                             >
                               <Pencil className="h-4 w-4" />
                               <span className="sr-only">Edit</span>
@@ -245,7 +253,17 @@ const AdminTemplates = () => {
                             <Button
                               variant="outline"
                               size="sm"
+                              onClick={() => openTemplateCodeEditor(template)}
+                              title="Edit template code"
+                            >
+                              <Code className="h-4 w-4" />
+                              <span className="sr-only">Code</span>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => handleToggleActive(template)}
+                              title={template.is_active ? 'Disable template' : 'Enable template'}
                             >
                               {template.is_active ? (
                                 <EyeOff className="h-4 w-4" />
@@ -261,6 +279,7 @@ const AdminTemplates = () => {
                               size="sm"
                               className="text-destructive hover:text-destructive"
                               onClick={() => handleDelete(template.id)}
+                              title="Delete template"
                             >
                               <Trash className="h-4 w-4" />
                               <span className="sr-only">Delete</span>

@@ -151,7 +151,8 @@ export const getPortfolioWithUser = async (portfolioId: string) => {
         username,
         full_name,
         avatar_url,
-        bio
+        bio,
+        banner_image_url
       )
     `)
     .eq('id', portfolioId)
@@ -220,6 +221,41 @@ export const uploadUserAvatar = async (file: File, userId: string) => {
     
   if (updateError) {
     console.error('Error updating avatar URL:', updateError);
+  }
+  
+  return publicUrl;
+};
+
+// Upload user banner image
+export const uploadUserBanner = async (file: File, userId: string) => {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${userId}/banner.${fileExt}`;
+  
+  const { error } = await supabase.storage
+    .from('avatars') // Using the same bucket as avatars for simplicity
+    .upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: true
+    });
+    
+  if (error) {
+    console.error('Error uploading banner:', error);
+    return null;
+  }
+  
+  // Get public URL
+  const { data: { publicUrl } } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(fileName);
+  
+  // Update user profile with banner URL
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({ banner_image_url: publicUrl })
+    .eq('id', userId);
+    
+  if (updateError) {
+    console.error('Error updating banner URL:', updateError);
   }
   
   return publicUrl;
@@ -408,4 +444,91 @@ export const getAdminStats = async () => {
       openCallCount: 0
     };
   }
+};
+
+// Get portfolio templates
+export const getPortfolioTemplates = async () => {
+  const { data, error } = await supabase
+    .from('portfolio_templates')
+    .select('*')
+    .eq('is_active', true)
+    .order('name');
+  
+  if (error) {
+    console.error('Error fetching portfolio templates:', error);
+    return [];
+  }
+  
+  return data;
+};
+
+// Update portfolio template
+export const updatePortfolioTemplate = async (templateId: string, updates: any) => {
+  const { data, error } = await supabase
+    .from('portfolio_templates')
+    .update(updates)
+    .eq('id', templateId);
+  
+  if (error) {
+    console.error('Error updating portfolio template:', error);
+    return null;
+  }
+  
+  return data;
+};
+
+// Add new portfolio template
+export const addPortfolioTemplate = async (template: any) => {
+  const { data, error } = await supabase
+    .from('portfolio_templates')
+    .insert([template])
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error adding portfolio template:', error);
+    return null;
+  }
+  
+  return data;
+};
+
+// Delete portfolio template
+export const deletePortfolioTemplate = async (templateId: string) => {
+  const { error } = await supabase
+    .from('portfolio_templates')
+    .delete()
+    .eq('id', templateId);
+  
+  if (error) {
+    console.error('Error deleting portfolio template:', error);
+    return false;
+  }
+  
+  return true;
+};
+
+// Get featured portfolios
+export const getFeaturedPortfolios = async (limit = 6) => {
+  const { data, error } = await supabase
+    .from('portfolios')
+    .select(`
+      *,
+      profiles:user_id (
+        id,
+        username,
+        full_name,
+        avatar_url
+      )
+    `)
+    .eq('is_public', true)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  
+  if (error) {
+    console.error('Error fetching featured portfolios:', error);
+    return [];
+  }
+  
+  return data;
 };

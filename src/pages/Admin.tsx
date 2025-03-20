@@ -176,6 +176,7 @@ const Admin = () => {
                   <li>Approve pending portfolios</li>
                   <li>Moderate reported content</li>
                   <li>Update platform announcements</li>
+                  <li>Manage featured artists on homepage</li>
                 </ul>
               </CardContent>
             </Card>
