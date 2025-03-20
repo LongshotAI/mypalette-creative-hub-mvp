@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Loader2, Plus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePortfolios } from '@/hooks/usePortfolios';
+import { usePortfolios } from '@/hooks/portfolio';
 import { useArtworks } from '@/hooks/useArtworks';
 import PortfolioList from './PortfolioList';
 import ArtworkList from './ArtworkList';
