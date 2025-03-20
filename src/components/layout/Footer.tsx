@@ -1,28 +1,10 @@
-import React, { useEffect, useState } from 'react';
+
+import React from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '../common/Logo';
 import { Separator } from '@/components/ui/separator';
-import { useAuth } from '@/contexts/AuthContext';
-import { checkAdminStatus } from '@/lib/supabase';
 
 const Footer: React.FC = () => {
-  const { user } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    // Check admin status when user changes
-    const checkAdmin = async () => {
-      if (user) {
-        const adminType = await checkAdminStatus(user.id);
-        setIsAdmin(!!adminType);
-      } else {
-        setIsAdmin(false);
-      }
-    };
-
-    checkAdmin();
-  }, [user]);
-
   return (
     <footer className="bg-white border-t border-gray-100 py-12">
       <div className="container-custom">
@@ -100,13 +82,6 @@ const Footer: React.FC = () => {
                   Privacy Policy
                 </Link>
               </li>
-              {isAdmin && (
-                <li>
-                  <Link to="/admin" className="text-sm hover:text-primary transition-colors">
-                    Admin Panel
-                  </Link>
-                </li>
-              )}
             </ul>
           </div>
         </div>

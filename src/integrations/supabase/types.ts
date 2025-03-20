@@ -210,42 +210,6 @@ export type Database = {
         }
         Relationships: []
       }
-      orders: {
-        Row: {
-          amount: number
-          artwork_id: string
-          buyer_id: string
-          created_at: string
-          currency: string
-          id: string
-          status: string
-          stripe_session_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          artwork_id: string
-          buyer_id: string
-          created_at?: string
-          currency?: string
-          id?: string
-          status?: string
-          stripe_session_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          artwork_id?: string
-          buyer_id?: string
-          created_at?: string
-          currency?: string
-          id?: string
-          status?: string
-          stripe_session_id?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       portfolios: {
         Row: {
           created_at: string | null
@@ -281,7 +245,6 @@ export type Database = {
       }
       profiles: {
         Row: {
-          admin_type: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string | null
@@ -294,7 +257,6 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
-          admin_type?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
@@ -307,7 +269,6 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
-          admin_type?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
@@ -326,18 +287,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_manage_admins: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_super_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

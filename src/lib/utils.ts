@@ -50,9 +50,3 @@ export function getReadableDate(isoString: string): string {
     day: 'numeric' 
   });
 }
-
-// Check if an email is the King Admin email
-export function isKingAdminEmail(email: string): boolean {
-  // This is the email address specified in the requirements
-  return email.toLowerCase() === 'pixelpalettenation@gmail.com';
-}
