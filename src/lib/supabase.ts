@@ -256,19 +256,21 @@ export const getAllAdmins = async () => {
   }
   
   // Get emails from auth.users
-  const userIds = data.map(admin => admin.id);
-  const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers({
+  const { data: users, error: usersError } = await supabase.auth.admin.listUsers({
     perPage: 100,
   });
   
-  if (usersError || !usersData) {
+  if (usersError || !users) {
     console.error('Error fetching user emails:', usersError);
-    return data;
+    return data.map(admin => ({
+      ...admin,
+      email: 'Unknown'
+    }));
   }
   
   // Map emails to admin records
   const adminWithEmails = data.map(admin => {
-    const user = usersData.users.find(u => u.id === admin.id);
+    const user = users.users.find(u => u.id === admin.id);
     return {
       ...admin,
       email: user?.email || 'Unknown'
