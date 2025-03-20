@@ -51,19 +51,36 @@ export const getUserByUsername = async (username: string) => {
 
 // Update user profile
 export const updateUserProfile = async (userId: string, updates: any) => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .update(updates)
-    .eq('id', userId)
-    .select()
-    .single();
+  console.log('Updating user profile:', userId, updates);
   
-  if (error) {
-    console.error('Error updating user profile:', error);
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId);
+    
+    if (error) {
+      console.error('Error updating user profile:', error);
+      throw error;
+    }
+    
+    // Fetch the updated profile
+    const { data: updatedProfile, error: fetchError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (fetchError) {
+      console.error('Error fetching updated profile:', fetchError);
+      throw fetchError;
+    }
+    
+    return updatedProfile;
+  } catch (error) {
+    console.error('Error in updateUserProfile:', error);
     return null;
   }
-  
-  return data;
 };
 
 // Helper for fetching user portfolios

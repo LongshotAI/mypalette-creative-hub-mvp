@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ const Hero: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pixelGridRef = useRef<HTMLDivElement>(null);
   
-  // Pixel art animation
+  // Pixel art animation - more subtle version
   useEffect(() => {
     if (!pixelGridRef.current) return;
     
@@ -25,42 +24,44 @@ const Hero: React.FC = () => {
     for (let i = 0; i < gridSize; i++) {
       for (let j = 0; j < gridSize; j++) {
         const pixel = document.createElement('div');
-        pixel.className = 'absolute transition-all duration-1000 rounded-sm opacity-0';
+        pixel.className = 'absolute transition-all duration-2000 rounded-sm opacity-0';
         pixel.style.width = `${pixelSize}px`;
         pixel.style.height = `${pixelSize}px`;
         pixel.style.left = `${j * pixelSize}px`;
         pixel.style.top = `${i * pixelSize}px`;
         
-        // Randomize when each pixel appears
-        const delay = Math.random() * 3000;
-        setTimeout(() => {
-          // Choose a color theme
-          const colors = [
-            'bg-brand-red/40', 'bg-brand-green/40', 'bg-brand-blue/40', 
-            'bg-primary/30', 'bg-secondary/30'
-          ];
-          const color = colors[Math.floor(Math.random() * colors.length)];
-          pixel.className = `absolute transition-all duration-1000 ${color} rounded-sm transform hover:scale-110`;
+        // Randomize when each pixel appears - reduced frequency
+        if (Math.random() > 0.7) { // Only create ~30% of possible pixels
+          const delay = Math.random() * 5000;
+          setTimeout(() => {
+            // Choose a color theme with reduced opacity
+            const colors = [
+              'bg-brand-red/15', 'bg-brand-green/15', 'bg-brand-blue/15', 
+              'bg-primary/10', 'bg-secondary/10'
+            ];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            pixel.className = `absolute transition-all duration-2000 ${color} rounded-sm`;
+            
+            // Only show some pixels for a sparse effect
+            if (Math.random() > 0.8) {
+              pixel.style.opacity = '0.3'; // Reduced opacity
+            }
+          }, delay);
           
-          // Only show some pixels for a sparse effect
-          if (Math.random() > 0.7) {
-            pixel.style.opacity = '1';
-          }
-        }, delay);
-        
-        pixelGrid.appendChild(pixel);
+          pixelGrid.appendChild(pixel);
+        }
       }
     }
     
-    // Animation loop for gentle movement
+    // Animation loop for gentle movement - slowed down
     const animatePixels = () => {
       Array.from(pixelGrid.children).forEach((pixel) => {
-        if (Math.random() > 0.99) { // Occasionally change pixels
+        if (Math.random() > 0.995) { // Very occasionally change pixels (slower rate)
           const elem = pixel as HTMLElement;
-          if (elem.style.opacity === '1') {
+          if (elem.style.opacity !== '0') {
             elem.style.opacity = '0';
-          } else if (Math.random() > 0.7) {
-            elem.style.opacity = '1';
+          } else if (Math.random() > 0.8) {
+            elem.style.opacity = '0.3'; // Reduced opacity
           }
         }
       });
@@ -88,50 +89,38 @@ const Hero: React.FC = () => {
     
     window.addEventListener('resize', handleResize);
     
-    // Create pixel art "MyPalette" text
+    // Create a more subtle pixel art effect
     const addPixelText = () => {
-      const text = "MyPalette";
       const pixelTextContainer = document.createElement('div');
-      pixelTextContainer.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-pulse';
+      pixelTextContainer.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none';
       
-      // Create pixel-style letters (simplified)
-      Array.from(text).forEach((letter, index) => {
-        const letterElem = document.createElement('div');
-        letterElem.className = 'inline-block mx-1 opacity-0 animate-fade-up';
-        letterElem.style.animationDelay = `${index * 150}ms`;
+      // Add a few floating pixels instead of text
+      for (let i = 0; i < 8; i++) {
+        const floatingPixel = document.createElement('div');
+        const size = 4 + Math.random() * 8;
+        const xPos = (Math.random() - 0.5) * 100;
+        const yPos = (Math.random() - 0.5) * 60;
         
-        // Create a mini-grid for each letter
-        const miniGrid = document.createElement('div');
-        miniGrid.className = 'w-6 h-8 relative';
+        floatingPixel.className = 'absolute rounded-sm opacity-0 animate-pulse';
+        floatingPixel.style.width = `${size}px`;
+        floatingPixel.style.height = `${size}px`;
+        floatingPixel.style.left = `calc(50% + ${xPos}px)`;
+        floatingPixel.style.top = `calc(50% + ${yPos}px)`;
+        floatingPixel.style.backgroundColor = `rgba(255, 255, 255, 0.1)`;
+        floatingPixel.style.animationDuration = `${5 + Math.random() * 5}s`;
         
-        // Random pixel art for each letter
-        for (let i = 0; i < 4; i++) {
-          for (let j = 0; j < 3; j++) {
-            if (Math.random() > 0.4) {
-              const pixel = document.createElement('div');
-              pixel.className = 'absolute bg-white/30 hover:bg-white/50 transition-all';
-              pixel.style.width = '25%';
-              pixel.style.height = '25%';
-              pixel.style.left = `${j * 33}%`;
-              pixel.style.top = `${i * 25}%`;
-              miniGrid.appendChild(pixel);
-            }
-          }
-        }
-        
-        letterElem.appendChild(miniGrid);
-        pixelTextContainer.appendChild(letterElem);
+        pixelTextContainer.appendChild(floatingPixel);
         
         setTimeout(() => {
-          letterElem.classList.add('opacity-100');
-        }, 1000 + index * 150);
-      });
+          floatingPixel.style.opacity = '0.15';
+        }, 1000 + i * 300);
+      }
       
       // Add pixel text to the canvas
       pixelGrid.appendChild(pixelTextContainer);
     };
     
-    // Add pixel art text after a delay
+    // Add subtle floating pixels after a delay
     setTimeout(addPixelText, 1000);
     
     // ASCII art effect in console (for fun)
