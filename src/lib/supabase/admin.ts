@@ -30,7 +30,7 @@ export const getAllAdmins = async () => {
   // First, get all profiles with admin privileges
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select<'*', AdminProfile>('*')
     .not('admin_type', 'is', null)
     .order('created_at', { ascending: false });
     
@@ -50,11 +50,11 @@ export const getAllAdmins = async () => {
   
   if (usersResponse.error) {
     console.error('Error fetching user emails:', usersResponse.error);
-    return []; // Return empty array instead of data with type assertion
+    return []; // Return empty array on error
   }
 
-  // Type assertion for the admin data
-  const adminData = data as AdminProfile[];
+  // Now TypeScript knows data is AdminProfile[]
+  const adminData = data;
   
   // Map emails to admin records
   const adminWithEmails = adminData.map(admin => {
