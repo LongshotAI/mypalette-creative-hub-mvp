@@ -30,7 +30,7 @@ export const getAllAdmins = async () => {
   // First, get all profiles with admin privileges
   const { data, error } = await supabase
     .from('profiles')
-    .select<'*', AdminProfile>('*')
+    .select('*')
     .not('admin_type', 'is', null)
     .order('created_at', { ascending: false });
     
@@ -54,7 +54,7 @@ export const getAllAdmins = async () => {
   }
 
   // Map emails to admin records
-  return data.map(admin => {
+  return data.map((admin: AdminProfile) => {
     const user = usersResponse.data.users.find(u => u.id === admin.id);
     return {
       ...admin,
