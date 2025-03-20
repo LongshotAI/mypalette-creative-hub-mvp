@@ -1,13 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
-import { Menu, X, LogOut, User, Shield } from 'lucide-react';
-import Logo from '../common/Logo';
-import AnimatedLink from '../ui/AnimatedLink';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import Logo from '@/components/common/Logo';
+import AnimatedLink from '@/components/ui/AnimatedLink';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,180 +12,90 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ChevronDown, User } from "lucide-react";
+import HeaderSearch from './HeaderSearch';
 
-const Header: React.FC = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+const Header = () => {
   const { user, signOut } = useAuth();
+  
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase.rpc('is_admin');
-        if (error) {
-          console.error('Error checking admin status:', error);
-          return;
-        }
-        
-        setIsAdmin(data);
-      } catch (error) {
-        console.error('Error:', error);
-      }
-    };
+  // Get user's initials for avatar fallback
+  const getUserInitials = () => {
+    if (!user || !user.user_metadata?.full_name) return 'U';
     
-    checkAdminStatus();
-  }, [user]);
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
+    const nameParts = user.user_metadata.full_name.split(' ');
+    if (nameParts.length === 1) return nameParts[0][0].toUpperCase();
+    
+    return `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase();
   };
 
   return (
-    <header
-      className={cn(
-        "fixed top-0 left-0 w-full z-50 transition-all duration-300 ease-in-out",
-        isScrolled 
-          ? "py-3 bg-white/80 backdrop-blur-lg shadow-sm border-b" 
-          : "py-5 bg-transparent"
-      )}
-    >
-      <div className="container-custom flex items-center justify-between">
-        <Logo variant="full" size={isScrolled ? "sm" : "md"} />
-
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-1">
-          <AnimatedLink to="/portfolios" label="Portfolios" />
-          <AnimatedLink to="/education" label="Education Hub" />
-          <AnimatedLink to="/open-calls" label="Open Calls" />
+    <header className="border-b border-border sticky top-0 bg-background z-10">
+      <div className="container mx-auto py-4 flex items-center justify-between">
+        <div className="flex items-center space-x-12">
+          <Link to="/" className="flex items-center">
+            <Logo className="h-8 w-auto" />
+          </Link>
           
-          <div className="ml-4">
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="rounded-full">
-                    <User className="h-4 w-4 mr-2" />
-                    {user.user_metadata.full_name || 'Account'}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/dashboard" className="cursor-pointer w-full">
-                      Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/dashboard/profile" className="cursor-pointer w-full">
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  {isAdmin && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link to="/admin" className="cursor-pointer w-full">
-                          <Shield className="h-4 w-4 mr-2" />
-                          Admin Dashboard
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()} className="text-destructive cursor-pointer">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button asChild size="sm" className="ppn-button">
-                <Link to="/sign-in">Sign In</Link>
-              </Button>
-            )}
-          </div>
-        </nav>
-
-        {/* Mobile Menu Button */}
-        <button 
-          className="md:hidden text-gray-700 hover:text-gray-900 focus:outline-none"
-          onClick={toggleMobileMenu}
-          aria-label="Toggle menu"
-        >
-          {isMobileMenuOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
-          )}
-        </button>
-      </div>
-
-      {/* Mobile Navigation */}
-      <div 
-        className={cn(
-          "fixed inset-0 z-40 bg-white transform transition-transform ease-in-out duration-300 md:hidden",
-          isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
-        )}
-        style={{ top: '60px' }}
-      >
-        <nav className="flex flex-col p-5 space-y-5">
-          <AnimatedLink 
-            to="/portfolios" 
-            label="Portfolios" 
-            className="text-lg py-3"
-            activeClassName="font-medium"
-          />
-          <AnimatedLink 
-            to="/education" 
-            label="Education Hub" 
-            className="text-lg py-3"
-            activeClassName="font-medium"
-          />
-          <AnimatedLink 
-            to="/open-calls" 
-            label="Open Calls" 
-            className="text-lg py-3"
-            activeClassName="font-medium"
-          />
+          <nav className="hidden md:flex space-x-6">
+            <AnimatedLink to="/portfolios">Portfolios</AnimatedLink>
+            <AnimatedLink to="/education">Education</AnimatedLink>
+            <AnimatedLink to="/open-calls">Open Calls</AnimatedLink>
+          </nav>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          {/* Add search button */}
+          <HeaderSearch />
           
           {user ? (
-            <>
-              <Link to="/dashboard" className="text-lg py-3 text-primary font-medium">
-                Dashboard
-              </Link>
-              {isAdmin && (
-                <Link to="/admin" className="text-lg py-3 flex items-center text-primary font-medium">
-                  <Shield className="h-4 w-4 mr-2" />
-                  Admin Dashboard
-                </Link>
-              )}
-              <Button 
-                onClick={() => signOut()} 
-                variant="outline" 
-                className="mt-4 w-full justify-start text-destructive"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Log out
-              </Button>
-            </>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={user.user_metadata?.avatar_url} alt={user.user_metadata?.full_name || 'User'} />
+                    <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" sideOffset={5}>
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard">Dashboard</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to={`/user/${user.id}`}>Public Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard/settings">Settings</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
-            <Button asChild size="lg" className="ppn-button w-full mt-4">
-              <Link to="/sign-in">Sign In</Link>
-            </Button>
+            <div className="flex items-center space-x-4">
+              <Button variant="outline" asChild>
+                <Link to="/sign-in">Sign In</Link>
+              </Button>
+              <Button asChild>
+                <Link to="/sign-up">Sign Up</Link>
+              </Button>
+            </div>
           )}
-        </nav>
+        </div>
       </div>
     </header>
   );
