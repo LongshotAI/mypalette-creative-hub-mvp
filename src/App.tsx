@@ -1,11 +1,12 @@
+
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import Index from './pages/Index';
 import SignUp from './pages/SignUp';
 import SignIn from './pages/SignIn';
 import Portfolios from './pages/Portfolios';
 import PortfolioDetail from './pages/PortfolioDetail';
-import UserProfile from './pages/UserProfile'; // Import the new component
+import UserProfile from './pages/UserProfile';
 import Education from './pages/Education';
 import OpenCalls from './pages/OpenCalls';
 import Search from './pages/Search';
@@ -16,14 +17,13 @@ import ProtectedRoute from './components/layout/ProtectedRoute';
 
 function App() {
   return (
-    <BrowserRouter>
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/sign-up" element={<SignUp />} />
       <Route path="/sign-in" element={<SignIn />} />
       <Route path="/portfolios" element={<Portfolios />} />
       <Route path="/portfolio/:portfolioId" element={<PortfolioDetail />} />
-      <Route path="/user/:userId" element={<UserProfile />} /> {/* Add the new user profile route */}
+      <Route path="/user/:userId" element={<UserProfile />} />
       <Route path="/education" element={<Education />} />
       <Route path="/open-calls" element={<OpenCalls />} />
       <Route path="/search" element={<Search />} />
@@ -31,7 +31,6 @@ function App() {
       <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
-    </BrowserRouter>
   );
 }
 
