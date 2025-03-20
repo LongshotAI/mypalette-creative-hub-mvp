@@ -111,7 +111,7 @@ const Index = () => {
             </p>
             <Button 
               size="lg" 
-              className="rounded-full px-8 py-6 font-medium bg-gradient-to-r from-brand-green to-brand-blue text-white hover:shadow-md transition-all duration-300"
+              className="rounded-full px-8 py-6 font-medium bg-brand-blue text-white hover:shadow-md transition-all duration-300"
               asChild
             >
               <Link to="/sign-up">

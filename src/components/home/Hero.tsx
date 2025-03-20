@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -164,9 +165,8 @@ const Hero: React.FC = () => {
           
           <h1 className="animate-fade-up font-sans text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6">
             Create a stunning 
-            <span className="relative mx-2 inline-block px-2">
+            <span className="relative mx-2 inline-block">
               <span className="relative z-10">digital portfolio</span>
-              <span className="absolute bottom-0 left-0 w-full h-3 bg-brand-green/20" />
             </span> 
             in minutes
           </h1>
@@ -177,7 +177,7 @@ const Hero: React.FC = () => {
           </p>
           
           <div className="animate-fade-up animate-delay-200 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Button asChild size="lg" className="rounded-full px-8 py-6 font-medium bg-gradient-to-r from-brand-green to-brand-blue text-white hover:shadow-md transition-all duration-300">
+            <Button asChild size="lg" className="rounded-full px-8 py-6 font-medium bg-brand-blue text-white hover:shadow-md transition-all duration-300">
               <Link to="/sign-up">
                 Sign Up
                 <ArrowRight className="ml-2 h-4 w-4" />
