@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import AdminUsers from '@/components/admin/AdminUsers';
+import * as AdminUsersModule from '@/components/admin/AdminUsers';
 import AdminPortfolios from '@/components/admin/AdminPortfolios';
 import AdminSettings from '@/components/admin/AdminSettings';
 import AdminEducation from '@/components/admin/AdminEducation';
@@ -68,6 +68,9 @@ const Admin = () => {
     return null; // This shouldn't render as we redirect non-admins
   }
 
+  // Get the AdminUsers component from the module
+  const AdminUsers = AdminUsersModule.default || Object.values(AdminUsersModule)[0];
+
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
@@ -80,7 +83,7 @@ const Admin = () => {
           <TabsTrigger value="settings">Platform Settings</TabsTrigger>
         </TabsList>
         <TabsContent value="users">
-          <AdminUsers />
+          {AdminUsers ? <AdminUsers /> : <div>Users component not available</div>}
         </TabsContent>
         <TabsContent value="portfolios">
           <AdminPortfolios />
