@@ -46,7 +46,7 @@ export const getAllAdmins = async () => {
   
   if (usersResponse.error) {
     console.error('Error fetching user emails:', usersResponse.error);
-    return data;
+    return data as AdminProfile[]; // Add type assertion here too
   }
 
   // Type assertion for the admin data
