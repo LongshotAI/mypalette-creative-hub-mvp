@@ -448,15 +448,17 @@ export const deleteEducationResource = async (resourceId: string) => {
 };
 
 export const getEducationCategories = async () => {
+  // Fix the distinct function issue by using a different approach
   const { data, error } = await supabase
     .from('education_resources')
-    .select('category')
-    .distinct();
+    .select('category');
     
   if (error) {
     console.error('Error fetching education categories:', error);
     return [];
   }
   
-  return data.map(item => item.category);
+  // Handle duplicates in code instead of using .distinct()
+  const uniqueCategories = Array.from(new Set(data.map(item => item.category)));
+  return uniqueCategories;
 };
