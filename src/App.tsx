@@ -49,7 +49,7 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route path="/user-info" element={<UserInfo />} />
+            <Route path="/user/:id" element={<UserInfo />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

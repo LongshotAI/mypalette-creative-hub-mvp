@@ -33,6 +33,39 @@ export const getUserProfile = async (userId: string) => {
   return data;
 };
 
+// Get user by username
+export const getUserByUsername = async (username: string) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('username', username)
+    .single();
+  
+  if (error) {
+    console.error('Error fetching user by username:', error);
+    return null;
+  }
+  
+  return data;
+};
+
+// Update user profile
+export const updateUserProfile = async (userId: string, updates: any) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId)
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error updating user profile:', error);
+    return null;
+  }
+  
+  return data;
+};
+
 // Helper for fetching user portfolios
 export const getUserPortfolios = async (userId: string) => {
   const { data, error } = await supabase
@@ -43,6 +76,31 @@ export const getUserPortfolios = async (userId: string) => {
   
   if (error) {
     console.error('Error fetching user portfolios:', error);
+    return [];
+  }
+  
+  return data;
+};
+
+// Get public portfolios with creator information
+export const getPublicPortfolios = async (limit = 10) => {
+  const { data, error } = await supabase
+    .from('portfolios')
+    .select(`
+      *,
+      profiles:user_id (
+        id,
+        username,
+        full_name,
+        avatar_url
+      )
+    `)
+    .eq('is_public', true)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  
+  if (error) {
+    console.error('Error fetching public portfolios:', error);
     return [];
   }
   
@@ -60,6 +118,31 @@ export const getPortfolioArtworks = async (portfolioId: string) => {
   if (error) {
     console.error('Error fetching portfolio artworks:', error);
     return [];
+  }
+  
+  return data;
+};
+
+// Get portfolio with user information
+export const getPortfolioWithUser = async (portfolioId: string) => {
+  const { data, error } = await supabase
+    .from('portfolios')
+    .select(`
+      *,
+      profiles:user_id (
+        id,
+        username,
+        full_name,
+        avatar_url,
+        bio
+      )
+    `)
+    .eq('id', portfolioId)
+    .single();
+  
+  if (error) {
+    console.error('Error fetching portfolio with user:', error);
+    return null;
   }
   
   return data;
@@ -86,6 +169,41 @@ export const uploadArtworkImage = async (file: File, userId: string) => {
   const { data: { publicUrl } } = supabase.storage
     .from('artworks')
     .getPublicUrl(fileName);
+  
+  return publicUrl;
+};
+
+// Upload user avatar
+export const uploadUserAvatar = async (file: File, userId: string) => {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${userId}/avatar.${fileExt}`;
+  
+  const { error } = await supabase.storage
+    .from('avatars')
+    .upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: true
+    });
+    
+  if (error) {
+    console.error('Error uploading avatar:', error);
+    return null;
+  }
+  
+  // Get public URL
+  const { data: { publicUrl } } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(fileName);
+  
+  // Update user profile with avatar URL
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({ avatar_url: publicUrl })
+    .eq('id', userId);
+    
+  if (updateError) {
+    console.error('Error updating avatar URL:', updateError);
+  }
   
   return publicUrl;
 };
@@ -231,4 +349,46 @@ export const submitOpenCallApplication = async (openCallId: string, userId: stri
   }
   
   return true;
+};
+
+// Get admin dashboard statistics
+export const getAdminStats = async () => {
+  try {
+    const { count: userCount } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true });
+      
+    const { count: portfolioCount } = await supabase
+      .from('portfolios')
+      .select('*', { count: 'exact', head: true });
+      
+    const { count: artworkCount } = await supabase
+      .from('artworks')
+      .select('*', { count: 'exact', head: true });
+      
+    const { count: educationCount } = await supabase
+      .from('education_resources')
+      .select('*', { count: 'exact', head: true });
+      
+    const { count: openCallCount } = await supabase
+      .from('open_calls')
+      .select('*', { count: 'exact', head: true });
+      
+    return {
+      userCount: userCount || 0,
+      portfolioCount: portfolioCount || 0,
+      artworkCount: artworkCount || 0,
+      educationCount: educationCount || 0,
+      openCallCount: openCallCount || 0
+    };
+  } catch (error) {
+    console.error('Error fetching admin stats:', error);
+    return {
+      userCount: 0,
+      portfolioCount: 0,
+      artworkCount: 0,
+      educationCount: 0,
+      openCallCount: 0
+    };
+  }
 };

@@ -1,77 +1,211 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import DefaultLayout from '@/components/layout/DefaultLayout';
-import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Clipboard, CheckCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { getUserProfile, getUserPortfolios } from '@/lib/supabase';
+import { Loader2, MapPin, Globe, Instagram, Twitter } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { GridTemplate } from '@/components/portfolio/templates/GridTemplate';
 
 const UserInfo = () => {
-  const { user } = useAuth();
-  const [copied, setCopied] = React.useState(false);
+  const { id: userId } = useParams();
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [portfolios, setPortfolios] = useState<any[]>([]);
 
-  const copyToClipboard = () => {
-    if (user?.id) {
-      navigator.clipboard.writeText(user.id);
-      setCopied(true);
-      toast.success('User ID copied to clipboard');
-      
-      setTimeout(() => {
-        setCopied(false);
-      }, 3000);
-    }
-  };
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setLoading(true);
+      try {
+        if (userId) {
+          const userProfile = await getUserProfile(userId);
+          setProfile(userProfile);
+          
+          const userPortfolios = await getUserPortfolios(userId);
+          setPortfolios(userPortfolios.filter((p: any) => p.is_public));
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <DefaultLayout>
+        <div className="container-custom py-12 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DefaultLayout>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <DefaultLayout>
+        <div className="container-custom py-12">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold">User Not Found</h2>
+                <p className="text-muted-foreground mt-2">
+                  The user profile you are looking for does not exist or is not available.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </DefaultLayout>
+    );
+  }
 
   return (
     <DefaultLayout>
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-8">User Information</h1>
-        
-        <Card className="max-w-lg mx-auto">
-          <CardHeader>
-            <CardTitle>Your Supabase User ID</CardTitle>
-            <CardDescription>
-              Use this ID to set yourself as a super admin in the database
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {user ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-secondary rounded-md flex items-center justify-between">
-                  <code className="text-sm font-mono break-all">{user.id}</code>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={copyToClipboard}
-                    className="ml-2 flex-shrink-0"
-                  >
-                    {copied ? (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <Clipboard className="h-4 w-4" />
-                    )}
-                  </Button>
+      <div className="container-custom py-12">
+        <Card className="mb-8">
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              <Avatar className="h-24 w-24 border">
+                {profile.avatar_url ? (
+                  <AvatarImage src={profile.avatar_url} alt={profile.full_name} />
+                ) : (
+                  <AvatarFallback className="text-2xl">
+                    {profile.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '?'}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold mb-1">{profile.full_name}</h1>
+                
+                {profile.username && (
+                  <p className="text-muted-foreground mb-3">@{profile.username}</p>
+                )}
+                
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {profile.location && (
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {profile.location}
+                    </Badge>
+                  )}
+                  
+                  {profile.current_exhibition && (
+                    <Badge className="bg-brand-green/10 text-brand-green border-brand-green/20">
+                      Currently Exhibiting
+                    </Badge>
+                  )}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  <p className="font-medium">To make yourself a super admin:</p>
-                  <ol className="list-decimal list-inside mt-2 space-y-2">
-                    <li>Go to the Supabase SQL Editor</li>
-                    <li>Run the following SQL query, replacing YOUR_USER_ID with the ID above:</li>
-                    <pre className="p-3 bg-secondary rounded-md text-xs mt-2 overflow-x-auto">
-                      UPDATE public.profiles SET admin_type = 'super_admin' WHERE id = 'YOUR_USER_ID';
-                    </pre>
-                    <li>Once complete, you'll have full access to the admin dashboard</li>
-                  </ol>
+                
+                {profile.bio && (
+                  <p className="mb-4 max-w-2xl">{profile.bio}</p>
+                )}
+                
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {profile.website_url && (
+                    <Button variant="outline" size="sm" className="gap-1" asChild>
+                      <a href={profile.website_url} target="_blank" rel="noopener noreferrer">
+                        <Globe className="h-4 w-4" />
+                        Website
+                      </a>
+                    </Button>
+                  )}
+                  
+                  {profile.instagram_url && (
+                    <Button variant="outline" size="sm" className="gap-1" asChild>
+                      <a href={profile.instagram_url} target="_blank" rel="noopener noreferrer">
+                        <Instagram className="h-4 w-4" />
+                        Instagram
+                      </a>
+                    </Button>
+                  )}
+                  
+                  {profile.twitter_url && (
+                    <Button variant="outline" size="sm" className="gap-1" asChild>
+                      <a href={profile.twitter_url} target="_blank" rel="noopener noreferrer">
+                        <Twitter className="h-4 w-4" />
+                        Twitter
+                      </a>
+                    </Button>
+                  )}
                 </div>
               </div>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-muted-foreground">Please sign in to view your user ID</p>
-              </div>
-            )}
+            </div>
           </CardContent>
         </Card>
+        
+        <Tabs defaultValue="portfolios">
+          <TabsList className="mb-4">
+            <TabsTrigger value="portfolios">Portfolios</TabsTrigger>
+            <TabsTrigger value="about">About</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="portfolios">
+            {portfolios.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {portfolios.map((portfolio) => (
+                  <Card key={portfolio.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                    <CardHeader className="p-4">
+                      <CardTitle>{portfolio.name}</CardTitle>
+                      {portfolio.description && (
+                        <CardDescription>{portfolio.description}</CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <Button variant="ghost" className="w-full h-10 rounded-none border-t" asChild>
+                        <a href={`/portfolio/${portfolio.id}`}>View Portfolio</a>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-8">
+                  <div className="text-center">
+                    <p className="text-muted-foreground">No public portfolios available</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="about">
+            <Card>
+              <CardContent className="pt-6">
+                {profile.artist_statement ? (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Artist Statement</h3>
+                    <p className="mb-6 whitespace-pre-line">{profile.artist_statement}</p>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">
+                    No artist statement available
+                  </p>
+                )}
+                
+                {profile.current_exhibition && (
+                  <>
+                    <Separator className="my-4" />
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">Current Exhibition</h3>
+                      <p className="whitespace-pre-line">{profile.current_exhibition}</p>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DefaultLayout>
   );
