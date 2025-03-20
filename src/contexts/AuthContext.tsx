@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -13,6 +12,8 @@ type AuthContextType = {
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   signInWithProvider: (provider: 'github' | 'twitter') => Promise<void>;
+  checkAdminStatus: () => Promise<boolean>;
+  checkSuperAdminStatus: () => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,7 +25,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
@@ -34,7 +34,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session check:', session?.user?.email);
       setSession(session);
@@ -75,7 +74,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       console.log('Signing up with:', email, name);
       
-      // Create the user
       const { error, data } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -93,12 +91,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('Sign up response:', data);
       
-      // Check if email confirmation is required
       if (data?.user && data.user.identities && data.user.identities.length === 0) {
         toast.info("This email is already registered. Please check your inbox for the confirmation link or try signing in.");
       } else {
         toast.success("Account created successfully! Check your email for confirmation if required.");
-        // Redirect user only if email confirmation is not required
         if (data?.session) {
           navigate('/dashboard');
         }
@@ -106,7 +102,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       console.error('Sign up error:', error);
       
-      // More user-friendly error messages
       if (error.message.includes('unique constraint')) {
         toast.error("This email is already registered. Please sign in instead.");
       } else {
@@ -158,6 +153,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const checkAdminStatus = async (): Promise<boolean> => {
+    try {
+      if (!user) return false;
+      
+      const { data, error } = await supabase.rpc('is_admin');
+      
+      if (error) {
+        console.error('Error checking admin status:', error);
+        return false;
+      }
+      
+      return !!data;
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      return false;
+    }
+  };
+
+  const checkSuperAdminStatus = async (): Promise<boolean> => {
+    try {
+      if (!user) return false;
+      
+      const { data, error } = await supabase.rpc('is_super_admin');
+      
+      if (error) {
+        console.error('Error checking super admin status:', error);
+        return false;
+      }
+      
+      return !!data;
+    } catch (error) {
+      console.error('Error checking super admin status:', error);
+      return false;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       session, 
@@ -166,7 +197,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signIn, 
       signUp, 
       signOut,
-      signInWithProvider
+      signInWithProvider,
+      checkAdminStatus,
+      checkSuperAdminStatus
     }}>
       {children}
     </AuthContext.Provider>
