@@ -69,9 +69,9 @@ export interface PortfolioTemplate {
   id: string;
   name: string;
   slug: string;
-  description: string;
+  description: string | null;
   preview_image_url: string | null;
   settings: Record<string, any>;
-  is_active: boolean;
-  created_at: string;
+  is_active: boolean | null;
+  created_at: string | null;
 }

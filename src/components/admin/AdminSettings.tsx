@@ -11,6 +11,7 @@ import { Loader2, Save, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { getPublicPortfolios } from '@/lib/supabase';
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,

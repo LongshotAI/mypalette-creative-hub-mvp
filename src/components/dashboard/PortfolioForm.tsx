@@ -45,7 +45,14 @@ const PortfolioForm = ({
           .order('name');
           
         if (error) throw error;
-        setTemplates(data || []);
+        
+        // Transform the data to ensure settings is treated as Record<string, any>
+        const transformedData = data?.map(template => ({
+          ...template,
+          settings: template.settings as Record<string, any>
+        })) || [];
+        
+        setTemplates(transformedData);
       } catch (err) {
         console.error('Error fetching templates:', err);
       } finally {
