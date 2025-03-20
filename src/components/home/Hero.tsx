@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,6 @@ const Hero: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pixelGridRef = useRef<HTMLDivElement>(null);
   
-  // Pixel art animation - more subtle version
   useEffect(() => {
     if (!pixelGridRef.current) return;
     
@@ -18,10 +16,8 @@ const Hero: React.FC = () => {
     const gridSize = 20; // Number of pixels in each row/column
     const pixelSize = Math.min(window.innerWidth, 1200) / gridSize; // Size of each pixel
     
-    // Clear any existing pixels
     pixelGrid.innerHTML = '';
     
-    // Create pixel grid for art animation
     for (let i = 0; i < gridSize; i++) {
       for (let j = 0; j < gridSize; j++) {
         const pixel = document.createElement('div');
@@ -31,11 +27,9 @@ const Hero: React.FC = () => {
         pixel.style.left = `${j * pixelSize}px`;
         pixel.style.top = `${i * pixelSize}px`;
         
-        // Randomize when each pixel appears - reduced frequency
-        if (Math.random() > 0.7) { // Only create ~30% of possible pixels
+        if (Math.random() > 0.7) {
           const delay = Math.random() * 5000;
           setTimeout(() => {
-            // Choose a color theme with reduced opacity
             const colors = [
               'bg-brand-red/15', 'bg-brand-green/15', 'bg-brand-blue/15', 
               'bg-primary/10', 'bg-secondary/10'
@@ -43,9 +37,8 @@ const Hero: React.FC = () => {
             const color = colors[Math.floor(Math.random() * colors.length)];
             pixel.className = `absolute transition-all duration-2000 ${color} rounded-sm`;
             
-            // Only show some pixels for a sparse effect
             if (Math.random() > 0.8) {
-              pixel.style.opacity = '0.3'; // Reduced opacity
+              pixel.style.opacity = '0.3';
             }
           }, delay);
           
@@ -54,15 +47,14 @@ const Hero: React.FC = () => {
       }
     }
     
-    // Animation loop for gentle movement - slowed down
     const animatePixels = () => {
       Array.from(pixelGrid.children).forEach((pixel) => {
-        if (Math.random() > 0.995) { // Very occasionally change pixels (slower rate)
+        if (Math.random() > 0.995) {
           const elem = pixel as HTMLElement;
           if (elem.style.opacity !== '0') {
             elem.style.opacity = '0';
           } else if (Math.random() > 0.8) {
-            elem.style.opacity = '0.3'; // Reduced opacity
+            elem.style.opacity = '0.3';
           }
         }
       });
@@ -72,7 +64,6 @@ const Hero: React.FC = () => {
     
     const animationId = requestAnimationFrame(animatePixels);
     
-    // Handle window resizing
     const handleResize = () => {
       if (pixelGrid) {
         const newPixelSize = Math.min(window.innerWidth, 1200) / gridSize;
@@ -90,12 +81,10 @@ const Hero: React.FC = () => {
     
     window.addEventListener('resize', handleResize);
     
-    // Create a more subtle pixel art effect
     const addPixelText = () => {
       const pixelTextContainer = document.createElement('div');
       pixelTextContainer.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none';
       
-      // Add a few floating pixels instead of text
       for (let i = 0; i < 8; i++) {
         const floatingPixel = document.createElement('div');
         const size = 4 + Math.random() * 8;
@@ -117,14 +106,11 @@ const Hero: React.FC = () => {
         }, 1000 + i * 300);
       }
       
-      // Add pixel text to the canvas
       pixelGrid.appendChild(pixelTextContainer);
     };
     
-    // Add subtle floating pixels after a delay
     setTimeout(addPixelText, 1000);
     
-    // ASCII art effect in console (for fun)
     console.log(`
     ███╗   ███╗██╗   ██╗██████╗  █████╗ ██╗     ███████╗████████╗████████╗███████╗
     ████╗ ████║╚██╗ ██╔╝██╔══██╗██╔══██╗██║     ██╔════╝╚══██╔══╝╚══██╔══╝██╔════╝
@@ -136,7 +122,6 @@ const Hero: React.FC = () => {
     Digital Portfolio Platform for Artists
     `);
     
-    // Cleanup
     return () => {
       cancelAnimationFrame(animationId);
       window.removeEventListener('resize', handleResize);
@@ -145,28 +130,20 @@ const Hero: React.FC = () => {
   
   return (
     <section ref={heroRef} className="relative overflow-hidden py-24 lg:py-32 bg-ppn-light">
-      {/* Pixel art canvas container */}
       <div className="absolute inset-0 z-0 pointer-events-none flex justify-center">
         <div ref={pixelGridRef} className="relative w-full max-w-6xl h-full"></div>
       </div>
       
-      {/* Animated background elements */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-secondary/20 pointer-events-none" />
       
       <div className="container-custom relative z-10">
         <div className="max-w-3xl mx-auto text-center transition-transform duration-200">
-          <div className="mb-6 animate-pixel-in">
-            <img 
-              src="/lovable-uploads/989cbf61-b6e6-42ab-b88c-4f5184336c53.png" 
-              alt="PPN Logo" 
-              className="h-24 mx-auto mb-4"
-            />
-          </div>
-          
           <h1 className="animate-fade-up font-sans text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6">
-            Create a stunning 
+            Create a 
             <span className="relative mx-2 inline-block">
-              <span className="relative z-10">digital portfolio</span>
+              <span className="text-brand-red">stunning</span>{" "}
+              <span className="text-brand-green">digital</span>{" "}
+              <span className="text-brand-blue">portfolio</span>
             </span> 
             in minutes
           </h1>
@@ -196,7 +173,6 @@ const Hero: React.FC = () => {
           </div>
         </div>
         
-        {/* Preview Image */}
         <div className="mt-16 md:mt-24 animate-fade-in animate-delay-300">
           <div className={cn(
             "relative mx-auto max-w-5xl rounded-xl overflow-hidden shadow-2xl",
@@ -204,7 +180,6 @@ const Hero: React.FC = () => {
             "before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:pointer-events-none"
           )}>
             <div className="aspect-[16/9] relative bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg p-6 flex items-center justify-center">
-              {/* Interactive Portfolio Preview */}
               <div className="absolute inset-0 opacity-10 pointer-events-none">
                 <div className="absolute top-1/4 left-1/4 w-16 h-16 bg-brand-red/50 rounded-full filter blur-xl" />
                 <div className="absolute top-1/3 right-1/3 w-24 h-24 bg-brand-green/50 rounded-full filter blur-xl" />
