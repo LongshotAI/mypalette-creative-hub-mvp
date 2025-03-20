@@ -1,98 +1,90 @@
 
 import React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Artwork } from '@/types/portfolio';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { Share2 } from 'lucide-react';
+import PurchaseButton from './PurchaseButton';
 
 interface ArtworkDetailModalProps {
   artwork: Artwork | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const ArtworkDetailModal = ({ artwork, open, onOpenChange }: ArtworkDetailModalProps) => {
+const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
+  artwork,
+  isOpen,
+  onClose,
+}) => {
   if (!artwork) return null;
 
-  const shareArtwork = async () => {
-    // Create the share data
-    const shareData = {
-      title: `Artwork: ${artwork.title}`,
-      text: `Check out this artwork: ${artwork.title}`,
-      url: window.location.href
-    };
-
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        // Fallback to copying to clipboard
-        await navigator.clipboard.writeText(window.location.href);
-        toast.success('Link copied to clipboard');
-      }
-    } catch (error) {
-      console.error('Error sharing:', error);
-    }
-  };
-
-  const formatCurrency = (price: number | null, currency: string) => {
-    if (price === null) return '';
-    
-    switch (currency) {
-      case 'USD':
-        return `$${price}`;
-      case 'EUR':
-        return `€${price}`;
-      case 'GBP':
-        return `£${price}`;
-      case 'JPY':
-        return `¥${price}`;
-      case 'ETH':
-        return `Ξ ${price}`;
-      default:
-        return `${price} ${currency}`;
-    }
-  };
+  // Format price with currency if the artwork is for sale
+  const formattedPrice = artwork.for_sale && artwork.price
+    ? new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: artwork.currency || 'USD',
+        minimumFractionDigits: 2,
+      }).format(artwork.price)
+    : null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl">{artwork.title}</DialogTitle>
-          {artwork.for_sale && artwork.price !== null && (
-            <DialogDescription className="text-primary font-medium text-lg">
-              {formatCurrency(artwork.price, artwork.currency)}
+          <DialogTitle className="text-xl sm:text-2xl">{artwork.title}</DialogTitle>
+          {artwork.description && (
+            <DialogDescription className="text-sm sm:text-base mt-2">
+              {artwork.description}
             </DialogDescription>
           )}
         </DialogHeader>
         
-        <div className="space-y-4">
-          <div className="rounded-md overflow-hidden">
-            <img 
-              src={artwork.image_url} 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          <div className="aspect-square w-full overflow-hidden rounded-md">
+            <img
+              src={artwork.image_url}
               alt={artwork.title}
-              className="w-full h-auto object-contain max-h-[60vh]"
+              className="h-full w-full object-cover"
             />
           </div>
           
-          {artwork.description && (
-            <div className="text-muted-foreground">
-              {artwork.description}
-            </div>
-          )}
-          
-          <div className="flex justify-between items-center pt-4 border-t">
-            <div>
-              {artwork.for_sale && (
-                <Button>Contact to Purchase</Button>
+          <div className="flex flex-col justify-between">
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">Details</h3>
+              
+              {artwork.description && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Description</h4>
+                  <p className="mt-1">{artwork.description}</p>
+                </div>
               )}
+              
+              {formattedPrice && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Price</h4>
+                  <p className="mt-1 font-semibold text-lg">{formattedPrice}</p>
+                </div>
+              )}
+              
+              {/* Additional artwork details can be added here */}
             </div>
             
-            <Button variant="outline" size="icon" onClick={shareArtwork}>
-              <Share2 className="h-4 w-4" />
-              <span className="sr-only">Share</span>
-            </Button>
+            {artwork.for_sale && artwork.price && (
+              <div className="mt-6">
+                <PurchaseButton 
+                  artwork={artwork} 
+                  className="w-full mt-4" 
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Secure payment processing powered by Stripe. You'll be redirected to complete your purchase.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
