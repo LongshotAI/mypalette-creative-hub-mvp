@@ -44,7 +44,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUserIsSuper }) =
   const loadAdmins = async () => {
     setLoading(true);
     const data = await getAllAdmins();
-    setAdmins(data as Admin[]); // Use type assertion to ensure TypeScript knows we're getting Admin[]
+    setAdmins(data);
     setLoading(false);
   };
 
