@@ -6,6 +6,7 @@ import FeaturedArtists from '@/components/home/FeaturedArtists';
 import WhyChooseSection from '@/components/home/WhyChooseSection';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
   return (
@@ -39,9 +40,16 @@ const Index = () => {
               <p className="text-muted-foreground mb-4">
                 Choose from beautiful, responsive portfolio templates designed specifically for artists.
               </p>
-              <Button variant="ghost" size="sm" className="group mt-2">
-                <span>Learn more</span>
-                <ArrowRight className="ml-2 h-4 w-4 transform transition-transform group-hover:translate-x-1" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="group mt-2"
+                asChild
+              >
+                <Link to="/portfolios">
+                  <span>Learn more</span>
+                  <ArrowRight className="ml-2 h-4 w-4 transform transition-transform group-hover:translate-x-1" />
+                </Link>
               </Button>
             </div>
             
@@ -54,9 +62,16 @@ const Index = () => {
               <p className="text-muted-foreground mb-4">
                 Access guides and tutorials about digital art, NFTs, smart contracts, and more.
               </p>
-              <Button variant="ghost" size="sm" className="group mt-2">
-                <span>Learn more</span>
-                <ArrowRight className="ml-2 h-4 w-4 transform transition-transform group-hover:translate-x-1" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="group mt-2"
+                asChild
+              >
+                <Link to="/education">
+                  <span>Learn more</span>
+                  <ArrowRight className="ml-2 h-4 w-4 transform transition-transform group-hover:translate-x-1" />
+                </Link>
               </Button>
             </div>
             
@@ -69,9 +84,16 @@ const Index = () => {
               <p className="text-muted-foreground mb-4">
                 Discover and apply to open calls for exhibitions, grants, and other creative opportunities.
               </p>
-              <Button variant="ghost" size="sm" className="group mt-2">
-                <span>Learn more</span>
-                <ArrowRight className="ml-2 h-4 w-4 transform transition-transform group-hover:translate-x-1" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="group mt-2"
+                asChild
+              >
+                <Link to="/open-calls">
+                  <span>Learn more</span>
+                  <ArrowRight className="ml-2 h-4 w-4 transform transition-transform group-hover:translate-x-1" />
+                </Link>
               </Button>
             </div>
           </div>
@@ -87,9 +109,15 @@ const Index = () => {
               Join a community of artists and creators on MyPalette. Create your portfolio, connect with
               opportunities, and take your art to the next level.
             </p>
-            <Button size="lg" className="rounded-full px-8 py-6 font-medium bg-gradient-to-r from-brand-green to-brand-blue text-white hover:shadow-md transition-all duration-300">
-              Sign Up Now
-              <ArrowRight className="ml-2 h-4 w-4" />
+            <Button 
+              size="lg" 
+              className="rounded-full px-8 py-6 font-medium bg-gradient-to-r from-brand-green to-brand-blue text-white hover:shadow-md transition-all duration-300"
+              asChild
+            >
+              <Link to="/sign-up">
+                Sign Up Now
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </div>
         </div>

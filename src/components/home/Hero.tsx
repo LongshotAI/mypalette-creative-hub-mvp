@@ -4,146 +4,167 @@ import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
-import * as THREE from 'three';
 
 const Hero: React.FC = () => {
   const heroRef = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pixelGridRef = useRef<HTMLDivElement>(null);
   
-  // Three.js animation setup
+  // Pixel art animation
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!pixelGridRef.current) return;
     
-    // Setup scene, camera, and renderer
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    const pixelGrid = pixelGridRef.current;
+    const gridSize = 20; // Number of pixels in each row/column
+    const pixelSize = Math.min(window.innerWidth, 1200) / gridSize; // Size of each pixel
     
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x000000, 0); // transparent background
-    canvasRef.current.appendChild(renderer.domElement);
+    // Clear any existing pixels
+    pixelGrid.innerHTML = '';
     
-    // Create floating objects
-    const objects: THREE.Mesh[] = [];
-    const colors = [0xf06292, 0x4fc3f7, 0x8bc34a, 0xffa726]; // pink, blue, green, orange
-    
-    for (let i = 0; i < 15; i++) {
-      const geometry = new THREE.IcosahedronGeometry(Math.random() * 0.8 + 0.2, 0);
-      const material = new THREE.MeshBasicMaterial({ 
-        color: colors[Math.floor(Math.random() * colors.length)],
-        transparent: true,
-        opacity: 0.3,
-        wireframe: true
-      });
-      
-      const object = new THREE.Mesh(geometry, material);
-      
-      // Position objects randomly
-      object.position.x = (Math.random() - 0.5) * 20;
-      object.position.y = (Math.random() - 0.5) * 20;
-      object.position.z = (Math.random() - 0.5) * 10 - 5;
-      
-      // Random rotation
-      object.rotation.x = Math.random() * Math.PI;
-      object.rotation.y = Math.random() * Math.PI;
-      
-      // Store random speed for animation
-      (object as any).speed = Math.random() * 0.01 + 0.005;
-      (object as any).rotationSpeed = Math.random() * 0.01 + 0.002;
-      
-      objects.push(object);
-      scene.add(object);
+    // Create pixel grid for art animation
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        const pixel = document.createElement('div');
+        pixel.className = 'absolute transition-all duration-1000 rounded-sm opacity-0';
+        pixel.style.width = `${pixelSize}px`;
+        pixel.style.height = `${pixelSize}px`;
+        pixel.style.left = `${j * pixelSize}px`;
+        pixel.style.top = `${i * pixelSize}px`;
+        
+        // Randomize when each pixel appears
+        const delay = Math.random() * 3000;
+        setTimeout(() => {
+          // Choose a color theme
+          const colors = [
+            'bg-brand-red/40', 'bg-brand-green/40', 'bg-brand-blue/40', 
+            'bg-primary/30', 'bg-secondary/30'
+          ];
+          const color = colors[Math.floor(Math.random() * colors.length)];
+          pixel.className = `absolute transition-all duration-1000 ${color} rounded-sm transform hover:scale-110`;
+          
+          // Only show some pixels for a sparse effect
+          if (Math.random() > 0.7) {
+            pixel.style.opacity = '1';
+          }
+        }, delay);
+        
+        pixelGrid.appendChild(pixel);
+      }
     }
     
-    // Position camera
-    camera.position.z = 5;
-    
-    // Animation loop
-    const animate = () => {
-      requestAnimationFrame(animate);
-      
-      // Animate each object
-      objects.forEach(object => {
-        object.rotation.x += (object as any).rotationSpeed;
-        object.rotation.y += (object as any).rotationSpeed;
-        object.position.y += Math.sin(Date.now() * 0.001) * 0.01;
+    // Animation loop for gentle movement
+    const animatePixels = () => {
+      Array.from(pixelGrid.children).forEach((pixel) => {
+        if (Math.random() > 0.99) { // Occasionally change pixels
+          const elem = pixel as HTMLElement;
+          if (elem.style.opacity === '1') {
+            elem.style.opacity = '0';
+          } else if (Math.random() > 0.7) {
+            elem.style.opacity = '1';
+          }
+        }
       });
       
-      // Mouse movement effect
-      if (textRef.current) {
-        const time = Date.now() * 0.0005;
-        textRef.current.style.transform = `translate(${Math.sin(time) * 10}px, ${Math.cos(time) * 10}px)`;
-      }
-      
-      renderer.render(scene, camera);
+      requestAnimationFrame(animatePixels);
     };
     
-    animate();
+    const animationId = requestAnimationFrame(animatePixels);
     
     // Handle window resizing
     const handleResize = () => {
-      if (!canvasRef.current) return;
-      
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      if (pixelGrid) {
+        const newPixelSize = Math.min(window.innerWidth, 1200) / gridSize;
+        Array.from(pixelGrid.children).forEach((pixel, index) => {
+          const elem = pixel as HTMLElement;
+          const j = index % gridSize;
+          const i = Math.floor(index / gridSize);
+          elem.style.width = `${newPixelSize}px`;
+          elem.style.height = `${newPixelSize}px`;
+          elem.style.left = `${j * newPixelSize}px`;
+          elem.style.top = `${i * newPixelSize}px`;
+        });
+      }
     };
     
     window.addEventListener('resize', handleResize);
     
-    // Cleanup
-    return () => {
-      if (canvasRef.current && canvasRef.current.contains(renderer.domElement)) {
-        canvasRef.current.removeChild(renderer.domElement);
-      }
-      window.removeEventListener('resize', handleResize);
+    // Create pixel art "MyPalette" text
+    const addPixelText = () => {
+      const text = "MyPalette";
+      const pixelTextContainer = document.createElement('div');
+      pixelTextContainer.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-pulse';
       
-      // Dispose resources
-      objects.forEach(object => {
-        object.geometry.dispose();
-        (object.material as THREE.Material).dispose();
+      // Create pixel-style letters (simplified)
+      Array.from(text).forEach((letter, index) => {
+        const letterElem = document.createElement('div');
+        letterElem.className = 'inline-block mx-1 opacity-0 animate-fade-up';
+        letterElem.style.animationDelay = `${index * 150}ms`;
+        
+        // Create a mini-grid for each letter
+        const miniGrid = document.createElement('div');
+        miniGrid.className = 'w-6 h-8 relative';
+        
+        // Random pixel art for each letter
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < 3; j++) {
+            if (Math.random() > 0.4) {
+              const pixel = document.createElement('div');
+              pixel.className = 'absolute bg-white/30 hover:bg-white/50 transition-all';
+              pixel.style.width = '25%';
+              pixel.style.height = '25%';
+              pixel.style.left = `${j * 33}%`;
+              pixel.style.top = `${i * 25}%`;
+              miniGrid.appendChild(pixel);
+            }
+          }
+        }
+        
+        letterElem.appendChild(miniGrid);
+        pixelTextContainer.appendChild(letterElem);
+        
+        setTimeout(() => {
+          letterElem.classList.add('opacity-100');
+        }, 1000 + index * 150);
       });
-    };
-  }, []);
-  
-  // Mouse movement parallax effect
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!heroRef.current || !textRef.current) return;
       
-      const x = e.clientX / window.innerWidth;
-      const y = e.clientY / window.innerHeight;
-      
-      // Subtle text movement
-      textRef.current.style.transform = `translate(${x * -10}px, ${y * -10}px)`;
-      
-      // Update gradient positions for subtle effect
-      const gradients = heroRef.current.querySelectorAll('.bg-blob');
-      gradients.forEach((gradient: Element) => {
-        const element = gradient as HTMLElement;
-        const speed = parseFloat(element.dataset.speed || '1');
-        element.style.transform = `translate(${x * 25 * speed}px, ${y * 25 * speed}px)`;
-      });
+      // Add pixel text to the canvas
+      pixelGrid.appendChild(pixelTextContainer);
     };
     
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    // Add pixel art text after a delay
+    setTimeout(addPixelText, 1000);
+    
+    // ASCII art effect in console (for fun)
+    console.log(`
+    ███╗   ███╗██╗   ██╗██████╗  █████╗ ██╗     ███████╗████████╗████████╗███████╗
+    ████╗ ████║╚██╗ ██╔╝██╔══██╗██╔══██╗██║     ██╔════╝╚══██╔══╝╚══██╔══╝██╔════╝
+    ██╔████╔██║ ╚████╔╝ ██████╔╝███████║██║     █████╗     ██║      ██║   █████╗  
+    ██║╚██╔╝██║  ╚██╔╝  ██╔═══╝ ██╔══██║██║     ██╔══╝     ██║      ██║   ██╔══╝  
+    ██║ ╚═╝ ██║   ██║   ██║     ██║  ██║███████╗███████╗   ██║      ██║   ███████╗
+    ╚═╝     ╚═╝   ╚═╝   ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝   ╚═╝      ╚═╝   ╚══════╝
+                                                                                
+    Digital Portfolio Platform for Artists
+    `);
+    
+    // Cleanup
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
   
   return (
     <section ref={heroRef} className="relative overflow-hidden py-24 lg:py-32 bg-ppn-light">
-      {/* Three.js canvas container */}
-      <div ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none" />
+      {/* Pixel art canvas container */}
+      <div className="absolute inset-0 z-0 pointer-events-none flex justify-center">
+        <div ref={pixelGridRef} className="relative w-full max-w-6xl h-full"></div>
+      </div>
       
       {/* Animated background elements */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-secondary/20 pointer-events-none" />
-      <div className="bg-blob absolute -top-24 right-0 w-80 h-80 bg-brand-red/5 rounded-full blur-3xl" data-speed="1.5" />
-      <div className="bg-blob absolute top-1/2 -left-24 w-80 h-80 bg-brand-green/5 rounded-full blur-3xl" data-speed="1" />
-      <div className="bg-blob absolute bottom-0 right-1/4 w-80 h-80 bg-brand-blue/5 rounded-full blur-3xl" data-speed="0.5" />
       
       <div className="container-custom relative z-10">
-        <div ref={textRef} className="max-w-3xl mx-auto text-center transition-transform duration-200">
+        <div className="max-w-3xl mx-auto text-center transition-transform duration-200">
           <div className="mb-6 animate-pixel-in">
             <img 
               src="/lovable-uploads/989cbf61-b6e6-42ab-b88c-4f5184336c53.png" 

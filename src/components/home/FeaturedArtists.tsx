@@ -3,6 +3,7 @@ import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 interface ArtistCardProps {
   name: string;
@@ -41,8 +42,10 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ name, specialty, imageUrl, dela
       </div>
       
       <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <Button variant="outline" size="sm" className="bg-white/90 hover:bg-white text-black">
-          View Portfolio
+        <Button variant="outline" size="sm" className="bg-white/90 hover:bg-white text-black" asChild>
+          <Link to="/portfolios">
+            View Portfolio
+          </Link>
         </Button>
       </div>
     </div>
@@ -71,9 +74,12 @@ const FeaturedArtists: React.FC = () => {
           <Button 
             variant="ghost" 
             className="mt-4 md:mt-0 group animate-fade-up animate-delay-200"
+            asChild
           >
-            <span>View all artists</span>
-            <ArrowRight className="ml-2 h-4 w-4 transform transition-transform group-hover:translate-x-1" />
+            <Link to="/portfolios">
+              <span>View all artists</span>
+              <ArrowRight className="ml-2 h-4 w-4 transform transition-transform group-hover:translate-x-1" />
+            </Link>
           </Button>
         </div>
         
