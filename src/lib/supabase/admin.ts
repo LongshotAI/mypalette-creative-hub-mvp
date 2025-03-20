@@ -39,7 +39,7 @@ export const getAllAdmins = async () => {
     return [];
   }
   
-  if (!data) {
+  if (!data || data.length === 0) {
     return [];
   }
   
@@ -53,11 +53,10 @@ export const getAllAdmins = async () => {
     return []; // Return empty array on error
   }
 
-  // Now TypeScript knows data is AdminProfile[]
-  const adminData = data;
+  // Since we've checked for null/empty data above, TypeScript should know data is AdminProfile[]
   
   // Map emails to admin records
-  const adminWithEmails = adminData.map(admin => {
+  const adminWithEmails = data.map(admin => {
     const user = usersResponse.data.users.find(u => u.id === admin.id);
     return {
       ...admin,
