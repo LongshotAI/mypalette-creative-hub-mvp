@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { CheckIcon, Filter } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -11,12 +12,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { SearchFilters as SearchFiltersType } from '@/lib/searchService';
 
-interface SearchFiltersComponentProps {
+interface SearchFiltersProps {
   filters: SearchFiltersType;
   onFilterChange: (filters: SearchFiltersType) => void;
 }
 
-const SearchFilters = ({ filters, onFilterChange }: SearchFiltersComponentProps) => {
+const SearchFilters = ({ filters, onFilterChange }: SearchFiltersProps) => {
   const handleTypeChange = (type: string) => {
     onFilterChange({ ...filters, type });
   };

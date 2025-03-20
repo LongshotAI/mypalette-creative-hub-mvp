@@ -1,3 +1,4 @@
+
 import { supabase } from './supabase';
 
 export type SearchResult = {
@@ -83,11 +84,11 @@ export const searchAll = async (query: string, filters: SearchFilters = {}): Pro
       searchPromises.push(resourcePromise);
     }
 
-    const [portfoliosResponse, artistsResponse, openCallsResponse, resourcesResponse] = 
-      await Promise.all(searchPromises);
+    const responses = await Promise.all(searchPromises);
     
-    if (portfoliosResponse && !portfoliosResponse.error) {
-      const portfolioResults = portfoliosResponse.data.map((portfolio: any) => ({
+    // Handle portfolio results
+    if (responses[0] && !responses[0].error) {
+      const portfolioResults = responses[0].data.map((portfolio: any) => ({
         id: portfolio.id,
         title: portfolio.name,
         description: portfolio.description,
@@ -101,8 +102,9 @@ export const searchAll = async (query: string, filters: SearchFilters = {}): Pro
       results.push(...portfolioResults);
     }
     
-    if (artistsResponse && !artistsResponse.error) {
-      const artistResults = artistsResponse.data.map((profile: any) => ({
+    // Handle artist results
+    if (responses[1] && !responses[1].error) {
+      const artistResults = responses[1].data.map((profile: any) => ({
         id: profile.id,
         title: profile.full_name || profile.username,
         description: profile.bio,
@@ -116,8 +118,9 @@ export const searchAll = async (query: string, filters: SearchFilters = {}): Pro
       results.push(...artistResults);
     }
     
-    if (openCallsResponse && !openCallsResponse.error) {
-      const openCallResults = openCallsResponse.data.map((call: any) => ({
+    // Handle open call results
+    if (responses[2] && !responses[2].error) {
+      const openCallResults = responses[2].data.map((call: any) => ({
         id: call.id,
         title: call.title,
         description: call.description,
@@ -130,8 +133,9 @@ export const searchAll = async (query: string, filters: SearchFilters = {}): Pro
       results.push(...openCallResults);
     }
     
-    if (resourcesResponse && !resourcesResponse.error) {
-      const resourceResults = resourcesResponse.data.map((resource: any) => ({
+    // Handle education resource results
+    if (responses[3] && !responses[3].error) {
+      const resourceResults = responses[3].data.map((resource: any) => ({
         id: resource.id,
         title: resource.title,
         description: resource.description,

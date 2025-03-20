@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { searchAll, SearchResult, SearchFilters as SearchFiltersType } from '@/lib/searchService';
+import { searchAll, SearchResult, type SearchFilters as SearchFiltersType } from '@/lib/searchService';
 import SearchBar from '@/components/search/SearchBar';
 import SearchFilters from '@/components/search/SearchFilters';
 import SearchResultCard from '@/components/search/SearchResultCard';

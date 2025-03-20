@@ -4,10 +4,108 @@ import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
+import * as THREE from 'three';
 
 const Hero: React.FC = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  
+  // Three.js animation setup
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    
+    // Setup scene, camera, and renderer
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000, 0); // transparent background
+    canvasRef.current.appendChild(renderer.domElement);
+    
+    // Create floating objects
+    const objects: THREE.Mesh[] = [];
+    const colors = [0xf06292, 0x4fc3f7, 0x8bc34a, 0xffa726]; // pink, blue, green, orange
+    
+    for (let i = 0; i < 15; i++) {
+      const geometry = new THREE.IcosahedronGeometry(Math.random() * 0.8 + 0.2, 0);
+      const material = new THREE.MeshBasicMaterial({ 
+        color: colors[Math.floor(Math.random() * colors.length)],
+        transparent: true,
+        opacity: 0.3,
+        wireframe: true
+      });
+      
+      const object = new THREE.Mesh(geometry, material);
+      
+      // Position objects randomly
+      object.position.x = (Math.random() - 0.5) * 20;
+      object.position.y = (Math.random() - 0.5) * 20;
+      object.position.z = (Math.random() - 0.5) * 10 - 5;
+      
+      // Random rotation
+      object.rotation.x = Math.random() * Math.PI;
+      object.rotation.y = Math.random() * Math.PI;
+      
+      // Store random speed for animation
+      (object as any).speed = Math.random() * 0.01 + 0.005;
+      (object as any).rotationSpeed = Math.random() * 0.01 + 0.002;
+      
+      objects.push(object);
+      scene.add(object);
+    }
+    
+    // Position camera
+    camera.position.z = 5;
+    
+    // Animation loop
+    const animate = () => {
+      requestAnimationFrame(animate);
+      
+      // Animate each object
+      objects.forEach(object => {
+        object.rotation.x += (object as any).rotationSpeed;
+        object.rotation.y += (object as any).rotationSpeed;
+        object.position.y += Math.sin(Date.now() * 0.001) * 0.01;
+      });
+      
+      // Mouse movement effect
+      if (textRef.current) {
+        const time = Date.now() * 0.0005;
+        textRef.current.style.transform = `translate(${Math.sin(time) * 10}px, ${Math.cos(time) * 10}px)`;
+      }
+      
+      renderer.render(scene, camera);
+    };
+    
+    animate();
+    
+    // Handle window resizing
+    const handleResize = () => {
+      if (!canvasRef.current) return;
+      
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => {
+      if (canvasRef.current && canvasRef.current.contains(renderer.domElement)) {
+        canvasRef.current.removeChild(renderer.domElement);
+      }
+      window.removeEventListener('resize', handleResize);
+      
+      // Dispose resources
+      objects.forEach(object => {
+        object.geometry.dispose();
+        (object.material as THREE.Material).dispose();
+      });
+    };
+  }, []);
   
   // Mouse movement parallax effect
   useEffect(() => {
@@ -35,6 +133,9 @@ const Hero: React.FC = () => {
   
   return (
     <section ref={heroRef} className="relative overflow-hidden py-24 lg:py-32 bg-ppn-light">
+      {/* Three.js canvas container */}
+      <div ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none" />
+      
       {/* Animated background elements */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-secondary/20 pointer-events-none" />
       <div className="bg-blob absolute -top-24 right-0 w-80 h-80 bg-brand-red/5 rounded-full blur-3xl" data-speed="1.5" />
@@ -66,7 +167,7 @@ const Hero: React.FC = () => {
           </p>
           
           <div className="animate-fade-up animate-delay-200 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Button asChild size="lg" className="ppn-button">
+            <Button asChild size="lg" className="rounded-full px-8 py-6 font-medium bg-gradient-to-r from-brand-green to-brand-blue text-white hover:shadow-md transition-all duration-300">
               <Link to="/sign-up">
                 Sign Up
                 <ArrowRight className="ml-2 h-4 w-4" />

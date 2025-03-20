@@ -15,6 +15,7 @@ import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 import UserInfo from "./pages/UserInfo";
+import Search from "./pages/Search";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/portfolio/:id" element={<PortfolioDetail />} />
             <Route path="/education" element={<Education />} />
             <Route path="/open-calls" element={<OpenCalls />} />
+            <Route path="/search" element={<Search />} />
             <Route 
               path="/dashboard" 
               element={
