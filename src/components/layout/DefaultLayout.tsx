@@ -23,13 +23,13 @@ const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children }) => {
 
   // Create a context object with the scroll position
   const childrenWithProps = React.Children.map(children, child => {
-    // Check if the child is a valid React element and can accept props
+    // Check if the child is a valid React element
     if (React.isValidElement(child)) {
-      // Pass scrollPosition prop only if the child's type is a component that accepts it
-      // This is safe because we're explicitly checking in the component
-      return React.cloneElement(child, { 
-        scrollPosition 
-      } as React.ComponentProps<typeof child.type>);
+      // Clone the element with the scrollPosition prop, using a proper type cast
+      return React.cloneElement(child, {
+        ...child.props,
+        scrollPosition
+      });
     }
     return child;
   });
