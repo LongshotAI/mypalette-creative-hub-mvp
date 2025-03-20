@@ -46,9 +46,9 @@ const PortfolioManager = () => {
     handleArtworkImageUpload,
     createArtwork,
     updateArtwork,
-    deleteArtwork,
     editArtwork,
-    resetArtworkForm
+    resetArtworkForm,
+    handleDeleteArtwork
   } = useArtworks(user?.id);
 
   useEffect(() => {
@@ -131,7 +131,7 @@ const PortfolioManager = () => {
             onEditArtwork={editArtwork}
             onDeleteArtwork={(artworkId) => {
               if (selectedPortfolio) {
-                deleteArtwork(artworkId, selectedPortfolio);
+                handleDeleteArtwork(artworkId, selectedPortfolio);
               }
             }}
           />
@@ -151,7 +151,20 @@ const PortfolioManager = () => {
                   }
                 }
               }}
-              onImageUpload={handleArtworkImageUpload}
+              onImageUpload={(e) => {
+                if (user?.id) {
+                  handleArtworkImageUpload(
+                    e, 
+                    user.id, 
+                    (imageUrl) => {
+                      setArtworkForm({
+                        ...artworkForm,
+                        image_url: imageUrl
+                      });
+                    }
+                  );
+                }
+              }}
               isSubmitting={artworkFormSubmitting}
               isUploading={imageUploading}
               isEditing={!!editingArtwork}

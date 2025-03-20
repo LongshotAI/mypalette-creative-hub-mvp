@@ -8,7 +8,7 @@ import AdminEducation from '@/components/admin/AdminEducation';
 import AdminStats from '@/components/admin/AdminStats';
 import AdminOpenCalls from '@/components/admin/AdminOpenCalls';
 import AdminTemplates from '@/components/admin/AdminTemplates';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface AdminTabsProps {
   adminType?: string | null;

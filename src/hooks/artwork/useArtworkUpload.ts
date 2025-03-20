@@ -8,10 +8,10 @@ export const useArtworkUpload = () => {
   
   const handleArtworkImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    userId: string | undefined,
+    userId: string,
     onSuccess: (imageUrl: string) => void
   ) => {
-    if (!e.target.files || !e.target.files[0] || !userId) return;
+    if (!e.target.files || !e.target.files[0]) return;
     
     const file = e.target.files[0];
     

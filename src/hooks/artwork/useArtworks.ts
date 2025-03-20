@@ -27,11 +27,11 @@ export const useArtworks = (userId: string | undefined) => {
     editingArtwork,
     artworkForm,
     setArtworkForm,
-    createArtwork,
-    updateArtwork,
+    handleCreateArtwork,
+    handleUpdateArtwork,
     editArtwork,
     resetArtworkForm
-  } = useArtworkForm(userId, loadPortfolioArtworks);
+  } = useArtworkForm(loadPortfolioArtworks);
 
   const {
     deleteLoading,
@@ -60,8 +60,8 @@ export const useArtworks = (userId: string | undefined) => {
     editingArtwork,
     artworkForm,
     setArtworkForm,
-    createArtwork,
-    updateArtwork,
+    createArtwork: handleCreateArtwork,
+    updateArtwork: handleUpdateArtwork,
     editArtwork,
     resetArtworkForm,
     

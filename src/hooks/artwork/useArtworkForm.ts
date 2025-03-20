@@ -64,9 +64,6 @@ export const useArtworkForm = (onArtworkUpdated: (portfolioId: string) => void) 
       
       // Reload the artwork list
       onArtworkUpdated(portfolioId);
-    } catch (error) {
-      console.error('Error updating artwork:', error);
-      toast.error('Failed to update artwork');
     } finally {
       setFormSubmitting(false);
     }
