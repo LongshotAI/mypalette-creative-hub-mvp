@@ -19,7 +19,7 @@ export const checkAdminStatus = async (userId: string) => {
 };
 
 export const getAllAdmins = async () => {
-  // Define explicit type for the admin profile data
+  // Use explicit type for the profiles data to avoid TS errors
   type AdminProfile = {
     id: string;
     admin_type: AdminType;
@@ -27,19 +27,14 @@ export const getAllAdmins = async () => {
     created_at: string;
   };
   
-  // First, get all profiles with admin privileges
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select<'*', AdminProfile>('id, admin_type, full_name, created_at')
     .not('admin_type', 'is', null)
     .order('created_at', { ascending: false });
     
   if (error) {
     console.error('Error fetching admins:', error);
-    return [];
-  }
-  
-  if (!data || data.length === 0) {
     return [];
   }
   
@@ -50,17 +45,22 @@ export const getAllAdmins = async () => {
   
   if (usersResponse.error) {
     console.error('Error fetching user emails:', usersResponse.error);
-    return []; // Return empty array on error
+    return data;
   }
 
+  // Type assertion to ensure TypeScript knows data is AdminProfile[]
+  const adminData = data as AdminProfile[];
+  
   // Map emails to admin records
-  return data.map((admin: AdminProfile) => {
+  const adminWithEmails = adminData.map(admin => {
     const user = usersResponse.data.users.find(u => u.id === admin.id);
     return {
       ...admin,
       email: user?.email || 'Unknown'
     };
   });
+  
+  return adminWithEmails;
 };
 
 export const updateAdminRole = async (userId: string, adminType: AdminType) => {
