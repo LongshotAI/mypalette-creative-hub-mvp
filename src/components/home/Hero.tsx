@@ -1,21 +1,30 @@
-
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
-const Hero: React.FC = () => {
+interface HeroProps {
+  scrollPosition?: number;
+}
+
+const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
   const heroRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pixelGridRef = useRef<HTMLDivElement>(null);
+  const [headingVisible, setHeadingVisible] = useState(true);
+  
+  useEffect(() => {
+    const threshold = 100;
+    setHeadingVisible(scrollPosition < threshold);
+  }, [scrollPosition]);
   
   useEffect(() => {
     if (!pixelGridRef.current) return;
     
     const pixelGrid = pixelGridRef.current;
-    const gridSize = 20; // Number of pixels in each row/column
-    const pixelSize = Math.min(window.innerWidth, 1200) / gridSize; // Size of each pixel
+    const gridSize = 20;
+    const pixelSize = Math.min(window.innerWidth, 1200) / gridSize;
     
     pixelGrid.innerHTML = '';
     
@@ -139,7 +148,13 @@ const Hero: React.FC = () => {
       
       <div className="container-custom relative z-10">
         <div className="max-w-3xl mx-auto text-center transition-transform duration-200">
-          <h1 className="animate-fade-up font-sans text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 md:mb-6">
+          <h1 
+            className={cn(
+              "animate-fade-up font-sans text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 md:mb-6",
+              "transition-opacity duration-500",
+              headingVisible ? "opacity-100" : "opacity-0"
+            )}
+          >
             Create a 
             <span className="relative mx-2 inline-block">
               <span className="text-brand-red">stunning</span>{" "}
@@ -149,12 +164,24 @@ const Hero: React.FC = () => {
             in minutes
           </h1>
           
-          <p className="animate-fade-up animate-delay-100 text-base md:text-lg lg:text-xl text-muted-foreground mb-6 md:mb-8 max-w-2xl mx-auto">
+          <p 
+            className={cn(
+              "animate-fade-up animate-delay-100 text-base md:text-lg lg:text-xl text-muted-foreground mb-6 md:mb-8 max-w-2xl mx-auto",
+              "transition-opacity duration-500",
+              headingVisible ? "opacity-100" : "opacity-0"
+            )}
+          >
             MyPalette helps artists showcase their work, sell physical artwork, access educational resources,
             and discover creative opportunities.
           </p>
           
-          <div className="animate-fade-up animate-delay-200 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+          <div 
+            className={cn(
+              "animate-fade-up animate-delay-200 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4",
+              "transition-opacity duration-500", 
+              headingVisible ? "opacity-100" : "opacity-0"
+            )}
+          >
             <Button asChild size="lg" className="rounded-full px-6 sm:px-8 py-5 sm:py-6 font-medium bg-brand-blue text-white hover:shadow-md transition-all duration-300">
               <Link to="/sign-up">
                 Sign Up

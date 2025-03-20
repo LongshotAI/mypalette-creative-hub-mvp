@@ -1,4 +1,3 @@
-
 import React from 'react';
 import DefaultLayout from '@/components/layout/DefaultLayout';
 import Hero from '@/components/home/Hero';
@@ -8,10 +7,14 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const Index = () => {
+interface IndexProps {
+  scrollPosition?: number;
+}
+
+const Index: React.FC<IndexProps> = ({ scrollPosition }) => {
   return (
     <DefaultLayout>
-      <Hero />
+      <Hero scrollPosition={scrollPosition} />
       <FeaturedArtists />
       
       {/* Why Choose MyPalette Section */}
