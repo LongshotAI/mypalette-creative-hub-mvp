@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import DefaultLayout from '@/components/layout/DefaultLayout';
@@ -10,7 +9,7 @@ import { getUserProfile, getUserPortfolios } from '@/lib/supabase';
 import { Loader2, MapPin, Globe, Instagram, Twitter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { GridTemplate } from '@/components/portfolio/templates/GridTemplate';
+import GridTemplate from '@/components/portfolio/templates/GridTemplate';
 
 const UserInfo = () => {
   const { id: userId } = useParams();
