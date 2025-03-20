@@ -12,14 +12,14 @@ import PurchaseButton from './PurchaseButton';
 
 interface ArtworkDetailModalProps {
   artwork: Artwork | null;
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
   artwork,
-  isOpen,
-  onClose,
+  open,
+  onOpenChange,
 }) => {
   if (!artwork) return null;
 
@@ -33,7 +33,7 @@ const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
     : null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="text-xl sm:text-2xl">{artwork.title}</DialogTitle>
