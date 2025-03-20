@@ -58,5 +58,6 @@ export interface PortfolioWithArtist {
     location?: string | null;
     artist_statement?: string | null;
     current_exhibition?: string | null;
+    admin_type?: string | null;
   };
 }
