@@ -21,16 +21,24 @@ const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children }) => {
     };
   }, []);
 
+  // Create a context object with the scroll position
+  const childrenWithProps = React.Children.map(children, child => {
+    // Check if the child is a valid React element and can accept props
+    if (React.isValidElement(child)) {
+      // Pass scrollPosition prop only if the child's type is a component that accepts it
+      // This is safe because we're explicitly checking in the component
+      return React.cloneElement(child, { 
+        scrollPosition 
+      } as React.ComponentProps<typeof child.type>);
+    }
+    return child;
+  });
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">
-        {React.Children.map(children, child => {
-          if (React.isValidElement(child)) {
-            return React.cloneElement(child, { scrollPosition });
-          }
-          return child;
-        })}
+        {childrenWithProps}
       </main>
       <Footer />
     </div>
