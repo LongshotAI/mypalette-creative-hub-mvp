@@ -57,16 +57,25 @@ export const useArtworkPurchase = () => {
       // Check if the artwork is sold out
       const { data: artwork } = await supabase
         .from('artworks')
-        .select('sold_out, for_sale, portfolios:portfolio_id(user_id)')
+        .select('sold_out, for_sale, portfolio_id')
         .eq('id', artworkId)
         .single();
       
-      // Prevent artists from buying their own artwork
-      if (artwork?.portfolios?.user_id === user.id) {
-        toast.error('You cannot purchase your own artwork');
-        trackInteraction('purchase_button', 'purchase_own_artwork', { artwork_id: artworkId });
-        setIsProcessing(false);
-        return null;
+      // Get the portfolio to check if the current user is the artist
+      if (artwork?.portfolio_id) {
+        const { data: portfolio } = await supabase
+          .from('portfolios')
+          .select('user_id')
+          .eq('id', artwork.portfolio_id)
+          .single();
+        
+        // Prevent artists from buying their own artwork
+        if (portfolio && portfolio.user_id === user.id) {
+          toast.error('You cannot purchase your own artwork');
+          trackInteraction('purchase_button', 'purchase_own_artwork', { artwork_id: artworkId });
+          setIsProcessing(false);
+          return null;
+        }
       }
       
       if (artwork?.sold_out) {

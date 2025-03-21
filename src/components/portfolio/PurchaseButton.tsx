@@ -41,7 +41,7 @@ const PurchaseButton: React.FC<PurchaseButtonProps> = ({ artwork, className }) =
     }
     
     // Check if the artwork belongs to the current user
-    if (artwork.portfolios?.user_id === user.id) {
+    if (artwork.portfolios && artwork.portfolios.user_id === user.id) {
       toast.error("You cannot purchase your own artwork");
       return;
     }
@@ -71,7 +71,7 @@ const PurchaseButton: React.FC<PurchaseButtonProps> = ({ artwork, className }) =
   }
   
   // If the artwork belongs to the current user, show a disabled button
-  if (user && artwork.portfolios?.user_id === user.id) {
+  if (user && artwork.portfolios && artwork.portfolios.user_id === user.id) {
     return (
       <Button 
         className={className}
