@@ -153,9 +153,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           })}
         </CardContent>
       </Card>
-      
-      {/* Main content area */}
-      {children}
     </div>
   );
 };

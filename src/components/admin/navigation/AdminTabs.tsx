@@ -16,8 +16,10 @@ interface AdminTabsProps {
 }
 
 const AdminTabs = ({ adminType, lastLogin }: AdminTabsProps) => {
+  const tabsId = React.useId(); // Generate unique ID for tabs
+
   return (
-    <Tabs defaultValue="overview">
+    <Tabs defaultValue="overview" id={tabsId}>
       <TabsList className="mb-6">
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="users">Users</TabsTrigger>

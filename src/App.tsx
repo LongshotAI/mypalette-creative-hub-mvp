@@ -36,9 +36,10 @@ function App() {
           <Route path="/open-calls" element={<OpenCalls />} />
           <Route path="/education" element={<Education />} />
           <Route path="/payment/confirmation" element={<ProtectedRoute><PaymentConfirmation /></ProtectedRoute>} />
+          {/* Ensure admin routes are properly protected and use the key prop to avoid duplication */}
           <Route path="/admin/*" element={
             <ProtectedRoute adminOnly={true}>
-              <Admin />
+              <Admin key="admin-page" />
             </ProtectedRoute>
           } />
           <Route path="*" element={<NotFound />} />
