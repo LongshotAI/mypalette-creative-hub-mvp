@@ -78,7 +78,7 @@ export const useArtworkPurchase = () => {
   };
   
   const loadOrderHistory = async (status: OrderStatus = 'all') => {
-    if (!user) return;
+    if (!user) return [];
     
     setLoadingOrders(true);
     setSelectedStatus(status);
@@ -120,9 +120,11 @@ export const useArtworkPurchase = () => {
       if (error) throw error;
       
       setOrders(data || []);
+      return data || [];
     } catch (error) {
       console.error('Error loading order history:', error);
       toast.error('Failed to load order history');
+      return [];
     } finally {
       setLoadingOrders(false);
     }

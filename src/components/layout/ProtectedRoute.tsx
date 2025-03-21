@@ -6,9 +6,10 @@ import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  adminOnly?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = false }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -30,6 +31,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (!user) {
     return <Navigate to="/sign-in" state={{ from: location }} replace />;
+  }
+
+  // Check if admin access is required and user is not an admin
+  if (adminOnly && (!user.app_metadata?.role || user.app_metadata.role !== 'admin')) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
