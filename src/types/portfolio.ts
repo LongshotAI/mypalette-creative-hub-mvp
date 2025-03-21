@@ -1,4 +1,3 @@
-
 export interface Portfolio {
   id: string;
   name: string;
@@ -74,4 +73,27 @@ export interface PortfolioTemplate {
   settings: Record<string, any>;
   is_active: boolean | null;
   created_at: string | null;
+}
+
+export interface Order {
+  id: string;
+  buyer_id: string;
+  artwork_id: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'completed' | 'failed';
+  stripe_session_id?: string;
+  created_at: string;
+  artworks?: Artwork & {
+    portfolios?: {
+      id: string;
+      name: string;
+      user_id: string;
+      profiles?: {
+        id: string;
+        username: string;
+        full_name?: string;
+      }
+    }
+  };
 }

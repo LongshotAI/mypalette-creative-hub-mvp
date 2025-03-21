@@ -32,6 +32,8 @@ serve(async (req) => {
     // Get request body
     const { artworkId, buyerId, successUrl, cancelUrl } = await req.json()
     
+    console.log('Processing payment request:', { artworkId, buyerId, successUrl, cancelUrl })
+    
     // Verify the user is authenticated
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
@@ -48,6 +50,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     
     if (authError || !user) {
+      console.error('Authentication error:', authError)
       return new Response(
         JSON.stringify({ error: 'Invalid token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -56,6 +59,7 @@ serve(async (req) => {
     
     // Verify the buyer is the authenticated user
     if (user.id !== buyerId) {
+      console.error('Unauthorized buyer attempt:', { userId: user.id, buyerId })
       return new Response(
         JSON.stringify({ error: 'Unauthorized buyer' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -81,6 +85,7 @@ serve(async (req) => {
       .single()
     
     if (artworkError || !artwork) {
+      console.error('Error fetching artwork:', artworkError)
       return new Response(
         JSON.stringify({ error: 'Artwork not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -89,8 +94,18 @@ serve(async (req) => {
     
     // Verify the artwork is for sale
     if (!artwork.for_sale) {
+      console.error('Attempt to purchase artwork not for sale:', { artworkId })
       return new Response(
         JSON.stringify({ error: 'Artwork is not for sale' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    // Prevent artists from buying their own artwork
+    if (artwork.portfolios?.user_id === buyerId) {
+      console.error('Artist attempting to buy their own artwork:', { artworkId, artistId: buyerId })
+      return new Response(
+        JSON.stringify({ error: 'You cannot purchase your own artwork' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -109,11 +124,14 @@ serve(async (req) => {
       .single()
     
     if (orderError || !order) {
+      console.error('Error creating order:', orderError)
       return new Response(
         JSON.stringify({ error: 'Failed to create order' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    
+    console.log('Order created successfully:', { orderId: order.id })
     
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -141,6 +159,8 @@ serve(async (req) => {
       }
     })
     
+    console.log('Stripe checkout session created:', { sessionId: session.id })
+    
     // Update order with Stripe session ID
     await supabase
       .from('orders')
@@ -152,7 +172,7 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error in stripe-payment function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

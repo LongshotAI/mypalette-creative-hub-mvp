@@ -1,6 +1,6 @@
 
-import React, { useEffect, useState } from 'react';
-import { useArtworkPurchase } from '@/hooks/useArtworkPurchase';
+import React, { useEffect } from 'react';
+import { useArtworkPurchase } from '@/hooks/purchase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
@@ -8,19 +8,10 @@ import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
 
 const OrderHistory = () => {
-  const { getOrderHistory } = useArtworkPurchase();
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loadOrderHistory, orders, loadingOrders } = useArtworkPurchase();
   
   useEffect(() => {
-    const loadOrders = async () => {
-      setLoading(true);
-      const orderData = await getOrderHistory();
-      setOrders(orderData);
-      setLoading(false);
-    };
-    
-    loadOrders();
+    loadOrderHistory();
   }, []);
   
   const getStatusColor = (status: string) => {
@@ -36,7 +27,7 @@ const OrderHistory = () => {
     }
   };
   
-  if (loading) {
+  if (loadingOrders) {
     return (
       <Card>
         <CardHeader>

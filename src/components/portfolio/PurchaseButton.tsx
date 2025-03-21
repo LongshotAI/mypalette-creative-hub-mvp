@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useArtworkPurchase } from '@/hooks/useArtworkPurchase';
+import { useArtworkPurchase } from '@/hooks/purchase';
 import { Loader2, ShoppingCart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Artwork } from '@/types/portfolio';

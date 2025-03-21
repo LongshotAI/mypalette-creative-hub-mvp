@@ -13,6 +13,7 @@ import Search from './pages/Search';
 import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
 import NotFound from './pages/NotFound';
+import PaymentConfirmation from './pages/PaymentConfirmation';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
       <Route path="/search" element={<Search />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+      <Route path="/payment/confirmation" element={<ProtectedRoute><PaymentConfirmation /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

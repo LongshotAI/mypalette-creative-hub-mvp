@@ -52,25 +52,70 @@ serve(async (req) => {
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
     } catch (err) {
+      console.error('Webhook signature verification failed:', err.message)
       return new Response(
         JSON.stringify({ error: `Webhook Error: ${err.message}` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
     
-    // Handle the checkout.session.completed event
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object
-      
-      // Update the order status
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: 'completed' })
-        .eq('stripe_session_id', session.id)
-      
-      if (error) {
-        console.error('Error updating order:', error)
+    console.log('Received Stripe webhook event:', event.type)
+    
+    // Handle different event types
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object
+        
+        console.log('Processing checkout.session.completed:', { sessionId: session.id })
+        
+        // Update the order status
+        const { data, error } = await supabase
+          .from('orders')
+          .update({ status: 'completed' })
+          .eq('stripe_session_id', session.id)
+          .select()
+        
+        if (error) {
+          console.error('Error updating order:', error)
+        } else {
+          console.log('Order updated successfully:', data)
+          
+          // If you want to send a notification email, you could do it here
+          // or trigger another function to do so
+        }
+        break
       }
+      
+      case 'checkout.session.expired': {
+        const session = event.data.object
+        
+        console.log('Processing checkout.session.expired:', { sessionId: session.id })
+        
+        // Update the order status to failed
+        const { error } = await supabase
+          .from('orders')
+          .update({ status: 'failed' })
+          .eq('stripe_session_id', session.id)
+        
+        if (error) {
+          console.error('Error updating expired order:', error)
+        }
+        break
+      }
+      
+      case 'payment_intent.payment_failed': {
+        const paymentIntent = event.data.object
+        
+        console.log('Payment failed:', { 
+          paymentIntentId: paymentIntent.id,
+          error: paymentIntent.last_payment_error
+        })
+        
+        // If you have a way to link payment_intent to session/order, you could update the order here
+        break
+      }
+      
+      // Add more event handlers as needed
     }
     
     // Return a response to acknowledge receipt of the event
@@ -79,7 +124,7 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error in webhook handler:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
