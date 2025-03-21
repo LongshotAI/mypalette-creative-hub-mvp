@@ -1,308 +1,219 @@
 
 import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { CheckCircle } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { AlertTriangle, CheckCircle2, XCircle, Clock, PlusCircle, Clipboard, Eye, Database } from 'lucide-react';
 
 const TestingInstructions = () => {
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Testing Instructions</CardTitle>
-          <CardDescription>
-            Step-by-step guides for testing key platform functionality.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="purchase-flow">
-              <AccordionTrigger>End-to-End Purchase Flow Testing</AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4 text-sm">
-                  <p>Follow these steps to conduct a complete end-to-end test of the purchase flow:</p>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 1: Navigate as a User</h4>
-                    <p>Start by logging in as an admin and browse to the public portfolio pages.</p>
-                    <p>Click on an artwork to open the artwork detail view.</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      <em>Verification: Analytics events for view tracking should be recorded in the analytics_events table.</em>
-                    </p>
+    <Card>
+      <CardHeader>
+        <CardTitle>Simulation & Testing Instructions</CardTitle>
+        <CardDescription>
+          Complete guide for testing the platform's features and transaction flows
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="overview">
+            <AccordionTrigger>Overview & Purpose</AccordionTrigger>
+            <AccordionContent className="space-y-4">
+              <p>
+                This simulation interface allows super admins to comprehensively test MyPalette's features
+                without processing real financial transactions. Use this tool to verify that all components
+                of the platform are working correctly before deploying to production or onboarding users.
+              </p>
+              
+              <div className="rounded-md bg-blue-50 p-4 border border-blue-200">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <Eye className="h-5 w-5 text-blue-400" />
                   </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 2: Test Purchase Button</h4>
-                    <p>Confirm the purchase button appears and displays the correct price.</p>
-                    <p>For artwork by the same user, verify "Your Artwork" shows instead of the purchase button.</p>
-                    <p>For sold out artwork, verify the "Sold Out" status appears.</p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 3: Simulate Transaction</h4>
-                    <p>Return to the Admin Simulation page and set up a transaction for the artwork you viewed.</p>
-                    <p>Run simulations for all three transaction types:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Successful Payment</li>
-                      <li>Failed Payment</li>
-                      <li>Abandoned Checkout</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 4: Verify Order Records</h4>
-                    <p>Check the Dashboard Order History to confirm orders are displayed correctly.</p>
-                    <p>Verify that statuses are correctly displayed as "Completed", "Failed", or "Pending".</p>
-                    <p>Check that price formatting and artwork details are displayed accurately.</p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 5: Verify Analytics</h4>
-                    <p>Check the Analytics Dashboard to confirm purchase events are tracked.</p>
-                    <p>Verify that purchase completions appear in conversion metrics.</p>
-                    <p>Check the Analytics Events table directly in the database to confirm all events are logged with proper user IDs and metadata.</p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 6: Inventory Management</h4>
-                    <p>For simulated successful purchases of limited-edition artworks:</p>
-                    <p>Verify that inventory counts are updated correctly.</p>
-                    <p>Once sold out, confirm the "Sold Out" badge appears appropriately.</p>
-                  </div>
-
-                  <div className="rounded-md bg-green-50 p-3 border border-green-100">
-                    <div className="flex">
-                      <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mr-2" />
-                      <div>
-                        <h4 className="font-medium text-green-800">Expected Outcomes</h4>
-                        <ul className="list-disc pl-5 mt-1 text-green-700 space-y-1">
-                          <li>Successful transactions should appear in the order history with "Completed" status</li>
-                          <li>Failed transactions should appear with "Failed" status</li>
-                          <li>All transactions should generate appropriate analytics events</li>
-                          <li>Inventory should update for successful purchases only</li>
-                          <li>All simulations should be clearly marked as test data</li>
-                        </ul>
-                      </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">Why This Matters</h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <p>Thorough testing ensures:</p>
+                      <ul className="list-disc pl-5 space-y-1 mt-2">
+                        <li>Transaction flows work correctly</li>
+                        <li>Errors are handled gracefully</li>
+                        <li>Analytics data is captured accurately</li>
+                        <li>Inventory management functions as expected</li>
+                        <li>The platform is ready for real users</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-            
-            <AccordionItem value="analytics-verification">
-              <AccordionTrigger>Analytics Verification Testing</AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4 text-sm">
-                  <p>Follow these steps to verify that analytics tracking is working properly across the platform:</p>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 1: Generate View Events</h4>
-                    <p>Browse through multiple portfolios and artworks as both logged-in and anonymous users.</p>
-                    <p>Make sure to view at least 5 different artworks and 3 different portfolios.</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      <em>Verification: The analytics_events table should record view events with appropriate metadata.</em>
-                    </p>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+          
+          <AccordionItem value="transaction-simulation">
+            <AccordionTrigger>Transaction Simulation Guide</AccordionTrigger>
+            <AccordionContent className="space-y-4">
+              <h4 className="font-semibold flex items-center">
+                <CheckCircle2 className="mr-2 h-5 w-5 text-green-500" />
+                Simulating Successful Purchases
+              </h4>
+              <ol className="list-decimal pl-5 space-y-2">
+                <li>Select an artwork from the dropdown in the Transaction Simulator</li>
+                <li>Choose a test buyer account</li>
+                <li>Select "Successful Purchase" as the transaction type</li>
+                <li>Add any relevant notes for later reference</li>
+                <li>Click "Run Simulation" to process the simulated transaction</li>
+                <li>Verify that a success toast message appears</li>
+                <li>Check the Simulation Logs to confirm the transaction was recorded</li>
+                <li>Verify that analytics events were captured correctly in the database</li>
+              </ol>
+              
+              <h4 className="font-semibold flex items-center mt-4">
+                <XCircle className="mr-2 h-5 w-5 text-red-500" />
+                Simulating Failed Transactions
+              </h4>
+              <ol className="list-decimal pl-5 space-y-2">
+                <li>Follow the same steps as above, but select "Failed Payment" as the transaction type</li>
+                <li>Confirm that the order is created with a "failed" status</li>
+                <li>Verify that the artwork remains available for purchase</li>
+                <li>Check that appropriate error handling is triggered</li>
+              </ol>
+              
+              <h4 className="font-semibold flex items-center mt-4">
+                <Clock className="mr-2 h-5 w-5 text-yellow-500" />
+                Simulating Abandoned Checkouts
+              </h4>
+              <ol className="list-decimal pl-5 space-y-2">
+                <li>Select "Abandoned Checkout" as the transaction type</li>
+                <li>Run the simulation</li>
+                <li>Verify that the order is created with a "pending" status</li>
+                <li>Check that the artwork remains available for purchase</li>
+              </ol>
+              
+              <div className="rounded-md bg-amber-50 p-4 border border-amber-200 mt-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <AlertTriangle className="h-5 w-5 text-amber-400" />
                   </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 2: Test Interaction Tracking</h4>
-                    <p>Perform various interactions including:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Clicking on artist profiles</li>
-                      <li>Using search functionality</li>
-                      <li>Filtering portfolios</li>
-                      <li>Opening artwork details</li>
-                    </ul>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      <em>Verification: These interactions should be recorded in the analytics_events table with appropriate event_type and metadata.</em>
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 3: Simulate Conversion Events</h4>
-                    <p>Use the Transaction Simulator to create:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>At least 2 successful purchases</li>
-                      <li>1 failed transaction</li>
-                      <li>1 abandoned cart</li>
-                    </ul>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      <em>Verification: Corresponding conversion events should appear in analytics_events.</em>
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 4: Verify Analytics Dashboard</h4>
-                    <p>Log in as an artist who has at least one artwork with view events.</p>
-                    <p>Check the Artist Analytics Dashboard to verify:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>View counts are accurately displayed</li>
-                      <li>Conversion metrics reflect simulated purchases</li>
-                      <li>Charts and graphs update to reflect new data</li>
-                      <li>Time period filters (7/30/90 days) function correctly</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 5: Device Tracking Verification</h4>
-                    <p>If possible, view the platform from multiple devices (desktop, mobile, tablet).</p>
-                    <p>Check the analytics data to confirm device type is correctly recorded.</p>
-                    <p>Verify that the device breakdown appears correctly in the Analytics Dashboard.</p>
-                  </div>
-
-                  <div className="rounded-md bg-green-50 p-3 border border-green-100">
-                    <div className="flex">
-                      <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mr-2" />
-                      <div>
-                        <h4 className="font-medium text-green-800">Expected Outcomes</h4>
-                        <ul className="list-disc pl-5 mt-1 text-green-700 space-y-1">
-                          <li>All user interactions should be tracked in analytics_events</li>
-                          <li>Conversion events should be properly linked to artworks and users</li>
-                          <li>Analytics Dashboard should accurately reflect all tracked events</li>
-                          <li>Device detection should correctly identify the user's device type</li>
-                          <li>Time period filtering should show the correct data ranges</li>
-                        </ul>
-                      </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-amber-800">Important Notes</h3>
+                    <div className="mt-2 text-sm text-amber-700">
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>Simulated transactions are clearly marked in the database with <code>is_simulation = true</code></li>
+                        <li>Simulated orders won't appear in actual sales reports but can be viewed in the simulation logs</li>
+                        <li>Use different test user accounts to simulate various scenarios</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-            
-            <AccordionItem value="inventory-management">
-              <AccordionTrigger>Inventory Management Testing</AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4 text-sm">
-                  <p>Follow these steps to verify that inventory management works correctly when artworks are purchased:</p>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 1: Create Test Artwork</h4>
-                    <p>Create a new artwork with limited stock (set quantity to 1).</p>
-                    <p>Ensure it's marked for sale with a valid price.</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      <em>Verification: Artwork should be visible in public portfolios with a purchase button.</em>
-                    </p>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+          
+          <AccordionItem value="end-to-end">
+            <AccordionTrigger>End-to-End Testing Scenarios</AccordionTrigger>
+            <AccordionContent className="space-y-4">
+              <p>
+                Use these comprehensive testing scenarios to ensure all platform components work together seamlessly.
+              </p>
+              
+              <div className="border rounded-md p-4 space-y-3">
+                <h4 className="font-semibold flex items-center">
+                  <PlusCircle className="mr-2 h-5 w-5 text-purple-500" />
+                  Scenario 1: Complete Artist-to-Buyer Flow
+                </h4>
+                <ol className="list-decimal pl-5 space-y-2 text-sm">
+                  <li>Create a test portfolio as an artist</li>
+                  <li>Upload a test artwork and mark it for sale</li>
+                  <li>Set a price and publish the portfolio</li>
+                  <li>Switch to a buyer account and browse the portfolio</li>
+                  <li>Use the transaction simulator to simulate a purchase</li>
+                  <li>Verify that the artist can see the sale in their dashboard</li>
+                  <li>Confirm that the buyer sees the purchase in their order history</li>
+                  <li>Check that analytics properly tracked the entire funnel</li>
+                </ol>
+              </div>
+              
+              <div className="border rounded-md p-4 space-y-3 mt-4">
+                <h4 className="font-semibold flex items-center">
+                  <PlusCircle className="mr-2 h-5 w-5 text-purple-500" />
+                  Scenario 2: Inventory Management Test
+                </h4>
+                <ol className="list-decimal pl-5 space-y-2 text-sm">
+                  <li>Create a test artwork with quantity = 1 (single edition)</li>
+                  <li>Simulate a successful purchase of this artwork</li>
+                  <li>Verify that the artwork is now marked as sold out</li>
+                  <li>Confirm that the purchase button is disabled for sold out items</li>
+                  <li>Check that analytics recorded both the purchase and inventory update</li>
+                </ol>
+              </div>
+              
+              <div className="border rounded-md p-4 space-y-3 mt-4">
+                <h4 className="font-semibold flex items-center">
+                  <PlusCircle className="mr-2 h-5 w-5 text-purple-500" />
+                  Scenario 3: Error Handling Flow
+                </h4>
+                <ol className="list-decimal pl-5 space-y-2 text-sm">
+                  <li>Attempt to purchase an artwork from the same artist account that created it</li>
+                  <li>Verify the system prevents self-purchases</li>
+                  <li>Simulate a failed transaction and verify error handling</li>
+                  <li>Try to purchase an item that's been deleted</li>
+                  <li>Confirm appropriate error messages display to users</li>
+                </ol>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+          
+          <AccordionItem value="verification">
+            <AccordionTrigger>Verification & Reporting</AccordionTrigger>
+            <AccordionContent className="space-y-4">
+              <h4 className="font-semibold flex items-center">
+                <Clipboard className="mr-2 h-5 w-5 text-blue-500" />
+                How to Verify Test Results
+              </h4>
+              <ol className="list-decimal pl-5 space-y-2">
+                <li>Check the Simulation Logs tab to review all simulated transactions</li>
+                <li>Examine the transaction details including status, type and timestamps</li>
+                <li>Use the export feature to download logs for detailed analysis</li>
+                <li>Verify application behavior across different user roles (artist, buyer, admin)</li>
+                <li>Confirm that UI components respond appropriately to different transaction states</li>
+              </ol>
+              
+              <h4 className="font-semibold flex items-center mt-4">
+                <Database className="mr-2 h-5 w-5 text-blue-500" />
+                Database Verification
+              </h4>
+              <p className="text-sm">
+                For super admins with database access, you can directly query the following tables to verify data:
+              </p>
+              <ul className="list-disc pl-5 space-y-1 mt-2 text-sm font-mono bg-gray-50 p-3 rounded">
+                <li>orders WHERE is_simulation = true</li>
+                <li>simulation_analytics (view)</li>
+                <li>artworks (to verify inventory updates)</li>
+              </ul>
+              
+              <div className="rounded-md bg-green-50 p-4 border border-green-200 mt-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <CheckCircle2 className="h-5 w-5 text-green-400" />
                   </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 2: Simulate a Successful Purchase</h4>
-                    <p>Use the Transaction Simulator to create a successful purchase for this artwork.</p>
-                    <p>Note the artwork ID for later verification.</p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 3: Verify Sold Out Status</h4>
-                    <p>Navigate to the artwork in the public view.</p>
-                    <p>Verify that it now shows as "Sold Out" instead of displaying a purchase button.</p>
-                    <p>Check the artwork in the artist's dashboard to confirm it shows as sold.</p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 4: Test Multiple Editions</h4>
-                    <p>Create another artwork with multiple editions (set quantity to 3).</p>
-                    <p>Simulate two successful purchases for this artwork.</p>
-                    <p>Verify that the artwork is still for sale but inventory is reduced.</p>
-                    <p>Simulate a third purchase and verify it now shows as sold out.</p>
-                  </div>
-
-                  <div className="rounded-md bg-green-50 p-3 border border-green-100">
-                    <div className="flex">
-                      <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mr-2" />
-                      <div>
-                        <h4 className="font-medium text-green-800">Expected Outcomes</h4>
-                        <ul className="list-disc pl-5 mt-1 text-green-700 space-y-1">
-                          <li>Single-edition artworks should show as sold out after one purchase</li>
-                          <li>Multi-edition artworks should show remaining inventory correctly</li>
-                          <li>Sold out artworks should display the "Sold Out" status</li>
-                          <li>Artists should see accurate inventory counts in their dashboard</li>
-                        </ul>
-                      </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-green-800">Testing Checklist</h3>
+                    <div className="mt-2 text-sm text-green-700">
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>All transaction types (success, failure, abandoned) tested</li>
+                        <li>Error handling verified for edge cases</li>
+                        <li>Analytics tracking confirmed for all events</li>
+                        <li>Inventory management tested for single-edition artworks</li>
+                        <li>Artist and buyer dashboards display correct information</li>
+                        <li>Notifications and confirmation emails functioning properly</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-            
-            <AccordionItem value="error-handling">
-              <AccordionTrigger>Error Handling & Edge Cases</AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4 text-sm">
-                  <p>Follow these steps to verify that the application handles errors and edge cases gracefully:</p>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 1: Network Errors</h4>
-                    <p>Test the application's behavior when network requests fail:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Use browser devtools to simulate offline mode during a purchase flow</li>
-                      <li>Attempt to complete a purchase with slow network speed</li>
-                      <li>Verify error messages are displayed appropriately</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 2: Concurrent Purchases</h4>
-                    <p>Simulate multiple users attempting to purchase the same limited-edition artwork:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Create an artwork with limited quantity (1)</li>
-                      <li>Use the Transaction Simulator to create two simultaneous purchases for the same artwork</li>
-                      <li>Verify only one purchase completes successfully and inventory is updated correctly</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 3: Handling Deleted Artworks</h4>
-                    <p>Test scenarios with deleted content:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Create a purchase for an artwork, then delete the artwork</li>
-                      <li>Verify order history still displays properly even with deleted artwork</li>
-                      <li>Verify analytics tracking remains intact for deleted items</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Step 4: Price Changes</h4>
-                    <p>Test scenarios with price updates:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Create an artwork with a specific price</li>
-                      <li>Initiate but don't complete a purchase</li>
-                      <li>Change the artwork price</li>
-                      <li>Verify the purchase flow handles this correctly</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="rounded-md bg-green-50 p-3 border border-green-100">
-                    <div className="flex">
-                      <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mr-2" />
-                      <div>
-                        <h4 className="font-medium text-green-800">Expected Outcomes</h4>
-                        <ul className="list-disc pl-5 mt-1 text-green-700 space-y-1">
-                          <li>Network errors should display appropriate error messages</li>
-                          <li>Inventory should be properly managed even with concurrent purchases</li>
-                          <li>Order history should gracefully handle deleted artworks</li>
-                          <li>Price changes should be handled properly in the purchase flow</li>
-                          <li>All errors should be properly logged for debugging</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </CardContent>
-      </Card>
-    </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </CardContent>
+    </Card>
   );
 };
 

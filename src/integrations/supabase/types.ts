@@ -221,6 +221,8 @@ export type Database = {
           created_at: string
           currency: string
           id: string
+          is_simulation: boolean | null
+          metadata: Json | null
           status: string
           stripe_session_id: string | null
           updated_at: string
@@ -232,6 +234,8 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          is_simulation?: boolean | null
+          metadata?: Json | null
           status?: string
           stripe_session_id?: string | null
           updated_at?: string
@@ -243,6 +247,8 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          is_simulation?: boolean | null
+          metadata?: Json | null
           status?: string
           stripe_session_id?: string | null
           updated_at?: string
@@ -377,7 +383,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      simulation_analytics: {
+        Row: {
+          amount: number | null
+          artwork_id: string | null
+          artwork_title: string | null
+          buyer_id: string | null
+          buyer_name: string | null
+          created_at: string | null
+          currency: string | null
+          id: string | null
+          metadata: Json | null
+          status: string | null
+          stripe_session_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_manage_admins: {
