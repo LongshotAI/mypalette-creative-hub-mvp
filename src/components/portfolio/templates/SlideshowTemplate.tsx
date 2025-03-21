@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Artwork } from '@/types/portfolio';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
@@ -7,13 +7,21 @@ import ArtworkDetailModal from '../ArtworkDetailModal';
 
 interface SlideshowTemplateProps {
   artworks: Artwork[];
+  onArtworkView?: (artworkId: string) => void;
 }
 
-const SlideshowTemplate = ({ artworks }: SlideshowTemplateProps) => {
+const SlideshowTemplate = ({ artworks, onArtworkView }: SlideshowTemplateProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   
   const currentArtwork = artworks[currentIndex];
+  
+  // Report artwork view when switching slides
+  useEffect(() => {
+    if (onArtworkView && currentArtwork) {
+      onArtworkView(currentArtwork.id);
+    }
+  }, [currentIndex, currentArtwork, onArtworkView]);
   
   const goToNext = (e: React.MouseEvent) => {
     e.stopPropagation();

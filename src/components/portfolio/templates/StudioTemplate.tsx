@@ -5,15 +5,20 @@ import ArtworkDetailModal from '../ArtworkDetailModal';
 
 interface StudioTemplateProps {
   artworks: Artwork[];
+  onArtworkView?: (artworkId: string) => void;
 }
 
-const StudioTemplate = ({ artworks }: StudioTemplateProps) => {
+const StudioTemplate = ({ artworks, onArtworkView }: StudioTemplateProps) => {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   const openArtworkDetail = (artwork: Artwork) => {
     setSelectedArtwork(artwork);
     setModalOpen(true);
+    // Call the onArtworkView function if it exists
+    if (onArtworkView) {
+      onArtworkView(artwork.id);
+    }
   };
 
   // Create a studio layout with some artworks on "walls" and some on "easels"

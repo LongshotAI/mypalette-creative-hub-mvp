@@ -5,15 +5,20 @@ import ArtworkDetailModal from '../ArtworkDetailModal';
 
 interface GridTemplateProps {
   artworks: Artwork[];
+  onArtworkView?: (artworkId: string) => void;
 }
 
-const GridTemplate = ({ artworks }: GridTemplateProps) => {
+const GridTemplate = ({ artworks, onArtworkView }: GridTemplateProps) => {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   const openArtworkDetail = (artwork: Artwork) => {
     setSelectedArtwork(artwork);
     setModalOpen(true);
+    // Call the onArtworkView function if it exists
+    if (onArtworkView) {
+      onArtworkView(artwork.id);
+    }
   };
 
   return (

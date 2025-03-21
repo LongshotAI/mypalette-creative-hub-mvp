@@ -5,15 +5,20 @@ import ArtworkDetailModal from '../ArtworkDetailModal';
 
 interface MinimalTemplateProps {
   artworks: Artwork[];
+  onArtworkView?: (artworkId: string) => void;
 }
 
-const MinimalTemplate = ({ artworks }: MinimalTemplateProps) => {
+const MinimalTemplate = ({ artworks, onArtworkView }: MinimalTemplateProps) => {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   const openArtworkDetail = (artwork: Artwork) => {
     setSelectedArtwork(artwork);
     setModalOpen(true);
+    // Call the onArtworkView function if it exists
+    if (onArtworkView) {
+      onArtworkView(artwork.id);
+    }
   };
 
   return (

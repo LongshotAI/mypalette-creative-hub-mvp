@@ -6,9 +6,10 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 
 interface GalleryTemplateProps {
   artworks: Artwork[];
+  onArtworkView?: (artworkId: string) => void;
 }
 
-const GalleryTemplate = ({ artworks }: GalleryTemplateProps) => {
+const GalleryTemplate = ({ artworks, onArtworkView }: GalleryTemplateProps) => {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [zoomModalOpen, setZoomModalOpen] = useState(false);
@@ -17,6 +18,10 @@ const GalleryTemplate = ({ artworks }: GalleryTemplateProps) => {
   const openArtworkDetail = (artwork: Artwork) => {
     setSelectedArtwork(artwork);
     setModalOpen(true);
+    // Call the onArtworkView function if it exists
+    if (onArtworkView) {
+      onArtworkView(artwork.id);
+    }
   };
 
   const handleZoomImage = (e: React.MouseEvent, imageUrl: string) => {

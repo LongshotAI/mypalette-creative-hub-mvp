@@ -5,15 +5,20 @@ import ArtworkDetailModal from '../ArtworkDetailModal';
 
 interface MasonryTemplateProps {
   artworks: Artwork[];
+  onArtworkView?: (artworkId: string) => void;
 }
 
-const MasonryTemplate = ({ artworks }: MasonryTemplateProps) => {
+const MasonryTemplate = ({ artworks, onArtworkView }: MasonryTemplateProps) => {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   const openArtworkDetail = (artwork: Artwork) => {
     setSelectedArtwork(artwork);
     setModalOpen(true);
+    // Call the onArtworkView function if it exists
+    if (onArtworkView) {
+      onArtworkView(artwork.id);
+    }
   };
 
   // Split artworks into columns for masonry effect
