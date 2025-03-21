@@ -1,4 +1,3 @@
-
 export interface Portfolio {
   id: string;
   name: string;
@@ -39,7 +38,7 @@ export interface Artwork {
       username?: string;
       full_name?: string;
     }
-  };
+  } | null;
   portfolio?: {
     id?: string;
     name?: string;
@@ -49,7 +48,7 @@ export interface Artwork {
       username?: string;
       full_name?: string;
     }
-  };
+  } | null;
 }
 
 export interface ArtworkFormData {

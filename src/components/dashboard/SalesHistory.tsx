@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { 
   Card, 
@@ -41,30 +40,48 @@ const SalesHistory = () => {
 
   const formatOrders = (): Order[] => {
     try {
-      return orders.map(order => ({
-        id: order.id,
-        buyer_id: order.buyer_id,
-        artwork_id: order.artwork_id,
-        amount: order.amount,
-        currency: order.currency,
-        status: order.status,
-        created_at: order.created_at,
-        stripe_session_id: order.stripe_session_id,
-        artworks: order.artworks ? {
-          id: order.artworks.id,
-          title: order.artworks.title,
-          description: order.artworks.description || "",
-          image_url: order.artworks.image_url,
-          price: order.artworks.price || null,
-          currency: order.artworks.currency || "USD",
-          for_sale: order.artworks.for_sale || false,
-          portfolio_id: order.artworks.portfolio_id,
-          created_at: order.artworks.created_at || order.created_at,
-          // Support both property names to ensure compatibility
-          portfolio: order.artworks.portfolio,
-          portfolios: order.artworks.portfolios || order.artworks.portfolio
-        } : undefined
-      }));
+      return orders.map(order => {
+        // Extract portfolio data properly, handling both array and single object cases
+        let portfolioData = null;
+        if (order.artworks) {
+          if (order.artworks.portfolios) {
+            // If portfolios is an array, take the first item
+            if (Array.isArray(order.artworks.portfolios)) {
+              portfolioData = order.artworks.portfolios[0];
+            } else {
+              // Otherwise use it directly
+              portfolioData = order.artworks.portfolios;
+            }
+          } else if (order.artworks.portfolio) {
+            portfolioData = order.artworks.portfolio;
+          }
+        }
+
+        return {
+          id: order.id,
+          buyer_id: order.buyer_id,
+          artwork_id: order.artwork_id,
+          amount: order.amount,
+          currency: order.currency,
+          status: order.status,
+          created_at: order.created_at,
+          stripe_session_id: order.stripe_session_id,
+          artworks: order.artworks ? {
+            id: order.artworks.id,
+            title: order.artworks.title,
+            description: order.artworks.description || "",
+            image_url: order.artworks.image_url,
+            price: order.artworks.price || null,
+            currency: order.artworks.currency || "USD",
+            for_sale: order.artworks.for_sale || false,
+            portfolio_id: order.artworks.portfolio_id,
+            created_at: order.artworks.created_at || order.created_at,
+            // Store portfolio data in both properties for compatibility
+            portfolio: portfolioData,
+            portfolios: portfolioData
+          } : undefined
+        };
+      });
     } catch (error) {
       console.error('Error formatting orders:', error);
       return [];

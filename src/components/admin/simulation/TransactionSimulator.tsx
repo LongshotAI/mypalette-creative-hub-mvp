@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -63,7 +62,7 @@ const TransactionSimulator = () => {
       try {
         const { data, error } = await supabase
           .from('artworks')
-          .select('id, title, description, price, currency, for_sale, portfolio_id, image_url, created_at, portfolios(id, name, user_id, profiles(id, full_name, username))');
+          .select('id, title, description, price, currency, for_sale, portfolio_id, image_url, created_at, portfolios:portfolio_id(id, name, user_id, profiles(id, full_name, username))');
 
         if (error) {
           console.error('Error fetching artworks:', error);
@@ -75,19 +74,27 @@ const TransactionSimulator = () => {
           return;
         }
 
-        // Properly transform the data to match the Artwork type
-        const formattedArtworks: Artwork[] = (data || []).map(item => ({
-          id: item.id,
-          title: item.title,
-          description: item.description || "",
-          image_url: item.image_url,
-          price: item.price,
-          currency: item.currency || "USD",
-          for_sale: item.for_sale || false,
-          portfolio_id: item.portfolio_id,
-          created_at: item.created_at || new Date().toISOString(),
-          portfolios: item.portfolios
-        }));
+        console.log('Fetched artwork data:', data);
+
+        const formattedArtworks: Artwork[] = (data || []).map(item => {
+          const portfolioData = item.portfolios && item.portfolios.length > 0 
+            ? item.portfolios[0] 
+            : null;
+            
+          return {
+            id: item.id,
+            title: item.title,
+            description: item.description || "",
+            image_url: item.image_url,
+            price: item.price,
+            currency: item.currency || "USD",
+            for_sale: item.for_sale || false,
+            portfolio_id: item.portfolio_id,
+            created_at: item.created_at || new Date().toISOString(),
+            portfolios: portfolioData,
+            portfolio: portfolioData
+          };
+        });
 
         setArtworks(formattedArtworks);
       } finally {
@@ -171,42 +178,42 @@ const TransactionSimulator = () => {
     </div>
   );
 
-const renderArtworkSelection = () => (
-  <div className="space-y-2">
-    <Label htmlFor="artwork">Select Artwork</Label>
-    <Select
-      value={formData.artwork_id}
-      onValueChange={(value) => setFormData({ ...formData, artwork_id: value })}
-    >
-      <SelectTrigger id="artwork">
-        <SelectValue placeholder="Select an artwork..." />
-      </SelectTrigger>
-      <SelectContent>
-        {loadingArtworks ? (
-          <div className="p-2 text-center">
-            <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-            <p className="text-xs mt-1">Loading artworks...</p>
-          </div>
-        ) : artworks.length === 0 ? (
-          <div className="p-2 text-center">
-            <p className="text-xs">No artworks available</p>
-          </div>
-        ) : (
-          artworks.map((artwork) => (
-            <SelectItem key={artwork.id} value={artwork.id}>
-              {artwork.title} - {artwork.currency} {artwork.price} 
-              {artwork.portfolios && (
-                <span className="ml-2 text-muted-foreground">
-                  by {artwork.portfolios.profiles?.full_name || artwork.portfolios.profiles?.username || 'Unknown Artist'}
-                </span>
-              )}
-            </SelectItem>
-          ))
-        )}
-      </SelectContent>
-    </Select>
-  </div>
-);
+  const renderArtworkSelection = () => (
+    <div className="space-y-2">
+      <Label htmlFor="artwork">Select Artwork</Label>
+      <Select
+        value={formData.artwork_id}
+        onValueChange={(value) => setFormData({ ...formData, artwork_id: value })}
+      >
+        <SelectTrigger id="artwork">
+          <SelectValue placeholder="Select an artwork..." />
+        </SelectTrigger>
+        <SelectContent>
+          {loadingArtworks ? (
+            <div className="p-2 text-center">
+              <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+              <p className="text-xs mt-1">Loading artworks...</p>
+            </div>
+          ) : artworks.length === 0 ? (
+            <div className="p-2 text-center">
+              <p className="text-xs">No artworks available</p>
+            </div>
+          ) : (
+            artworks.map((artwork) => (
+              <SelectItem key={artwork.id} value={artwork.id}>
+                {artwork.title} - {artwork.currency} {artwork.price} 
+                {artwork.portfolios && (
+                  <span className="ml-2 text-muted-foreground">
+                    by {artwork.portfolios.profiles?.full_name || artwork.portfolios.profiles?.username || 'Unknown Artist'}
+                  </span>
+                )}
+              </SelectItem>
+            ))
+          )}
+        </SelectContent>
+      </Select>
+    </div>
+  );
 
   const renderAmountInput = () => (
     <div className="space-y-2">
