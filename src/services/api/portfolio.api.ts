@@ -146,14 +146,23 @@ export const getPublicPortfolios = async (limit = 10): Promise<ApiResponse<Portf
  */
 export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResponse<any>> => {
   try {
-    // First get the portfolio
+    // First check if the portfolio exists and get its data
     const { data: portfolio, error: portfolioError } = await supabase
       .from('portfolios')
       .select('*')
       .eq('id', portfolioId)
       .single();
     
-    if (portfolioError) throw portfolioError;
+    if (portfolioError) {
+      console.error('Portfolio fetch error:', portfolioError);
+      
+      // Check if it's a not found error
+      if (portfolioError.code === 'PGRST116') {
+        return createErrorResponse('Portfolio not found', new Error('Portfolio not found'));
+      }
+      
+      throw portfolioError;
+    }
     
     if (!portfolio) {
       return createErrorResponse('Portfolio not found', new Error('Portfolio not found'));
@@ -180,7 +189,17 @@ export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResp
       .eq('id', portfolio.user_id)
       .single();
     
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      
+      // Continue even if profile fetch fails - we'll return the portfolio without profile data
+      const portfolioWithoutProfile = {
+        ...portfolio,
+        profiles: null
+      };
+      
+      return createSuccessResponse(portfolioWithoutProfile);
+    }
     
     // Combine the data
     const portfolioWithUser = {
@@ -190,6 +209,7 @@ export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResp
     
     return createSuccessResponse(portfolioWithUser);
   } catch (error) {
+    console.error('Failed to fetch portfolio with user:', error);
     return createErrorResponse('Failed to fetch portfolio with user', error);
   }
 };

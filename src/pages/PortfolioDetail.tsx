@@ -24,7 +24,11 @@ const PortfolioDetail = () => {
 
   useEffect(() => {
     const fetchPortfolioData = async () => {
-      if (!portfolioId) return;
+      if (!portfolioId) {
+        setError('No portfolio ID provided');
+        setLoading(false);
+        return;
+      }
       
       setLoading(true);
       setError(null);
@@ -36,26 +40,28 @@ const PortfolioDetail = () => {
         const portfolioResponse = await portfolioApi.getPortfolioWithUser(portfolioId);
         
         if (portfolioResponse.status !== 'success' || !portfolioResponse.data) {
-          console.error('Portfolio not found or error:', portfolioResponse.error);
-          setError('Portfolio not found or is not accessible');
+          console.error('Portfolio fetch error:', portfolioResponse.error);
+          setError(portfolioResponse.error?.message || 'Portfolio not found or is not accessible');
           toast.error('Portfolio not found or is not accessible');
           setLoading(false);
           return;
         }
         
+        console.log('Portfolio data retrieved:', portfolioResponse.data);
         setPortfolio(portfolioResponse.data);
         
         // Fetch artworks for the portfolio
         const artworkResponse = await artworkApi.getPortfolioArtworks(portfolioId);
         
         if (artworkResponse.status === 'success') {
+          console.log('Artworks retrieved:', artworkResponse.data?.length || 0);
           setArtworks(artworkResponse.data || []);
         } else {
           console.error('Error fetching artworks:', artworkResponse.error);
           toast.error('Could not load artwork for this portfolio');
         }
       } catch (error) {
-        console.error('Error fetching portfolio:', error);
+        console.error('Error in portfolio fetch flow:', error);
         setError('Failed to load portfolio details');
         toast.error('Error loading portfolio details');
       } finally {
@@ -84,7 +90,7 @@ const PortfolioDetail = () => {
       <DefaultLayout>
         <div className="container mx-auto py-12 min-h-screen flex flex-col items-center justify-center">
           <h2 className="text-2xl font-semibold mb-4">Portfolio not found</h2>
-          <p className="text-muted-foreground mb-6">The portfolio you're looking for might have been removed or is private.</p>
+          <p className="text-muted-foreground mb-6">{error || 'The portfolio you\'re looking for might have been removed or is private.'}</p>
           <Button asChild>
             <Link to="/portfolios">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -112,6 +118,8 @@ const PortfolioDetail = () => {
     }
   };
 
+  const artistName = portfolio.profiles?.full_name || portfolio.profiles?.username || 'Artist';
+
   return (
     <DefaultLayout>
       <div className={`min-h-screen ${getThemeStyles()}`}>
@@ -136,7 +144,7 @@ const PortfolioDetail = () => {
                 className="flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 <User className="h-4 w-4 mr-1" />
-                {portfolio.profiles?.full_name || portfolio.profiles?.username || 'Artist'}
+                {artistName}
               </Link>
             </div>
           </div>
