@@ -16,7 +16,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = f
   // Debug logging
   useEffect(() => {
     console.log('ProtectedRoute: user =', user?.email, 'loading =', loading);
-  }, [user, loading]);
+    if (adminOnly) {
+      console.log('Checking admin status:', 
+        user?.app_metadata?.role, 
+        user?.user_metadata?.is_super_admin);
+    }
+  }, [user, loading, adminOnly]);
 
   if (loading) {
     return (
@@ -35,6 +40,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = f
 
   // Check if admin access is required and user is not an admin
   if (adminOnly && (!user.app_metadata?.role || user.app_metadata.role !== 'admin')) {
+    console.log('User attempted admin access but is not authorized:', user?.email);
     return <Navigate to="/dashboard" replace />;
   }
 
