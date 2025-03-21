@@ -30,11 +30,14 @@ export const useAnalytics = () => {
         }
       };
       
-      // Store analytics data in the console for now (this will be updated to DB storage)
       console.log('Analytics event tracked:', viewData);
       
-      // In future implementations, this data will be stored in Supabase
-      // await supabase.from('analytics_events').insert([viewData]);
+      // Store analytics data in Supabase
+      const { error } = await supabase.from('analytics_events').insert([viewData]);
+      
+      if (error) {
+        console.error('Error storing artwork view analytics:', error);
+      }
     } catch (error) {
       console.error('Error tracking artwork view:', error);
     }
@@ -58,11 +61,14 @@ export const useAnalytics = () => {
         }
       };
       
-      // Store analytics data in the console for now
       console.log('Analytics event tracked:', viewData);
       
-      // In future implementations, this data will be stored in Supabase
-      // await supabase.from('analytics_events').insert([viewData]);
+      // Store analytics data in Supabase
+      const { error } = await supabase.from('analytics_events').insert([viewData]);
+      
+      if (error) {
+        console.error('Error storing portfolio view analytics:', error);
+      }
     } catch (error) {
       console.error('Error tracking portfolio view:', error);
     }
@@ -86,11 +92,14 @@ export const useAnalytics = () => {
         }
       };
       
-      // Store analytics data in the console for now
       console.log('Conversion event tracked:', eventData);
       
-      // In future implementations, this data will be stored in Supabase
-      // await supabase.from('analytics_events').insert([eventData]);
+      // Store conversion data in Supabase
+      const { error } = await supabase.from('analytics_events').insert([eventData]);
+      
+      if (error) {
+        console.error('Error storing conversion analytics:', error);
+      }
     } catch (error) {
       console.error('Error tracking conversion event:', error);
     }
@@ -116,11 +125,14 @@ export const useAnalytics = () => {
         }
       };
       
-      // Store analytics data in the console for now
       console.log('Interaction event tracked:', eventData);
       
-      // In future implementations, this data will be stored in Supabase
-      // await supabase.from('analytics_events').insert([eventData]);
+      // Store interaction data in Supabase
+      const { error } = await supabase.from('analytics_events').insert([eventData]);
+      
+      if (error) {
+        console.error('Error storing interaction analytics:', error);
+      }
     } catch (error) {
       console.error('Error tracking interaction event:', error);
     }

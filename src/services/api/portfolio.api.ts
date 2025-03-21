@@ -207,6 +207,8 @@ export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResp
       profiles: profile
     };
     
+    // Record analytics for this view (moved to component to avoid duplicate tracking)
+    
     return createSuccessResponse(portfolioWithUser);
   } catch (error) {
     console.error('Failed to fetch portfolio with user:', error);

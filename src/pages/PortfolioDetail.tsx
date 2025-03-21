@@ -14,6 +14,7 @@ import StudioTemplate from '@/components/portfolio/templates/StudioTemplate';
 import * as portfolioApi from '@/services/api/portfolio.api';
 import * as artworkApi from '@/services/api/artwork.api';
 import { toast } from 'sonner';
+import { useAnalytics } from '@/hooks/analytics';
 
 const PortfolioDetail = () => {
   const { portfolioId } = useParams<{ portfolioId: string }>();
@@ -21,6 +22,7 @@ const PortfolioDetail = () => {
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const analytics = useAnalytics();
 
   useEffect(() => {
     const fetchPortfolioData = async () => {
@@ -50,6 +52,9 @@ const PortfolioDetail = () => {
         console.log('Portfolio data retrieved:', portfolioResponse.data);
         setPortfolio(portfolioResponse.data);
         
+        // Track portfolio view after successful retrieval
+        analytics.trackPortfolioView(portfolioId);
+        
         // Fetch artworks for the portfolio
         const artworkResponse = await artworkApi.getPortfolioArtworks(portfolioId);
         
@@ -70,7 +75,14 @@ const PortfolioDetail = () => {
     };
     
     fetchPortfolioData();
-  }, [portfolioId]);
+  }, [portfolioId, analytics]);
+
+  // Track artwork view when a user interacts with an artwork
+  const handleArtworkView = (artworkId: string) => {
+    if (portfolioId) {
+      analytics.trackArtworkView(artworkId, portfolioId);
+    }
+  };
 
   if (loading) {
     return (
@@ -158,13 +170,13 @@ const PortfolioDetail = () => {
             </div>
           ) : (
             <div className="mb-8">
-              {/* Render the appropriate template based on the portfolio type */}
-              {portfolio.template === 'grid' && <GridTemplate artworks={artworks} />}
-              {portfolio.template === 'masonry' && <MasonryTemplate artworks={artworks} />}
-              {portfolio.template === 'slideshow' && <SlideshowTemplate artworks={artworks} />}
-              {portfolio.template === 'minimal' && <MinimalTemplate artworks={artworks} />}
-              {portfolio.template === 'gallery' && <GalleryTemplate artworks={artworks} />}
-              {portfolio.template === 'studio' && <StudioTemplate artworks={artworks} />}
+              {/* Pass the handleArtworkView callback to each template */}
+              {portfolio.template === 'grid' && <GridTemplate artworks={artworks} onArtworkView={handleArtworkView} />}
+              {portfolio.template === 'masonry' && <MasonryTemplate artworks={artworks} onArtworkView={handleArtworkView} />}
+              {portfolio.template === 'slideshow' && <SlideshowTemplate artworks={artworks} onArtworkView={handleArtworkView} />}
+              {portfolio.template === 'minimal' && <MinimalTemplate artworks={artworks} onArtworkView={handleArtworkView} />}
+              {portfolio.template === 'gallery' && <GalleryTemplate artworks={artworks} onArtworkView={handleArtworkView} />}
+              {portfolio.template === 'studio' && <StudioTemplate artworks={artworks} onArtworkView={handleArtworkView} />}
             </div>
           )}
         </div>
