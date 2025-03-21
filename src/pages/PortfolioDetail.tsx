@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getPortfolioWithUser, getPortfolioArtworks } from '@/lib/supabase';
 import { Artwork, PortfolioWithArtist } from '@/types/portfolio';
 import { Loader2, User, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,9 @@ import SlideshowTemplate from '@/components/portfolio/templates/SlideshowTemplat
 import MinimalTemplate from '@/components/portfolio/templates/MinimalTemplate';
 import GalleryTemplate from '@/components/portfolio/templates/GalleryTemplate';
 import StudioTemplate from '@/components/portfolio/templates/StudioTemplate';
+import * as portfolioApi from '@/services/api/portfolio.api';
+import * as artworkApi from '@/services/api/artwork.api';
+import { toast } from 'sonner';
 
 const PortfolioDetail = () => {
   const { portfolioId } = useParams<{ portfolioId: string }>();
@@ -27,20 +29,28 @@ const PortfolioDetail = () => {
       
       try {
         // Fetch portfolio with user info
-        const portfolioData = await getPortfolioWithUser(portfolioId);
+        const portfolioResponse = await portfolioApi.getPortfolioWithUser(portfolioId);
         
-        if (!portfolioData) {
+        if (portfolioResponse.status !== 'success' || !portfolioResponse.data) {
           console.error('Portfolio not found');
+          toast.error('Portfolio not found or is not accessible');
+          setLoading(false);
           return;
         }
         
-        setPortfolio(portfolioData);
+        setPortfolio(portfolioResponse.data);
         
         // Fetch artworks for the portfolio
-        const artworkData = await getPortfolioArtworks(portfolioId);
-        setArtworks(artworkData);
+        const artworkResponse = await artworkApi.getPortfolioArtworks(portfolioId);
+        
+        if (artworkResponse.status === 'success') {
+          setArtworks(artworkResponse.data || []);
+        } else {
+          console.error('Error fetching artworks:', artworkResponse.error);
+        }
       } catch (error) {
         console.error('Error fetching portfolio:', error);
+        toast.error('Error loading portfolio details');
       } finally {
         setLoading(false);
       }

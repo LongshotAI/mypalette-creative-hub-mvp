@@ -156,7 +156,14 @@ export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResp
           full_name,
           avatar_url,
           bio,
-          banner_image_url
+          banner_image_url,
+          instagram_url,
+          twitter_url,
+          website_url,
+          contact_email,
+          location,
+          artist_statement,
+          current_exhibition
         )
       `)
       .eq('id', portfolioId)
