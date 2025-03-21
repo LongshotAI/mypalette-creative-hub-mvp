@@ -1,10 +1,8 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
-import ParticleCanvas from './ParticleCanvas';
 
 interface HeroProps {
   scrollPosition?: number;
@@ -12,6 +10,8 @@ interface HeroProps {
 
 const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
   const heroRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pixelGridRef = useRef<HTMLDivElement>(null);
   const [headingVisible, setHeadingVisible] = useState(true);
   
   useEffect(() => {
@@ -19,24 +19,132 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
     setHeadingVisible(scrollPosition < threshold);
   }, [scrollPosition]);
   
+  useEffect(() => {
+    if (!pixelGridRef.current) return;
+    
+    const pixelGrid = pixelGridRef.current;
+    const gridSize = 20;
+    const pixelSize = Math.min(window.innerWidth, 1200) / gridSize;
+    
+    pixelGrid.innerHTML = '';
+    
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        const pixel = document.createElement('div');
+        pixel.className = 'absolute transition-all duration-2000 rounded-sm opacity-0';
+        pixel.style.width = `${pixelSize}px`;
+        pixel.style.height = `${pixelSize}px`;
+        pixel.style.left = `${j * pixelSize}px`;
+        pixel.style.top = `${i * pixelSize}px`;
+        
+        if (Math.random() > 0.7) {
+          const delay = Math.random() * 5000;
+          setTimeout(() => {
+            const colors = [
+              'bg-brand-red/15', 'bg-brand-green/15', 'bg-brand-blue/15', 
+              'bg-primary/10', 'bg-secondary/10'
+            ];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            pixel.className = `absolute transition-all duration-2000 ${color} rounded-sm`;
+            
+            if (Math.random() > 0.8) {
+              pixel.style.opacity = '0.3';
+            }
+          }, delay);
+          
+          pixelGrid.appendChild(pixel);
+        }
+      }
+    }
+    
+    const animatePixels = () => {
+      Array.from(pixelGrid.children).forEach((pixel) => {
+        if (Math.random() > 0.995) {
+          const elem = pixel as HTMLElement;
+          if (elem.style.opacity !== '0') {
+            elem.style.opacity = '0';
+          } else if (Math.random() > 0.8) {
+            elem.style.opacity = '0.3';
+          }
+        }
+      });
+      
+      requestAnimationFrame(animatePixels);
+    };
+    
+    const animationId = requestAnimationFrame(animatePixels);
+    
+    const handleResize = () => {
+      if (pixelGrid) {
+        const newPixelSize = Math.min(window.innerWidth, 1200) / gridSize;
+        Array.from(pixelGrid.children).forEach((pixel, index) => {
+          const elem = pixel as HTMLElement;
+          const j = index % gridSize;
+          const i = Math.floor(index / gridSize);
+          elem.style.width = `${newPixelSize}px`;
+          elem.style.height = `${newPixelSize}px`;
+          elem.style.left = `${j * newPixelSize}px`;
+          elem.style.top = `${i * newPixelSize}px`;
+        });
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    const addPixelText = () => {
+      const pixelTextContainer = document.createElement('div');
+      pixelTextContainer.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none';
+      
+      for (let i = 0; i < 8; i++) {
+        const floatingPixel = document.createElement('div');
+        const size = 4 + Math.random() * 8;
+        const xPos = (Math.random() - 0.5) * 100;
+        const yPos = (Math.random() - 0.5) * 60;
+        
+        floatingPixel.className = 'absolute rounded-sm opacity-0 animate-pulse';
+        floatingPixel.style.width = `${size}px`;
+        floatingPixel.style.height = `${size}px`;
+        floatingPixel.style.left = `calc(50% + ${xPos}px)`;
+        floatingPixel.style.top = `calc(50% + ${yPos}px)`;
+        floatingPixel.style.backgroundColor = `rgba(255, 255, 255, 0.1)`;
+        floatingPixel.style.animationDuration = `${5 + Math.random() * 5}s`;
+        
+        pixelTextContainer.appendChild(floatingPixel);
+        
+        setTimeout(() => {
+          floatingPixel.style.opacity = '0.15';
+        }, 1000 + i * 300);
+      }
+      
+      pixelGrid.appendChild(pixelTextContainer);
+    };
+    
+    setTimeout(addPixelText, 1000);
+    
+    console.log(`
+    ███╗   ███╗██╗   ██╗██████╗  █████╗ ██╗     ███████╗████████╗████████╗███████╗
+    ████╗ ████║╚██╗ ██╔╝██╔══██╗██╔══██╗██║     ██╔════╝╚══██╔══╝╚══██╔══╝██╔════╝
+    ██╔████╔██║ ╚████╔╝ ██████╔╝███████║██║     █████╗     ██║      ██║   █████╗  
+    ██║╚██╔╝██║  ╚██╔╝  ██╔═══╝ ██╔══██║██║     ██╔══╝     ██║      ██║   ██╔══╝  
+    ██║ ╚═╝ ██║   ██║   ██║     ██║  ██║███████╗███████╗   ██║      ██║   ███████╗
+    ╚═╝     ╚═╝   ╚═╝   ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝   ╚═╝      ╚═╝   ╚══════╝
+                                                                                
+    Digital Portfolio Platform for Artists
+    `);
+    
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+  
   return (
     <section ref={heroRef} className="relative overflow-hidden py-16 md:py-24 lg:py-32 bg-ppn-light -mt-20 pt-20">
-      {/* Ambient background gradients */}
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-white/80 pointer-events-none"></div>
-      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-brand-red/5 rounded-full filter blur-3xl"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-green/5 rounded-full filter blur-3xl"></div>
-      <div className="absolute top-1/3 right-1/3 w-80 h-80 bg-brand-blue/5 rounded-full filter blur-3xl"></div>
-      
-      {/* Interactive canvas */}
       <div className="absolute inset-0 z-0 pointer-events-none flex justify-center">
-        <div className="relative w-full max-w-6xl h-full">
-          <div className="absolute inset-0 flex justify-center items-center pointer-events-auto">
-            <ParticleCanvas scrollPosition={scrollPosition} />
-          </div>
-        </div>
+        <div ref={pixelGridRef} className="relative w-full max-w-6xl h-full"></div>
       </div>
       
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white/20 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-secondary/20 pointer-events-none" />
       
       <div className="container-custom relative z-10">
         <div className="max-w-3xl mx-auto text-center transition-transform duration-200">

@@ -24,46 +24,19 @@ function App() {
     <AuthProvider>
       <AnalyticsProvider>
         <Routes>
-          {/* Public routes */}
           <Route path="/" element={<Index />} />
           <Route path="/sign-in" element={<SignIn />} />
           <Route path="/sign-up" element={<SignUp />} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/user-profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+          <Route path="/user-info" element={<ProtectedRoute><UserInfo /></ProtectedRoute>} />
           <Route path="/portfolios" element={<Portfolios />} />
           <Route path="/portfolios/:id" element={<PortfolioDetail />} />
           <Route path="/search" element={<Search />} />
           <Route path="/open-calls" element={<OpenCalls />} />
           <Route path="/education" element={<Education />} />
-          
-          {/* Protected user routes */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/user-profile" element={
-            <ProtectedRoute>
-              <UserProfile />
-            </ProtectedRoute>
-          } />
-          <Route path="/user-info" element={
-            <ProtectedRoute>
-              <UserInfo />
-            </ProtectedRoute>
-          } />
-          <Route path="/payment/confirmation" element={
-            <ProtectedRoute>
-              <PaymentConfirmation />
-            </ProtectedRoute>
-          } />
-          
-          {/* Admin routes with adminOnly flag explicitly set to true */}
-          <Route path="/admin/*" element={
-            <ProtectedRoute adminOnly={true}>
-              <Admin />
-            </ProtectedRoute>
-          } />
-          
-          {/* 404 Not Found */}
+          <Route path="/payment/confirmation" element={<ProtectedRoute><PaymentConfirmation /></ProtectedRoute>} />
+          <Route path="/admin/*" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AnalyticsProvider>
