@@ -3,7 +3,7 @@ import React from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -12,6 +12,7 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   // Show loading state
   if (loading) {
@@ -24,7 +25,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   // Redirect to login if not authenticated
   if (!user) {
-    return <Navigate to="/sign-in?redirect=/dashboard" replace />;
+    return <Navigate to={`/sign-in?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
   return (

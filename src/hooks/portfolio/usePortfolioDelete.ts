@@ -1,9 +1,9 @@
 
 import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import * as portfolioApi from '@/services/api/portfolio.api';
 
-export const usePortfolioDelete = (onSuccess?: () => void) => {
+export const usePortfolioDelete = (onSuccess: () => void) => {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const deletePortfolio = async (portfolioId: string) => {
@@ -14,17 +14,23 @@ export const usePortfolioDelete = (onSuccess?: () => void) => {
     setDeleteLoading(true);
     
     try {
-      const response = await portfolioApi.deletePortfolio(portfolioId);
+      console.log('Deleting portfolio:', portfolioId);
+      const { error } = await supabase
+        .from('portfolios')
+        .delete()
+        .eq('id', portfolioId);
       
-      if (response.status === 'success') {
-        toast.success('Portfolio deleted successfully');
-        
-        if (onSuccess) {
-          onSuccess();
-        }
+      if (error) {
+        console.error('Error deleting portfolio:', error);
+        throw error;
       }
-    } catch (error) {
+      
+      console.log('Portfolio deleted successfully');
+      toast.success('Portfolio deleted successfully');
+      onSuccess();
+    } catch (error: any) {
       console.error('Error deleting portfolio:', error);
+      toast.error('Failed to delete portfolio: ' + (error.message || 'Unknown error'));
     } finally {
       setDeleteLoading(false);
     }

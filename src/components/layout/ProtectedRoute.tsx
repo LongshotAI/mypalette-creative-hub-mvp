@@ -76,7 +76,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = f
 
   if (!user) {
     console.log('User not authenticated, redirecting to sign-in');
-    return <Navigate to="/sign-in" state={{ from: location }} replace />;
+    return <Navigate to={`/sign-in?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
   if (adminOnly) {

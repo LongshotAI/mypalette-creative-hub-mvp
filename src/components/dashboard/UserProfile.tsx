@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Instagram, Twitter, Globe, Upload, Loader2, Mail, Briefcase, User, MapPin } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase, getUserProfile } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 
@@ -57,23 +57,35 @@ const UserProfile = () => {
       setLoading(true);
       
       try {
-        const profile = await getUserProfile(user.id);
+        console.log('Fetching profile for user ID:', user.id);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
         
-        if (profile) {
+        if (error) {
+          console.error('Error fetching profile:', error);
+          throw error;
+        }
+        
+        console.log('Profile data received:', data);
+        
+        if (data) {
           setProfileData({
-            id: profile.id,
-            username: profile.username || '',
-            full_name: profile.full_name || user.user_metadata?.full_name || '',
-            bio: profile.bio || '',
-            avatar_url: profile.avatar_url || '',
-            banner_image_url: profile.banner_image_url || '',
-            website_url: profile.website_url || '',
-            instagram_url: profile.instagram_url || '',
-            twitter_url: profile.twitter_url || '',
-            contact_email: profile.contact_email || user.email || '',
-            location: profile.location || '',
-            artist_statement: profile.artist_statement || '',
-            current_exhibition: profile.current_exhibition || ''
+            id: data.id,
+            username: data.username || '',
+            full_name: data.full_name || user.user_metadata?.full_name || '',
+            bio: data.bio || '',
+            avatar_url: data.avatar_url || '',
+            banner_image_url: data.banner_image_url || '',
+            website_url: data.website_url || '',
+            instagram_url: data.instagram_url || '',
+            twitter_url: data.twitter_url || '',
+            contact_email: data.contact_email || user.email || '',
+            location: data.location || '',
+            artist_statement: data.artist_statement || '',
+            current_exhibition: data.current_exhibition || ''
           });
         } else {
           // Initialize with user metadata if available
@@ -110,7 +122,8 @@ const UserProfile = () => {
     setSaving(true);
     
     try {
-      const { error } = await supabase
+      console.log('Updating profile for user ID:', user.id, 'with data:', profileData);
+      const { data, error } = await supabase
         .from('profiles')
         .upsert({
           id: user.id,
@@ -126,15 +139,20 @@ const UserProfile = () => {
           location: profileData.location,
           artist_statement: profileData.artist_statement,
           current_exhibition: profileData.current_exhibition,
-          updated_at: new Date()
-        }, { onConflict: 'id' });
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' })
+        .select();
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating profile:', error);
+        throw error;
+      }
       
+      console.log('Profile updated successfully:', data);
       toast.success('Profile updated successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
+      toast.error('Failed to update profile: ' + (error.message || 'Unknown error'));
     } finally {
       setSaving(false);
     }

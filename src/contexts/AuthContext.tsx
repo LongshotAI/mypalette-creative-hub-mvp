@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -157,13 +158,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (!user) return false;
       
+      // First, check if we have admin role in the user metadata (client-side check)
+      const userRole = user.app_metadata?.role;
+      if (userRole === 'admin' || userRole === 'super_admin') {
+        return true;
+      }
+      
+      // If no role in metadata, check with the Supabase RPC function
+      console.log('Checking admin status via RPC');
       const { data, error } = await supabase.rpc('is_admin');
       
       if (error) {
-        console.error('Error checking admin status:', error);
+        console.error('Error checking admin status via RPC:', error);
         return false;
       }
       
+      console.log('RPC admin check result:', data);
       return !!data;
     } catch (error) {
       console.error('Error checking admin status:', error);
@@ -175,13 +185,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (!user) return false;
       
+      // First, check if we have super_admin role in the user metadata (client-side check)
+      const userRole = user.app_metadata?.role;
+      if (userRole === 'super_admin') {
+        return true;
+      }
+      
+      // If no role in metadata, check with the Supabase RPC function
+      console.log('Checking super admin status via RPC');
       const { data, error } = await supabase.rpc('is_super_admin');
       
       if (error) {
-        console.error('Error checking super admin status:', error);
+        console.error('Error checking super admin status via RPC:', error);
         return false;
       }
       
+      console.log('RPC super admin check result:', data);
       return !!data;
     } catch (error) {
       console.error('Error checking super admin status:', error);

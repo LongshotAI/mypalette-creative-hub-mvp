@@ -15,8 +15,7 @@ const Admin = () => {
 
   return (
     <AdminLayout>
-      {/* Pass a unique key to ensure AdminTabs is only rendered once */}
-      <AdminTabs key="admin-tabs" />
+      <AdminTabs />
     </AdminLayout>
   );
 };
