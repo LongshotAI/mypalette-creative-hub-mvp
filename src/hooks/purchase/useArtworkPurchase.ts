@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { Order, OrderStatus } from '@/types/portfolio';
+import { useAnalytics } from '@/hooks/analytics';
 
 export const useArtworkPurchase = () => {
   const { user } = useAuth();
@@ -11,6 +12,7 @@ export const useArtworkPurchase = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus>('all');
+  const { trackConversion, trackInteraction } = useAnalytics();
 
   /**
    * Initiates the purchase process for an artwork
@@ -26,6 +28,9 @@ export const useArtworkPurchase = () => {
     setIsProcessing(true);
     
     try {
+      // Track the start of the purchase process
+      trackConversion('purchase_initiated', { artwork_id: artworkId });
+      
       // Get the user session for the auth token
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -44,6 +49,7 @@ export const useArtworkPurchase = () => {
       
       if (existingOrders && existingOrders.length > 0) {
         toast.info('You have already purchased this artwork');
+        trackInteraction('purchase_button', 'already_purchased', { artwork_id: artworkId });
         setIsProcessing(false);
         return null;
       }
@@ -51,18 +57,28 @@ export const useArtworkPurchase = () => {
       // Check if the artwork is sold out
       const { data: artwork } = await supabase
         .from('artworks')
-        .select('sold_out, for_sale')
+        .select('sold_out, for_sale, portfolios:portfolio_id(user_id)')
         .eq('id', artworkId)
         .single();
       
+      // Prevent artists from buying their own artwork
+      if (artwork?.portfolios?.user_id === user.id) {
+        toast.error('You cannot purchase your own artwork');
+        trackInteraction('purchase_button', 'purchase_own_artwork', { artwork_id: artworkId });
+        setIsProcessing(false);
+        return null;
+      }
+      
       if (artwork?.sold_out) {
         toast.error('This artwork is sold out');
+        trackInteraction('purchase_button', 'purchase_sold_out', { artwork_id: artworkId });
         setIsProcessing(false);
         return null;
       }
       
       if (!artwork?.for_sale) {
         toast.error('This artwork is not for sale');
+        trackInteraction('purchase_button', 'purchase_not_for_sale', { artwork_id: artworkId });
         setIsProcessing(false);
         return null;
       }
@@ -88,6 +104,12 @@ export const useArtworkPurchase = () => {
         throw error;
       }
       
+      // Track successful checkout initiation
+      trackConversion('checkout_initiated', { 
+        artwork_id: artworkId,
+        session_id: data.sessionId
+      });
+      
       // Redirect to Stripe checkout
       if (data.sessionUrl) {
         window.location.href = data.sessionUrl;
@@ -98,6 +120,10 @@ export const useArtworkPurchase = () => {
     } catch (error) {
       console.error('Error purchasing artwork:', error);
       toast.error('Failed to process payment. Please try again.');
+      trackConversion('purchase_failed', { 
+        artwork_id: artworkId,
+        error: error.message
+      });
       return null;
     } finally {
       setIsProcessing(false);

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Artwork } from '@/types/portfolio';
 import PurchaseButton from './PurchaseButton';
+import { useAnalytics } from '@/hooks/analytics/useAnalytics';
 
 interface ArtworkDetailModalProps {
   artwork: Artwork | null;
@@ -21,6 +22,15 @@ const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
   open,
   onOpenChange,
 }) => {
+  const { trackArtworkView } = useAnalytics();
+  
+  // Track artwork view when the modal opens
+  useEffect(() => {
+    if (open && artwork) {
+      trackArtworkView(artwork.id, artwork.portfolio_id);
+    }
+  }, [open, artwork]);
+
   if (!artwork) return null;
 
   // Format price with currency if the artwork is for sale
@@ -71,7 +81,16 @@ const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                 </div>
               )}
               
-              {/* Additional artwork details can be added here */}
+              {artwork.quantity !== undefined && artwork.quantity !== null && artwork.for_sale && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Availability</h4>
+                  <p className="mt-1">
+                    {artwork.sold_out 
+                      ? 'Sold Out' 
+                      : `${artwork.quantity} available`}
+                  </p>
+                </div>
+              )}
             </div>
             
             {artwork.for_sale && artwork.price && (
