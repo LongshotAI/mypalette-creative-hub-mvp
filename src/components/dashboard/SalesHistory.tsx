@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useArtworkPurchase } from '@/hooks/purchase';
 import { Loader2, PackageOpen } from 'lucide-react';
-import { Order } from '@/types/portfolio';
+import { Order, Artwork } from '@/types/portfolio';
 
 const SalesHistory = () => {
   const { 
@@ -53,9 +53,19 @@ const SalesHistory = () => {
         artworks: order.artworks ? {
           id: order.artworks.id,
           title: order.artworks.title,
+          description: order.artworks.description || "",
           image_url: order.artworks.image_url,
+          price: order.artworks.price || null,
+          currency: order.artworks.currency || "USD",
+          for_sale: order.artworks.for_sale || false,
           portfolio_id: order.artworks.portfolio_id,
-          portfolios: order.artworks.portfolios
+          created_at: order.artworks.created_at || order.created_at,
+          portfolios: order.artworks.portfolios ? {
+            id: order.artworks.portfolios.id || "",
+            name: order.artworks.portfolios.name || "",
+            user_id: order.artworks.portfolios.user_id || "",
+            profiles: order.artworks.portfolios.profiles || undefined
+          } : undefined
         } : undefined
       }));
     } catch (error) {

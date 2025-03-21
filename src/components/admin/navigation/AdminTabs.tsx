@@ -9,7 +9,7 @@ import {
   BookOpen, 
   Settings, 
   FileSpreadsheet,
-  Flask
+  FlaskConical
 } from 'lucide-react';
 
 const AdminTabs = () => {
@@ -83,7 +83,7 @@ const AdminTabs = () => {
             asChild
           >
             <Link to="/admin?tab=simulation" className={tab === 'simulation' ? 'data-[state=active]' : ''}>
-              <Flask className="h-4 w-4" />
+              <FlaskConical className="h-4 w-4" />
               <span className="hidden sm:inline">Simulation</span>
             </Link>
           </TabsTrigger>

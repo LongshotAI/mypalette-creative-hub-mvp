@@ -165,9 +165,9 @@ const TransactionSimulator = () => {
                   {artworks.map((artwork) => (
                     <SelectItem key={artwork.id} value={artwork.id}>
                       {artwork.title} - {artwork.currency} {artwork.price} 
-                      {artwork.portfolios && (
+                      {artwork.portfolio && (
                         <span className="ml-2 text-muted-foreground">
-                          by {artwork.portfolios.profiles?.full_name || artwork.portfolios.profiles?.username || 'Unknown Artist'}
+                          by {artwork.portfolio.profiles?.full_name || artwork.portfolio.profiles?.username || 'Unknown Artist'}
                         </span>
                       )}
                     </SelectItem>
