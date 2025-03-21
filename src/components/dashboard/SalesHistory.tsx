@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { 
   Card, 
@@ -59,7 +60,9 @@ const SalesHistory = () => {
           for_sale: order.artworks.for_sale || false,
           portfolio_id: order.artworks.portfolio_id,
           created_at: order.artworks.created_at || order.created_at,
-          portfolio: order.artworks.portfolio || order.artworks.portfolios
+          // Support both property names to ensure compatibility
+          portfolio: order.artworks.portfolio,
+          portfolios: order.artworks.portfolios || order.artworks.portfolio
         } : undefined
       }));
     } catch (error) {

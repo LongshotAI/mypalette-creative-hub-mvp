@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -62,7 +63,7 @@ const TransactionSimulator = () => {
       try {
         const { data, error } = await supabase
           .from('artworks')
-          .select('id, title, price, currency, portfolio_id, portfolios(profiles(full_name, username))');
+          .select('id, title, description, price, currency, for_sale, portfolio_id, image_url, created_at, portfolios(id, name, user_id, profiles(id, full_name, username))');
 
         if (error) {
           console.error('Error fetching artworks:', error);
@@ -70,10 +71,25 @@ const TransactionSimulator = () => {
             title: "Error",
             description: "Failed to load artworks.",
             variant: "destructive",
-          })
+          });
+          return;
         }
 
-        setArtworks(data || []);
+        // Properly transform the data to match the Artwork type
+        const formattedArtworks: Artwork[] = (data || []).map(item => ({
+          id: item.id,
+          title: item.title,
+          description: item.description || "",
+          image_url: item.image_url,
+          price: item.price,
+          currency: item.currency || "USD",
+          for_sale: item.for_sale || false,
+          portfolio_id: item.portfolio_id,
+          created_at: item.created_at || new Date().toISOString(),
+          portfolios: item.portfolios
+        }));
+
+        setArtworks(formattedArtworks);
       } finally {
         setLoadingArtworks(false);
       }
@@ -179,9 +195,9 @@ const renderArtworkSelection = () => (
           artworks.map((artwork) => (
             <SelectItem key={artwork.id} value={artwork.id}>
               {artwork.title} - {artwork.currency} {artwork.price} 
-              {artwork.portfolio && (
+              {artwork.portfolios && (
                 <span className="ml-2 text-muted-foreground">
-                  by {artwork.portfolio.profiles?.full_name || artwork.portfolio.profiles?.username || 'Unknown Artist'}
+                  by {artwork.portfolios.profiles?.full_name || artwork.portfolios.profiles?.username || 'Unknown Artist'}
                 </span>
               )}
             </SelectItem>

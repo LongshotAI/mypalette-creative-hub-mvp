@@ -31,9 +31,19 @@ export interface Artwork {
   quantity?: number | null;
   sold_out?: boolean;
   portfolios?: {
-    user_id: string;
-    name?: string;
     id?: string;
+    name?: string;
+    user_id?: string;
+    profiles?: {
+      id?: string;
+      username?: string;
+      full_name?: string;
+    }
+  };
+  portfolio?: {
+    id?: string;
+    name?: string;
+    user_id?: string;
     profiles?: {
       id?: string;
       username?: string;
