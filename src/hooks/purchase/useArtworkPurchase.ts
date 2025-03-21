@@ -1,15 +1,16 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { Order } from '@/types/portfolio';
+import { Order, OrderStatus } from '@/types/portfolio';
 
 export const useArtworkPurchase = () => {
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<OrderStatus>('all');
 
   /**
    * Initiates the purchase process for an artwork
@@ -33,9 +34,42 @@ export const useArtworkPurchase = () => {
         return null;
       }
       
+      // Check if artwork is already purchased by this user
+      const { data: existingOrders } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('buyer_id', user.id)
+        .eq('artwork_id', artworkId)
+        .eq('status', 'completed');
+      
+      if (existingOrders && existingOrders.length > 0) {
+        toast.info('You have already purchased this artwork');
+        setIsProcessing(false);
+        return null;
+      }
+      
+      // Check if the artwork is sold out
+      const { data: artwork } = await supabase
+        .from('artworks')
+        .select('sold_out, for_sale')
+        .eq('id', artworkId)
+        .single();
+      
+      if (artwork?.sold_out) {
+        toast.error('This artwork is sold out');
+        setIsProcessing(false);
+        return null;
+      }
+      
+      if (!artwork?.for_sale) {
+        toast.error('This artwork is not for sale');
+        setIsProcessing(false);
+        return null;
+      }
+      
       // Determine the success and cancel URLs
-      const successUrl = `${window.location.origin}/dashboard?tab=orders`;
-      const cancelUrl = window.location.href;
+      const successUrl = `${window.location.origin}/payment/confirmation?session_id={CHECKOUT_SESSION_ID}&order_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${window.location.origin}/payment/confirmation?canceled=true&order_id={CHECKOUT_SESSION_ID}`;
       
       // Call the Stripe payment function
       const { data, error } = await supabase.functions.invoke('stripe-payment', {
@@ -71,18 +105,20 @@ export const useArtworkPurchase = () => {
   };
   
   /**
-   * Fetches the order history for the current user
+   * Fetches the order history for the current user with optional filtering
+   * @param status - Optional status filter (all, pending, completed, failed)
    */
-  const loadOrderHistory = async () => {
+  const loadOrderHistory = async (status: OrderStatus = 'all') => {
     if (!user) {
       setOrders([]);
       return;
     }
     
     setLoadingOrders(true);
+    setSelectedStatus(status);
     
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('orders')
         .select(`
           *,
@@ -92,6 +128,7 @@ export const useArtworkPurchase = () => {
             image_url,
             price,
             currency,
+            sold_out,
             portfolio_id,
             portfolios:portfolio_id (
               id,
@@ -108,6 +145,13 @@ export const useArtworkPurchase = () => {
         .eq('buyer_id', user.id)
         .order('created_at', { ascending: false });
       
+      // Apply status filter if not 'all'
+      if (status !== 'all') {
+        query = query.eq('status', status);
+      }
+      
+      const { data, error } = await query;
+      
       if (error) {
         throw error;
       }
@@ -121,11 +165,128 @@ export const useArtworkPurchase = () => {
     }
   };
   
+  /**
+   * Loads orders for a specific artwork (for sellers)
+   * @param artworkId - The ID of the artwork to get orders for
+   */
+  const loadArtworkOrders = async (artworkId: string) => {
+    if (!user) {
+      return [];
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          profiles:buyer_id (
+            username,
+            full_name
+          )
+        `)
+        .eq('artwork_id', artworkId)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching artwork orders:', error);
+      toast.error('Failed to load orders for this artwork');
+      return [];
+    }
+  };
+  
+  /**
+   * Get seller's sales history (orders for all artworks in their portfolios)
+   */
+  const loadSellerOrders = async (status: OrderStatus = 'all') => {
+    if (!user) {
+      return [];
+    }
+    
+    try {
+      // First get all portfolios owned by this user
+      const { data: portfolios, error: portfolioError } = await supabase
+        .from('portfolios')
+        .select('id')
+        .eq('user_id', user.id);
+      
+      if (portfolioError || !portfolios.length) {
+        return [];
+      }
+      
+      const portfolioIds = portfolios.map(p => p.id);
+      
+      // Then get all artworks in those portfolios
+      const { data: artworks, error: artworksError } = await supabase
+        .from('artworks')
+        .select('id')
+        .in('portfolio_id', portfolioIds);
+      
+      if (artworksError || !artworks.length) {
+        return [];
+      }
+      
+      const artworkIds = artworks.map(a => a.id);
+      
+      // Finally get all orders for those artworks
+      let query = supabase
+        .from('orders')
+        .select(`
+          *,
+          artworks:artwork_id (
+            id,
+            title,
+            image_url,
+            price,
+            currency
+          ),
+          profiles:buyer_id (
+            username,
+            full_name
+          )
+        `)
+        .in('artwork_id', artworkIds)
+        .order('created_at', { ascending: false });
+      
+      // Apply status filter if not 'all'
+      if (status !== 'all') {
+        query = query.eq('status', status);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching seller orders:', error);
+      toast.error('Failed to load sales history');
+      return [];
+    }
+  };
+
+  // Initialize order history when component mounts
+  useEffect(() => {
+    if (user) {
+      loadOrderHistory('all');
+    }
+  }, [user]);
+  
   return {
     purchaseArtwork,
     loadOrderHistory,
+    loadArtworkOrders,
+    loadSellerOrders,
     orders,
     loadingOrders,
-    isProcessing
+    isProcessing,
+    selectedStatus,
+    setSelectedStatus
   };
 };

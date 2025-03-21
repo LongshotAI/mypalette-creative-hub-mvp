@@ -68,6 +68,18 @@ serve(async (req) => {
         
         console.log('Processing checkout.session.completed:', { sessionId: session.id })
         
+        // Get the order from the database
+        const { data: order, error: orderError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('stripe_session_id', session.id)
+          .single()
+          
+        if (orderError) {
+          console.error('Error fetching order:', orderError)
+          break
+        }
+          
         // Update the order status
         const { data, error } = await supabase
           .from('orders')
@@ -77,12 +89,71 @@ serve(async (req) => {
         
         if (error) {
           console.error('Error updating order:', error)
-        } else {
-          console.log('Order updated successfully:', data)
-          
-          // If you want to send a notification email, you could do it here
-          // or trigger another function to do so
+          break
         }
+        
+        console.log('Order updated successfully:', data)
+        
+        // Handle inventory management - mark artwork as sold out if needed
+        // First, check if the artwork has quantity information
+        const { data: artwork, error: artworkError } = await supabase
+          .from('artworks')
+          .select('quantity, portfolio_id')
+          .eq('id', order.artwork_id)
+          .single()
+          
+        if (!artworkError && artwork) {
+          // If quantity is null or undefined, assume it's a single item (sold out after one purchase)
+          // If quantity is a number, decrement it and check if it's now zero
+          let updateData = {}
+          
+          if (artwork.quantity === null || artwork.quantity === undefined) {
+            // Single item artwork, mark as sold out
+            updateData = { sold_out: true }
+          } else if (artwork.quantity > 0) {
+            // Multiple items, decrement quantity
+            const newQuantity = artwork.quantity - 1
+            updateData = { 
+              quantity: newQuantity,
+              sold_out: newQuantity <= 0
+            }
+          }
+          
+          if (Object.keys(updateData).length > 0) {
+            const { error: updateError } = await supabase
+              .from('artworks')
+              .update(updateData)
+              .eq('id', order.artwork_id)
+              
+            if (updateError) {
+              console.error('Error updating artwork inventory:', updateError)
+            } else {
+              console.log('Artwork inventory updated successfully')
+            }
+          }
+          
+          // Get seller information for notification
+          if (artwork.portfolio_id) {
+            const { data: portfolio, error: portfolioError } = await supabase
+              .from('portfolios')
+              .select('user_id')
+              .eq('id', artwork.portfolio_id)
+              .single()
+              
+            if (!portfolioError && portfolio) {
+              // Send notification to seller
+              // In a real system, you would implement proper notifications here
+              // For now, just mark the order as seller_notified
+              await supabase
+                .from('orders')
+                .update({ seller_notified: true })
+                .eq('id', order.id)
+                
+              console.log('Seller notification marked for order:', order.id)
+            }
+          }
+        }
+        
         break
       }
       
@@ -111,11 +182,42 @@ serve(async (req) => {
           error: paymentIntent.last_payment_error
         })
         
-        // If you have a way to link payment_intent to session/order, you could update the order here
+        // Find orders related to this payment intent and mark as failed
+        const { data: sessions, error: sessionsError } = await supabase
+          .from('orders')
+          .select('stripe_session_id')
+          .eq('status', 'pending')
+          
+        if (sessionsError) {
+          console.error('Error fetching sessions:', sessionsError)
+          break
+        }
+        
+        // For each pending session, check if it belongs to this payment intent
+        for (const orderSession of sessions || []) {
+          try {
+            const session = await stripe.checkout.sessions.retrieve(orderSession.stripe_session_id)
+            
+            if (session.payment_intent === paymentIntent.id) {
+              // Update the order status to failed
+              const { error } = await supabase
+                .from('orders')
+                .update({ status: 'failed' })
+                .eq('stripe_session_id', session.id)
+                
+              if (error) {
+                console.error('Error updating failed order:', error)
+              } else {
+                console.log('Order marked as failed:', session.id)
+              }
+            }
+          } catch (err) {
+            console.error('Error checking session:', err)
+          }
+        }
+        
         break
       }
-      
-      // Add more event handlers as needed
     }
     
     // Return a response to acknowledge receipt of the event

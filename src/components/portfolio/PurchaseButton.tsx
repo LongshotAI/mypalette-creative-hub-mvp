@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useArtworkPurchase } from '@/hooks/purchase';
-import { Loader2, ShoppingCart } from 'lucide-react';
+import { Loader2, ShoppingCart, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Artwork } from '@/types/portfolio';
 import { useNavigate } from 'react-router-dom';
@@ -36,6 +36,21 @@ const PurchaseButton: React.FC<PurchaseButtonProps> = ({ artwork, className }) =
   
   if (!artwork.for_sale || !artwork.price) {
     return null;
+  }
+  
+  // If the artwork is sold out, show a disabled button
+  if (artwork.sold_out) {
+    return (
+      <Button 
+        className={className}
+        disabled
+        variant="secondary"
+        size="sm"
+      >
+        <AlertTriangle className="mr-2 h-4 w-4" />
+        Sold Out
+      </Button>
+    );
   }
   
   return (

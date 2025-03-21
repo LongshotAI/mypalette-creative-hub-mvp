@@ -27,6 +27,8 @@ export interface Artwork {
   for_sale: boolean;
   portfolio_id: string;
   created_at: string;
+  quantity?: number | null;
+  sold_out?: boolean;
 }
 
 export interface ArtworkFormData {
@@ -38,7 +40,6 @@ export interface ArtworkFormData {
   for_sale: boolean;
 }
 
-// Updated interface for the portfolio with artist information
 export interface PortfolioWithArtist {
   id: string;
   name: string;
@@ -84,6 +85,7 @@ export interface Order {
   status: 'pending' | 'completed' | 'failed';
   stripe_session_id?: string;
   created_at: string;
+  seller_notified?: boolean;
   artworks?: Artwork & {
     portfolios?: {
       id: string;
@@ -97,3 +99,5 @@ export interface Order {
     }
   };
 }
+
+export type OrderStatus = 'all' | 'pending' | 'completed' | 'failed';

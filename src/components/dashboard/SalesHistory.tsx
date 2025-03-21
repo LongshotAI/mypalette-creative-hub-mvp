@@ -1,29 +1,35 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useArtworkPurchase } from '@/hooks/purchase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { OrderStatus } from '@/types/portfolio';
+import { OrderStatus, Order } from '@/types/portfolio';
+import { useAuth } from '@/contexts/AuthContext';
 
-const OrderHistory = () => {
-  const { 
-    loadOrderHistory, 
-    orders, 
-    loadingOrders, 
-    selectedStatus,
-    setSelectedStatus
-  } = useArtworkPurchase();
+const SalesHistory = () => {
+  const { user } = useAuth();
+  const { loadSellerOrders } = useArtworkPurchase();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedStatus, setSelectedStatus] = useState<OrderStatus>('all');
   
   useEffect(() => {
-    loadOrderHistory();
-  }, []);
+    fetchSales(selectedStatus);
+  }, [user]);
+  
+  const fetchSales = async (status: OrderStatus) => {
+    setLoading(true);
+    setSelectedStatus(status);
+    const sellerOrders = await loadSellerOrders(status);
+    setOrders(sellerOrders);
+    setLoading(false);
+  };
   
   const handleTabChange = (value: string) => {
-    loadOrderHistory(value as OrderStatus);
+    fetchSales(value as OrderStatus);
   };
   
   const getStatusColor = (status: string) => {
@@ -62,7 +68,7 @@ const OrderHistory = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Order History</CardTitle>
+        <CardTitle>Sales History</CardTitle>
         <Tabs 
           defaultValue="all" 
           value={selectedStatus}
@@ -78,20 +84,17 @@ const OrderHistory = () => {
         </Tabs>
       </CardHeader>
       <CardContent>
-        {loadingOrders ? (
+        {loading ? (
           <div className="py-10 flex justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : orders.length === 0 ? (
           <div className="text-center py-10">
-            <p className="text-muted-foreground">You haven't made any purchases yet.</p>
-            <Link to="/portfolios" className="text-primary hover:underline mt-2 inline-block">
-              Browse artworks
-            </Link>
+            <p className="text-muted-foreground">You haven't sold any artwork yet.</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {orders.map((order) => (
+            {orders.map((order: any) => (
               <div key={order.id} className="border rounded-lg p-4">
                 <div className="flex flex-col md:flex-row justify-between gap-4">
                   <div className="flex items-center gap-4">
@@ -105,7 +108,7 @@ const OrderHistory = () => {
                     <div>
                       <h3 className="font-medium">{order.artworks?.title}</h3>
                       <p className="text-sm text-muted-foreground">
-                        by {order.artworks?.portfolios?.profiles?.full_name || order.artworks?.portfolios?.profiles?.username}
+                        Purchased by {order.profiles?.full_name || order.profiles?.username || 'Anonymous'}
                       </p>
                       <p className="text-sm mt-1">
                         {new Intl.NumberFormat('en-US', {
@@ -120,12 +123,6 @@ const OrderHistory = () => {
                     <p className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
                     </p>
-                    <Link 
-                      to={`/payment/confirmation?order_id=${order.id}`}
-                      className="text-xs text-primary hover:underline"
-                    >
-                      View details
-                    </Link>
                   </div>
                 </div>
               </div>
@@ -137,4 +134,4 @@ const OrderHistory = () => {
   );
 };
 
-export default OrderHistory;
+export default SalesHistory;

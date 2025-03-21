@@ -3,20 +3,57 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Order } from '@/types/portfolio';
+import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNow } from 'date-fns';
 
 const PaymentConfirmation = () => {
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pollingCount, setPollingCount] = useState(0);
   
   const searchParams = new URLSearchParams(location.search);
   const orderId = searchParams.get('order_id');
   const sessionId = searchParams.get('session_id');
   const canceled = searchParams.get('canceled');
+  
+  // Helper function to get status badge styles
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return (
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+            <CheckCircle className="mr-1 h-4 w-4" />
+            Completed
+          </Badge>
+        );
+      case 'pending':
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
+            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            Pending
+          </Badge>
+        );
+      case 'failed':
+        return (
+          <Badge className="bg-red-100 text-red-800 hover:bg-red-200">
+            <XCircle className="mr-1 h-4 w-4" />
+            Failed
+          </Badge>
+        );
+      default:
+        return (
+          <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-200">
+            <AlertTriangle className="mr-1 h-4 w-4" />
+            Unknown
+          </Badge>
+        );
+    }
+  };
   
   useEffect(() => {
     const fetchOrder = async () => {
@@ -55,6 +92,14 @@ const PaymentConfirmation = () => {
         }
         
         setOrder(data);
+        
+        // If order status is still pending and we haven't polled too many times, 
+        // try again in a few seconds (Stripe webhooks can take a moment to process)
+        if (data.status === 'pending' && pollingCount < 5) {
+          setTimeout(() => {
+            setPollingCount(prev => prev + 1);
+          }, 3000);
+        }
       } catch (error) {
         console.error('Error fetching order:', error);
         setError('Unable to load order details');
@@ -64,7 +109,7 @@ const PaymentConfirmation = () => {
     };
     
     fetchOrder();
-  }, [orderId]);
+  }, [orderId, pollingCount]);
   
   if (loading) {
     return (
@@ -153,14 +198,19 @@ const PaymentConfirmation = () => {
         <CardTitle className="text-center">
           {isCompleted ? (
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
+          ) : order.status === 'failed' ? (
+            <XCircle className="h-12 w-12 text-red-500 mx-auto mb-2" />
           ) : (
             <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-2" />
           )}
-          {isCompleted ? 'Payment Successful' : 'Processing Payment'}
+          {isCompleted ? 'Payment Successful' : 
+           order.status === 'failed' ? 'Payment Failed' : 'Processing Payment'}
         </CardTitle>
         <CardDescription className="text-center">
           {isCompleted 
             ? 'Your payment has been successfully processed.' 
+            : order.status === 'failed'
+            ? 'There was an issue processing your payment.'
             : 'Your payment is being processed. This may take a moment.'}
         </CardDescription>
       </CardHeader>
@@ -195,22 +245,30 @@ const PaymentConfirmation = () => {
             </div>
             <div className="flex justify-between py-1">
               <span>Status:</span>
-              <span>{order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span>
+              <span>{getStatusBadge(order.status)}</span>
             </div>
             <div className="flex justify-between py-1">
               <span>Date:</span>
-              <span>{new Date(order.created_at).toLocaleDateString()}</span>
+              <span>{formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}</span>
             </div>
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-center gap-4">
-        <Link to="/portfolios">
-          <Button variant="outline">Continue Shopping</Button>
-        </Link>
-        <Link to="/dashboard?tab=orders">
-          <Button>View Orders</Button>
-        </Link>
+      <CardFooter className="flex flex-col gap-4">
+        <div className="flex justify-center gap-4 w-full">
+          <Link to="/portfolios">
+            <Button variant="outline">Continue Shopping</Button>
+          </Link>
+          <Link to="/dashboard?tab=orders">
+            <Button>View Orders</Button>
+          </Link>
+        </div>
+        
+        {order.status === 'pending' && pollingCount >= 5 && (
+          <p className="text-sm text-muted-foreground text-center mt-2">
+            Your payment is still being processed. You'll receive a confirmation once completed.
+          </p>
+        )}
       </CardFooter>
     </Card>
   );
