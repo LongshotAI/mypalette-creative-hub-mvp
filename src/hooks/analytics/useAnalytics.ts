@@ -17,6 +17,12 @@ export const useAnalytics = () => {
    */
   const trackArtworkView = async (artworkId: string, portfolioId: string) => {
     try {
+      // Get browser and device information
+      const userAgent = navigator.userAgent;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const isTablet = /iPad|Android(?!.*Mobile)/i.test(userAgent);
+      const deviceType = isTablet ? 'tablet' : (isMobile ? 'mobile' : 'desktop');
+
       // Record basic view information
       const viewData = {
         artwork_id: artworkId,
@@ -26,7 +32,9 @@ export const useAnalytics = () => {
         event_metadata: {
           page: window.location.pathname,
           referrer: document.referrer,
-          timestamp: new Date().toISOString()
+          device: deviceType,
+          timestamp: new Date().toISOString(),
+          user_agent: userAgent
         }
       };
       
@@ -49,6 +57,12 @@ export const useAnalytics = () => {
    */
   const trackPortfolioView = async (portfolioId: string) => {
     try {
+      // Get browser and device information
+      const userAgent = navigator.userAgent;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const isTablet = /iPad|Android(?!.*Mobile)/i.test(userAgent);
+      const deviceType = isTablet ? 'tablet' : (isMobile ? 'mobile' : 'desktop');
+
       // Record basic view information
       const viewData = {
         portfolio_id: portfolioId,
@@ -57,7 +71,9 @@ export const useAnalytics = () => {
         event_metadata: {
           page: window.location.pathname,
           referrer: document.referrer,
-          timestamp: new Date().toISOString()
+          device: deviceType,
+          timestamp: new Date().toISOString(),
+          user_agent: userAgent
         }
       };
       
@@ -81,6 +97,12 @@ export const useAnalytics = () => {
    */
   const trackConversion = async (eventName: string, metadata: any) => {
     try {
+      // Get browser and device information
+      const userAgent = navigator.userAgent;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const isTablet = /iPad|Android(?!.*Mobile)/i.test(userAgent);
+      const deviceType = isTablet ? 'tablet' : (isMobile ? 'mobile' : 'desktop');
+
       const eventData = {
         user_id: user?.id || null,
         event_type: 'conversion',
@@ -88,7 +110,9 @@ export const useAnalytics = () => {
         event_metadata: {
           ...metadata,
           page: window.location.pathname,
-          timestamp: new Date().toISOString()
+          device: deviceType,
+          timestamp: new Date().toISOString(),
+          user_agent: userAgent
         }
       };
       
@@ -113,6 +137,12 @@ export const useAnalytics = () => {
    */
   const trackInteraction = async (elementId: string, eventName: string, metadata: any = {}) => {
     try {
+      // Get browser and device information
+      const userAgent = navigator.userAgent;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const isTablet = /iPad|Android(?!.*Mobile)/i.test(userAgent);
+      const deviceType = isTablet ? 'tablet' : (isMobile ? 'mobile' : 'desktop');
+
       const eventData = {
         user_id: user?.id || null,
         event_type: 'interaction',
@@ -121,7 +151,9 @@ export const useAnalytics = () => {
         event_metadata: {
           ...metadata,
           page: window.location.pathname,
-          timestamp: new Date().toISOString()
+          device: deviceType,
+          timestamp: new Date().toISOString(),
+          user_agent: userAgent
         }
       };
       
@@ -137,11 +169,51 @@ export const useAnalytics = () => {
       console.error('Error tracking interaction event:', error);
     }
   };
+
+  /**
+   * Records when a checkout process is started
+   * @param artworkId - The ID of the artwork being purchased
+   * @param price - The price of the artwork
+   * @param currency - The currency of the price
+   */
+  const trackCheckoutStart = async (artworkId: string, price: number, currency: string) => {
+    try {
+      await trackConversion('checkout_started', {
+        artwork_id: artworkId,
+        price,
+        currency
+      });
+    } catch (error) {
+      console.error('Error tracking checkout start:', error);
+    }
+  };
+
+  /**
+   * Records when a purchase is completed
+   * @param orderId - The ID of the completed order
+   * @param artworkId - The ID of the artwork purchased
+   * @param price - The price paid
+   * @param currency - The currency of the payment
+   */
+  const trackPurchaseComplete = async (orderId: string, artworkId: string, price: number, currency: string) => {
+    try {
+      await trackConversion('purchase_completed', {
+        order_id: orderId,
+        artwork_id: artworkId,
+        price,
+        currency
+      });
+    } catch (error) {
+      console.error('Error tracking purchase completion:', error);
+    }
+  };
   
   return {
     trackArtworkView,
     trackPortfolioView,
     trackConversion,
-    trackInteraction
+    trackInteraction,
+    trackCheckoutStart,
+    trackPurchaseComplete
   };
 };
