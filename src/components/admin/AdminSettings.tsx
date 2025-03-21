@@ -50,125 +50,93 @@ const AdminSettings = () => {
         // Get all public portfolios
         try {
           // First try to get portfolios with profile relationship
-          const { data: portfolioData, error: portfolioError } = await supabase
+          const { data: portfoliosData, error: portfoliosError } = await supabase
             .from('portfolios')
-            .select(`
-              *,
-              profiles:user_id (
-                id,
-                username,
-                full_name,
-                avatar_url
-              )
-            `)
-            .eq('is_public', true)
-            .order('created_at', { ascending: false })
-            .limit(100);
+            .select('*');
             
-          if (portfolioError) {
-            console.error('Error fetching portfolios with profiles:', portfolioError);
-            
-            // Fallback to just fetch portfolios without the relationship
-            const { data: fallbackData } = await supabase
-              .from('portfolios')
-              .select('*')
-              .eq('is_public', true)
-              .order('created_at', { ascending: false })
-              .limit(100);
-              
-            setPublicPortfolios(fallbackData || []);
+          if (portfoliosError) {
+            console.error('Error fetching portfolios:', portfoliosError);
+            toast.error('Failed to load portfolios');
+            setPublicPortfolios([]);
           } else {
-            setPublicPortfolios(portfolioData || []);
+            console.log('Portfolios with profiles:', portfoliosData);
+            
+            // Now fetch user profiles separately and join the data
+            const portfoliosWithOwners = await Promise.all(
+              portfoliosData.map(async (portfolio) => {
+                const { data: profileData } = await supabase
+                  .from('profiles')
+                  .select('full_name, email')
+                  .eq('id', portfolio.user_id)
+                  .single();
+                  
+                return {
+                  ...portfolio,
+                  owner_name: profileData?.full_name || 'Unknown artist',
+                  owner_email: profileData?.email || 'Unknown'
+                };
+              })
+            );
+            
+            setPublicPortfolios(portfoliosWithOwners);
           }
         } catch (portfolioError) {
           console.error('Error fetching public portfolios:', portfolioError);
           setPublicPortfolios([]);
         }
         
-        // Try to get settings from the settings table
+        // Get settings using the RPC function
         try {
-          const { data, error } = await supabase
-            .from('platform_settings')
-            .select('*')
-            .single();
+          const { data: settingsData, error: settingsError } = await supabase
+            .rpc('get_platform_settings');
             
-          if (error) {
-            // Table might not exist, we'll create it
-            if (error.code === '42P01') { // relation does not exist
-              console.log('Platform settings table does not exist, will create it');
-              await createSettingsTable();
-            } else {
-              console.error('Error fetching settings:', error);
-              toast.error('Failed to load platform settings');
-            }
-          } else if (data) {
+          if (settingsError) {
+            console.error('Error getting platform settings via RPC:', settingsError);
+            toast.error('Failed to load platform settings');
+          } else if (settingsData) {
             // If we have settings data, update the state
             setSettings({
-              siteName: data.site_name || 'MyPalette',
-              siteDescription: data.site_description || 'The digital portfolio platform for artists',
-              maintenanceMode: data.maintenance_mode || false,
-              featuredArtistsLimit: data.featured_artists_limit?.toString() || '6',
-              registrationOpen: data.registration_open || true,
-              featuredPortfolios: data.featured_portfolios || []
+              siteName: settingsData.site_name || 'MyPalette',
+              siteDescription: settingsData.site_description || 'The digital portfolio platform for artists',
+              maintenanceMode: settingsData.maintenance_mode || false,
+              featuredArtistsLimit: settingsData.featured_artists_limit?.toString() || '6',
+              registrationOpen: settingsData.registration_open || true,
+              featuredPortfolios: settingsData.featured_portfolios || []
             });
-            console.log('Loaded settings:', data);
+            console.log('Loaded settings via RPC:', settingsData);
           }
         } catch (settingsError) {
-          console.error('Error checking platform settings:', settingsError);
-          // Will fall back to default settings
+          console.error('Error checking platform settings via RPC:', settingsError);
+          
+          // Fallback to direct table query
+          try {
+            const { data, error } = await supabase
+              .from('platform_settings')
+              .select('*')
+              .single();
+              
+            if (error) {
+              console.error('Error fetching settings directly:', error);
+            } else if (data) {
+              setSettings({
+                siteName: data.site_name || 'MyPalette',
+                siteDescription: data.site_description || 'The digital portfolio platform for artists',
+                maintenanceMode: data.maintenance_mode || false,
+                featuredArtistsLimit: data.featured_artists_limit?.toString() || '6',
+                registrationOpen: data.registration_open || true,
+                featuredPortfolios: data.featured_portfolios || []
+              });
+              console.log('Loaded settings via direct query:', data);
+            }
+          } catch (directError) {
+            console.error('Error in direct settings fetch:', directError);
+          }
         }
       } catch (error) {
         console.error('Error in fetchData:', error);
         toast.error('An error occurred while loading settings');
       } finally {
         setInitialLoading(false);
-      }
-    };
-
-    const createSettingsTable = async () => {
-      try {
-        // Create the platform_settings table if it doesn't exist
-        const { error: createTableError } = await supabase.rpc('create_settings_table').maybeSingle();
-        
-        if (createTableError) {
-          // RPC might not exist, so we'll try direct SQL (though this is less ideal)
-          console.error('Error creating settings table via RPC:', createTableError);
-          toast.error('Could not create settings table. Contact your administrator.');
-          return;
-        }
-        
-        // Create default settings
-        await createDefaultSettings();
-      } catch (error) {
-        console.error('Error creating settings table:', error);
-        toast.error('Failed to initialize platform settings');
-      }
-    };
-
-    const createDefaultSettings = async () => {
-      try {
-        // Create default settings
-        const { error } = await supabase
-          .from('platform_settings')
-          .insert([{
-            site_name: settings.siteName,
-            site_description: settings.siteDescription,
-            maintenance_mode: settings.maintenanceMode,
-            featured_artists_limit: parseInt(settings.featuredArtistsLimit),
-            registration_open: settings.registrationOpen,
-            featured_portfolios: []
-          }]);
-          
-        if (error) {
-          console.error('Error creating default settings:', error);
-          toast.error('Failed to create default settings');
-        } else {
-          console.log('Created default settings');
-          toast.success('Default platform settings created');
-        }
-      } catch (error) {
-        console.error('Error in createDefaultSettings:', error);
-        toast.error('Failed to initialize default settings');
       }
     };
 
@@ -179,87 +147,48 @@ const AdminSettings = () => {
     try {
       setLoading(true);
       
-      // Check if settings table exists
-      const { error: checkError } = await supabase
-        .from('platform_settings')
-        .select('*', { count: 'exact', head: true });
-      
-      // If the table doesn't exist, we need to create it
-      if (checkError && checkError.message.includes('does not exist')) {
-        // Create the table via SQL
-        const createTableSQL = `
-          CREATE TABLE IF NOT EXISTS public.platform_settings (
-            id SERIAL PRIMARY KEY,
-            site_name TEXT NOT NULL DEFAULT 'MyPalette',
-            site_description TEXT DEFAULT 'The digital portfolio platform for artists',
-            maintenance_mode BOOLEAN DEFAULT FALSE,
-            featured_artists_limit INTEGER DEFAULT 6,
-            registration_open BOOLEAN DEFAULT TRUE,
-            featured_portfolios UUID[] DEFAULT '{}',
-            created_at TIMESTAMPTZ DEFAULT NOW(),
-            updated_at TIMESTAMPTZ DEFAULT NOW()
-          );
-        `;
-        
-        try {
-          // This requires superuser privileges, which is why we typically use RPC
-          // In a real app, this would be done during initial setup/migration
-          await supabase.rpc('create_settings_table');
-        } catch (createError) {
-          console.error('Failed to create settings table:', createError);
-          toast.error('Unable to create settings table. Contact your administrator.');
-          return;
-        }
-      }
-      
-      // Check if we need to insert or update
-      const { data: existingData, error: fetchError } = await supabase
-        .from('platform_settings')
-        .select('id')
-        .limit(1);
-        
-      if (fetchError && !fetchError.message.includes('does not exist')) {
-        console.error('Error checking existing settings:', fetchError);
-        toast.error('Failed to check existing settings');
-        return;
-      }
-      
       const settingsData = {
-        site_name: settings.siteName,
-        site_description: settings.siteDescription,
-        maintenance_mode: settings.maintenanceMode,
-        featured_artists_limit: parseInt(settings.featuredArtistsLimit),
-        registration_open: settings.registrationOpen,
-        featured_portfolios: settings.featuredPortfolios,
-        updated_at: new Date().toISOString()
+        p_site_name: settings.siteName,
+        p_site_description: settings.siteDescription,
+        p_maintenance_mode: settings.maintenanceMode,
+        p_featured_artists_limit: parseInt(settings.featuredArtistsLimit),
+        p_registration_open: settings.registrationOpen,
+        p_featured_portfolios: settings.featuredPortfolios
       };
       
-      if (!existingData || existingData.length === 0) {
-        // Insert new settings
-        const { error: insertError } = await supabase
-          .from('platform_settings')
-          .insert([settingsData]);
-          
-        if (insertError) {
-          console.error('Error inserting settings:', insertError);
-          toast.error('Failed to save settings');
-          return;
-        }
-      } else {
-        // Update existing settings
-        const { error: updateError } = await supabase
-          .from('platform_settings')
-          .update(settingsData)
-          .eq('id', existingData[0].id);
-          
-        if (updateError) {
-          console.error('Error updating settings:', updateError);
-          toast.error('Failed to update settings');
-          return;
+      // Try to save settings via RPC
+      const { data, error } = await supabase
+        .rpc('update_platform_settings', settingsData);
+        
+      if (error) {
+        console.error('Error saving settings via RPC:', error);
+        
+        // Fallback to direct update
+        try {
+          const { error: directError } = await supabase
+            .from('platform_settings')
+            .update({
+              site_name: settings.siteName,
+              site_description: settings.siteDescription,
+              maintenance_mode: settings.maintenanceMode,
+              featured_artists_limit: parseInt(settings.featuredArtistsLimit),
+              registration_open: settings.registrationOpen,
+              featured_portfolios: settings.featuredPortfolios,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', 1);
+            
+          if (directError) {
+            throw directError;
+          }
+        } catch (directError) {
+          console.error('Error in direct settings update:', directError);
+          throw directError;
         }
       }
       
       toast.success('Platform settings updated successfully');
+      console.log('Settings saved successfully:', data);
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error('Failed to update settings. Please check the console for details.');
@@ -394,7 +323,7 @@ const AdminSettings = () => {
                         <div>
                           <p className="font-medium">{portfolio.name}</p>
                           <p className="text-sm text-muted-foreground">
-                            {portfolio.profiles?.full_name || 'Unknown artist'}
+                            {portfolio.owner_name || 'Unknown artist'}
                           </p>
                         </div>
                         <Button 
@@ -423,7 +352,7 @@ const AdminSettings = () => {
                           .filter(p => !settings.featuredPortfolios.includes(p.id))
                           .map(portfolio => (
                             <SelectItem key={portfolio.id} value={portfolio.id}>
-                              {portfolio.name} ({portfolio.profiles?.full_name || 'Unknown'})
+                              {portfolio.name} ({portfolio.owner_name || 'Unknown'})
                             </SelectItem>
                           ))}
                       </SelectContent>

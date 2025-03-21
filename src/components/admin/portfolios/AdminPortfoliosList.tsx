@@ -45,6 +45,17 @@ interface AdminPortfoliosListProps {
 
 const AdminPortfoliosList = ({ portfolios, loading, onDeletePortfolio }: AdminPortfoliosListProps) => {
   const [portfolioToDelete, setPortfolioToDelete] = useState<PortfolioWithOwner | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async (portfolio: PortfolioWithOwner) => {
+    try {
+      setDeleting(true);
+      await onDeletePortfolio(portfolio.id);
+    } finally {
+      setDeleting(false);
+      setPortfolioToDelete(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -118,43 +129,52 @@ const AdminPortfoliosList = ({ portfolios, loading, onDeletePortfolio }: AdminPo
                     </Link>
                   </Button>
                   
-                  <AlertDialog open={portfolioToDelete?.id === portfolio.id} onOpenChange={(open) => {
-                    if (!open) setPortfolioToDelete(null);
-                  }}>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="text-destructive border-destructive hover:bg-destructive/10"
-                      onClick={() => setPortfolioToDelete(portfolio)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
-                    </Button>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Portfolio</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete the portfolio "{portfolioToDelete?.name}" and all its artworks?
-                          This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          onClick={() => portfolioToDelete && onDeletePortfolio(portfolioToDelete.id)}
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="text-destructive border-destructive hover:bg-destructive/10"
+                    onClick={() => setPortfolioToDelete(portfolio)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
                 </div>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+      
+      <AlertDialog open={portfolioToDelete !== null} onOpenChange={(open) => {
+        if (!open) setPortfolioToDelete(null);
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Portfolio</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the portfolio "{portfolioToDelete?.name}" and all its artworks?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => portfolioToDelete && handleDelete(portfolioToDelete)}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

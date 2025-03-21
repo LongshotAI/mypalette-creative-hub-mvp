@@ -32,82 +32,92 @@ const AdminPortfolios = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const fetchPortfolios = async () => {
-      try {
-        // Get all portfolios with join to profiles for owner information
-        const { data, error } = await supabase
-          .from('portfolios')
-          .select(`
-            *,
-            profiles:user_id (
-              full_name,
-              username,
-              email
-            )
-          `);
-        
-        if (error) {
-          throw error;
-        }
-
-        // Get artwork count for each portfolio
-        const portfoliosWithCounts = await Promise.all(
-          data.map(async (portfolio) => {
-            const { count, error: countError } = await supabase
-              .from('artworks')
-              .select('*', { count: 'exact', head: true })
-              .eq('portfolio_id', portfolio.id);
-            
-            return {
-              ...portfolio,
-              owner_name: portfolio.profiles?.full_name || portfolio.profiles?.username || 'Unknown',
-              owner_email: portfolio.profiles?.email || 'Unknown',
-              artwork_count: count || 0
-            };
-          })
-        );
-        
-        setPortfolios(portfoliosWithCounts);
-      } catch (error) {
-        console.error('Error fetching portfolios:', error);
-        toast.error('Failed to load portfolios');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchPortfolios();
   }, []);
+
+  const fetchPortfolios = async () => {
+    try {
+      setLoading(true);
+      
+      // Get all portfolios 
+      const { data: portfoliosData, error } = await supabase
+        .from('portfolios')
+        .select('*');
+      
+      if (error) {
+        throw error;
+      }
+
+      // Get owner information for each portfolio
+      const portfoliosWithOwners = await Promise.all(
+        portfoliosData.map(async (portfolio) => {
+          // Get owner information
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('id', portfolio.user_id)
+            .single();
+          
+          // Get artwork count
+          const { count } = await supabase
+            .from('artworks')
+            .select('*', { count: 'exact', head: true })
+            .eq('portfolio_id', portfolio.id);
+          
+          return {
+            ...portfolio,
+            owner_name: profileData?.full_name || 'Unknown',
+            owner_email: profileData?.email || 'Unknown',
+            artwork_count: count || 0
+          };
+        })
+      );
+      
+      console.log('Fetched portfolios with owner data:', portfoliosWithOwners);
+      setPortfolios(portfoliosWithOwners);
+    } catch (error) {
+      console.error('Error fetching portfolios:', error);
+      toast.error('Failed to load portfolios');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDeletePortfolio = async (id: string) => {
     try {
       setLoading(true);
       
       // First delete all artworks in the portfolio
+      console.log('Deleting artworks for portfolio:', id);
       const { error: artworksError } = await supabase
         .from('artworks')
         .delete()
         .eq('portfolio_id', id);
       
       if (artworksError) {
+        console.error('Error deleting portfolio artworks:', artworksError);
         throw artworksError;
       }
       
       // Then delete the portfolio
+      console.log('Deleting portfolio:', id);
       const { error } = await supabase
         .from('portfolios')
         .delete()
         .eq('id', id);
       
       if (error) {
+        console.error('Error deleting portfolio:', error);
         throw error;
       }
       
-      setPortfolios(portfolios.filter(p => p.id !== id));
+      console.log('Portfolio deleted successfully');
       toast.success('Portfolio deleted successfully');
-    } catch (error) {
+      setPortfolios(portfolios.filter(p => p.id !== id));
+      
+    } catch (error: any) {
       console.error('Error deleting portfolio:', error);
-      toast.error('Failed to delete portfolio');
+      toast.error('Failed to delete portfolio: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
