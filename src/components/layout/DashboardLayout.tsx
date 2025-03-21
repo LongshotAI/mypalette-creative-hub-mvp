@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -13,6 +14,17 @@ interface DashboardLayoutProps {
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, loading } = useAuth();
   const location = useLocation();
+
+  useEffect(() => {
+    // Log authentication status for debugging
+    if (loading) {
+      console.log('Dashboard: Authentication status loading...');
+    } else if (user) {
+      console.log('Dashboard: User authenticated:', user.email);
+    } else {
+      console.log('Dashboard: User not authenticated, will redirect to login');
+    }
+  }, [user, loading]);
 
   // Show loading state
   if (loading) {
@@ -25,6 +37,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   // Redirect to login if not authenticated
   if (!user) {
+    // Show toast notification for better UX
+    toast.error('Please sign in to access this page');
+    
     return <Navigate to={`/sign-in?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 

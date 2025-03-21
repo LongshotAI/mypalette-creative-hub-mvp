@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Save, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-import { getPublicPortfolios } from '@/lib/supabase';
 import { Separator } from "@/components/ui/separator";
 import {
   Select,
@@ -49,41 +48,100 @@ const AdminSettings = () => {
         setInitialLoading(true);
         
         // Get all public portfolios
-        const portfolios = await getPublicPortfolios(100);
-        setPublicPortfolios(portfolios);
-        
-        // Try to get settings from the settings table
-        const { data, error } = await supabase
-          .from('platform_settings')
-          .select('*')
-          .single();
-          
-        if (error && error.code !== 'PGRST116') { // PGRST116 means no rows returned
-          console.error('Error fetching settings:', error);
-          toast.error('Failed to load platform settings');
-          return;
+        try {
+          // First try to get portfolios with profile relationship
+          const { data: portfolioData, error: portfolioError } = await supabase
+            .from('portfolios')
+            .select(`
+              *,
+              profiles:user_id (
+                id,
+                username,
+                full_name,
+                avatar_url
+              )
+            `)
+            .eq('is_public', true)
+            .order('created_at', { ascending: false })
+            .limit(100);
+            
+          if (portfolioError) {
+            console.error('Error fetching portfolios with profiles:', portfolioError);
+            
+            // Fallback to just fetch portfolios without the relationship
+            const { data: fallbackData } = await supabase
+              .from('portfolios')
+              .select('*')
+              .eq('is_public', true)
+              .order('created_at', { ascending: false })
+              .limit(100);
+              
+            setPublicPortfolios(fallbackData || []);
+          } else {
+            setPublicPortfolios(portfolioData || []);
+          }
+        } catch (portfolioError) {
+          console.error('Error fetching public portfolios:', portfolioError);
+          setPublicPortfolios([]);
         }
         
-        // If we have settings data, update the state
-        if (data) {
-          setSettings({
-            siteName: data.site_name || 'MyPalette',
-            siteDescription: data.site_description || 'The digital portfolio platform for artists',
-            maintenanceMode: data.maintenance_mode || false,
-            featuredArtistsLimit: data.featured_artists_limit?.toString() || '6',
-            registrationOpen: data.registration_open || true,
-            featuredPortfolios: data.featured_portfolios || []
-          });
-          console.log('Loaded settings:', data);
-        } else {
-          // If no settings exist, create default settings
-          await createDefaultSettings();
+        // Try to get settings from the settings table
+        try {
+          const { data, error } = await supabase
+            .from('platform_settings')
+            .select('*')
+            .single();
+            
+          if (error) {
+            // Table might not exist, we'll create it
+            if (error.code === '42P01') { // relation does not exist
+              console.log('Platform settings table does not exist, will create it');
+              await createSettingsTable();
+            } else {
+              console.error('Error fetching settings:', error);
+              toast.error('Failed to load platform settings');
+            }
+          } else if (data) {
+            // If we have settings data, update the state
+            setSettings({
+              siteName: data.site_name || 'MyPalette',
+              siteDescription: data.site_description || 'The digital portfolio platform for artists',
+              maintenanceMode: data.maintenance_mode || false,
+              featuredArtistsLimit: data.featured_artists_limit?.toString() || '6',
+              registrationOpen: data.registration_open || true,
+              featuredPortfolios: data.featured_portfolios || []
+            });
+            console.log('Loaded settings:', data);
+          }
+        } catch (settingsError) {
+          console.error('Error checking platform settings:', settingsError);
+          // Will fall back to default settings
         }
       } catch (error) {
         console.error('Error in fetchData:', error);
         toast.error('An error occurred while loading settings');
       } finally {
         setInitialLoading(false);
+      }
+    };
+
+    const createSettingsTable = async () => {
+      try {
+        // Create the platform_settings table if it doesn't exist
+        const { error: createTableError } = await supabase.rpc('create_settings_table').maybeSingle();
+        
+        if (createTableError) {
+          // RPC might not exist, so we'll try direct SQL (though this is less ideal)
+          console.error('Error creating settings table via RPC:', createTableError);
+          toast.error('Could not create settings table. Contact your administrator.');
+          return;
+        }
+        
+        // Create default settings
+        await createDefaultSettings();
+      } catch (error) {
+        console.error('Error creating settings table:', error);
+        toast.error('Failed to initialize platform settings');
       }
     };
 
@@ -106,9 +164,11 @@ const AdminSettings = () => {
           toast.error('Failed to create default settings');
         } else {
           console.log('Created default settings');
+          toast.success('Default platform settings created');
         }
       } catch (error) {
         console.error('Error in createDefaultSettings:', error);
+        toast.error('Failed to initialize default settings');
       }
     };
 
@@ -119,74 +179,87 @@ const AdminSettings = () => {
     try {
       setLoading(true);
       
-      // First check if settings table exists
+      // Check if settings table exists
       const { error: checkError } = await supabase
         .from('platform_settings')
         .select('*', { count: 'exact', head: true });
       
       // If the table doesn't exist, we need to create it
       if (checkError && checkError.message.includes('does not exist')) {
-        await supabase.rpc('create_settings_table');
+        // Create the table via SQL
+        const createTableSQL = `
+          CREATE TABLE IF NOT EXISTS public.platform_settings (
+            id SERIAL PRIMARY KEY,
+            site_name TEXT NOT NULL DEFAULT 'MyPalette',
+            site_description TEXT DEFAULT 'The digital portfolio platform for artists',
+            maintenance_mode BOOLEAN DEFAULT FALSE,
+            featured_artists_limit INTEGER DEFAULT 6,
+            registration_open BOOLEAN DEFAULT TRUE,
+            featured_portfolios UUID[] DEFAULT '{}',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+          );
+        `;
         
-        // Insert initial settings
+        try {
+          // This requires superuser privileges, which is why we typically use RPC
+          // In a real app, this would be done during initial setup/migration
+          await supabase.rpc('create_settings_table');
+        } catch (createError) {
+          console.error('Failed to create settings table:', createError);
+          toast.error('Unable to create settings table. Contact your administrator.');
+          return;
+        }
+      }
+      
+      // Check if we need to insert or update
+      const { data: existingData, error: fetchError } = await supabase
+        .from('platform_settings')
+        .select('id')
+        .limit(1);
+        
+      if (fetchError && !fetchError.message.includes('does not exist')) {
+        console.error('Error checking existing settings:', fetchError);
+        toast.error('Failed to check existing settings');
+        return;
+      }
+      
+      const settingsData = {
+        site_name: settings.siteName,
+        site_description: settings.siteDescription,
+        maintenance_mode: settings.maintenanceMode,
+        featured_artists_limit: parseInt(settings.featuredArtistsLimit),
+        registration_open: settings.registrationOpen,
+        featured_portfolios: settings.featuredPortfolios,
+        updated_at: new Date().toISOString()
+      };
+      
+      if (!existingData || existingData.length === 0) {
+        // Insert new settings
         const { error: insertError } = await supabase
           .from('platform_settings')
-          .insert([{
-            site_name: settings.siteName,
-            site_description: settings.siteDescription,
-            maintenance_mode: settings.maintenanceMode,
-            featured_artists_limit: parseInt(settings.featuredArtistsLimit),
-            registration_open: settings.registrationOpen,
-            featured_portfolios: settings.featuredPortfolios
-          }]);
+          .insert([settingsData]);
           
         if (insertError) {
-          throw insertError;
+          console.error('Error inserting settings:', insertError);
+          toast.error('Failed to save settings');
+          return;
         }
       } else {
-        // Table exists, update settings
+        // Update existing settings
         const { error: updateError } = await supabase
           .from('platform_settings')
-          .update({
-            site_name: settings.siteName,
-            site_description: settings.siteDescription,
-            maintenance_mode: settings.maintenanceMode,
-            featured_artists_limit: parseInt(settings.featuredArtistsLimit),
-            registration_open: settings.registrationOpen,
-            featured_portfolios: settings.featuredPortfolios,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', 1);
+          .update(settingsData)
+          .eq('id', existingData[0].id);
           
         if (updateError) {
-          // If update fails (maybe no row with id=1), try to insert
-          const { error: insertError } = await supabase
-            .from('platform_settings')
-            .insert([{
-              site_name: settings.siteName,
-              site_description: settings.siteDescription,
-              maintenance_mode: settings.maintenanceMode,
-              featured_artists_limit: parseInt(settings.featuredArtistsLimit),
-              registration_open: settings.registrationOpen,
-              featured_portfolios: settings.featuredPortfolios
-            }]);
-            
-          if (insertError) {
-            throw insertError;
-          }
+          console.error('Error updating settings:', updateError);
+          toast.error('Failed to update settings');
+          return;
         }
       }
       
       toast.success('Platform settings updated successfully');
-      
-      // Refetch settings to confirm they were saved
-      const { data } = await supabase
-        .from('platform_settings')
-        .select('*')
-        .single();
-        
-      console.log('Settings after save:', data);
-      
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error('Failed to update settings. Please check the console for details.');

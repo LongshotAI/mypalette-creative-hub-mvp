@@ -101,27 +101,47 @@ export const getUserPortfolios = async (userId: string) => {
 
 // Get public portfolios with creator information
 export const getPublicPortfolios = async (limit = 10) => {
-  const { data, error } = await supabase
-    .from('portfolios')
-    .select(`
-      *,
-      profiles:user_id (
-        id,
-        username,
-        full_name,
-        avatar_url
-      )
-    `)
-    .eq('is_public', true)
-    .order('created_at', { ascending: false })
-    .limit(limit);
-  
-  if (error) {
-    console.error('Error fetching public portfolios:', error);
+  try {
+    // Try first with the relationship
+    const { data, error } = await supabase
+      .from('portfolios')
+      .select(`
+        *,
+        profiles:user_id (
+          id,
+          username,
+          full_name,
+          avatar_url
+        )
+      `)
+      .eq('is_public', true)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    if (error) {
+      console.error('Error fetching public portfolios with profiles:', error);
+      
+      // Fallback to just fetch portfolios without the relationship
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('portfolios')
+        .select('*')
+        .eq('is_public', true)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      
+      if (fallbackError) {
+        console.error('Error fetching public portfolios:', fallbackError);
+        return [];
+      }
+      
+      return fallbackData || [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error in getPublicPortfolios:', error);
     return [];
   }
-  
-  return data;
 };
 
 // Helper for fetching portfolio artworks
@@ -531,4 +551,41 @@ export const getFeaturedPortfolios = async (limit = 6) => {
   }
   
   return data;
+};
+
+// Create platform settings table
+export const createPlatformSettingsTable = async () => {
+  // This would normally be done in a migration script, not in the client
+  // For demonstration purposes only
+  try {
+    // Check if the table exists first
+    const { error: checkError } = await supabase
+      .from('platform_settings')
+      .select('*', { count: 'exact', head: true });
+    
+    if (checkError && checkError.code === '42P01') {
+      console.log('Platform settings table does not exist, attempting to create it');
+      
+      // Unfortunately, CREATE TABLE requires elevated permissions not available in the client
+      // This would normally be an RPC function or a server-side API call
+      
+      // For now, we'll create a minimal version of the settings in the client side
+      // as a workaround
+      const defaultSettings = {
+        site_name: 'MyPalette',
+        site_description: 'The digital portfolio platform for artists',
+        maintenance_mode: false,
+        featured_artists_limit: 6,
+        registration_open: true,
+        featured_portfolios: []
+      };
+      
+      return defaultSettings;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error checking/creating platform settings table:', error);
+    return null;
+  }
 };

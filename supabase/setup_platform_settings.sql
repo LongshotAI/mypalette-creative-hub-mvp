@@ -1,55 +1,128 @@
 
--- Create platform settings table if it doesn't exist
-CREATE TABLE IF NOT EXISTS public.platform_settings (
-  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  site_name text DEFAULT 'MyPalette',
-  site_description text DEFAULT 'The digital portfolio platform for artists',
-  maintenance_mode boolean DEFAULT false,
-  featured_artists_limit integer DEFAULT 6,
-  registration_open boolean DEFAULT true,
-  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
-  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now())
-);
-
--- Create function to create settings table via RPC
-CREATE OR REPLACE FUNCTION create_settings_table()
-RETURNS void
+-- Create a function to create the platform_settings table if it doesn't exist
+CREATE OR REPLACE FUNCTION public.create_settings_table()
+RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  CREATE TABLE IF NOT EXISTS public.platform_settings (
-    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    site_name text DEFAULT 'MyPalette',
-    site_description text DEFAULT 'The digital portfolio platform for artists',
-    maintenance_mode boolean DEFAULT false,
-    featured_artists_limit integer DEFAULT 6,
-    registration_open boolean DEFAULT true,
-    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
-    updated_at timestamp with time zone DEFAULT timezone('utc'::text, now())
-  );
+  -- Check if the table exists
+  IF NOT EXISTS (
+    SELECT FROM information_schema.tables
+    WHERE table_schema = 'public'
+    AND table_name = 'platform_settings'
+  ) THEN
+    -- Create the table
+    EXECUTE '
+      CREATE TABLE public.platform_settings (
+        id SERIAL PRIMARY KEY,
+        site_name TEXT NOT NULL DEFAULT ''MyPalette'',
+        site_description TEXT DEFAULT ''The digital portfolio platform for artists'',
+        maintenance_mode BOOLEAN DEFAULT FALSE,
+        featured_artists_limit INTEGER DEFAULT 6,
+        registration_open BOOLEAN DEFAULT TRUE,
+        featured_portfolios UUID[] DEFAULT ''{}''::UUID[],
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      
+      -- Insert initial default settings
+      INSERT INTO public.platform_settings (
+        site_name, 
+        site_description, 
+        maintenance_mode, 
+        featured_artists_limit, 
+        registration_open
+      ) VALUES (
+        ''MyPalette'', 
+        ''The digital portfolio platform for artists'', 
+        FALSE, 
+        6, 
+        TRUE
+      );
+    ';
+  END IF;
 END;
 $$;
 
--- Insert default settings if table is empty
-INSERT INTO public.platform_settings (site_name, site_description, maintenance_mode, featured_artists_limit, registration_open)
-SELECT 'MyPalette', 'The digital portfolio platform for artists', false, 6, true
-WHERE NOT EXISTS (SELECT 1 FROM public.platform_settings);
+-- Create a function to update platform settings
+CREATE OR REPLACE FUNCTION public.update_platform_settings(
+  p_site_name TEXT,
+  p_site_description TEXT,
+  p_maintenance_mode BOOLEAN,
+  p_featured_artists_limit INTEGER,
+  p_registration_open BOOLEAN,
+  p_featured_portfolios UUID[]
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_settings JSONB;
+BEGIN
+  -- Make sure settings table exists
+  PERFORM create_settings_table();
+  
+  -- Check if admin
+  IF NOT (SELECT is_admin()) THEN
+    RAISE EXCEPTION 'Only administrators can update platform settings';
+  END IF;
+  
+  -- Update or insert settings
+  IF EXISTS (SELECT 1 FROM public.platform_settings LIMIT 1) THEN
+    UPDATE public.platform_settings
+    SET 
+      site_name = p_site_name,
+      site_description = p_site_description,
+      maintenance_mode = p_maintenance_mode,
+      featured_artists_limit = p_featured_artists_limit,
+      registration_open = p_registration_open,
+      featured_portfolios = p_featured_portfolios,
+      updated_at = NOW()
+    WHERE id = (SELECT id FROM public.platform_settings ORDER BY id LIMIT 1)
+    RETURNING to_jsonb(platform_settings.*) INTO v_settings;
+  ELSE
+    INSERT INTO public.platform_settings (
+      site_name,
+      site_description,
+      maintenance_mode,
+      featured_artists_limit,
+      registration_open,
+      featured_portfolios
+    ) VALUES (
+      p_site_name,
+      p_site_description,
+      p_maintenance_mode,
+      p_featured_artists_limit,
+      p_registration_open,
+      p_featured_portfolios
+    )
+    RETURNING to_jsonb(platform_settings.*) INTO v_settings;
+  END IF;
+  
+  RETURN v_settings;
+END;
+$$;
 
--- Create RLS policy
-ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
-
--- Allow admins to manage settings
-CREATE POLICY admin_manage_settings ON public.platform_settings 
-  FOR ALL 
-  TO authenticated 
-  USING (exists (
-    SELECT 1 FROM public.profiles 
-    WHERE profiles.id = auth.uid() AND profiles.admin_type IS NOT NULL
-  ));
-
--- Allow anyone to read settings
-CREATE POLICY read_settings ON public.platform_settings 
-  FOR SELECT 
-  TO anon, authenticated 
-  USING (true);
+-- Create a function to get platform settings
+CREATE OR REPLACE FUNCTION public.get_platform_settings()
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $$
+DECLARE
+  v_settings JSONB;
+BEGIN
+  -- Make sure settings table exists
+  PERFORM create_settings_table();
+  
+  -- Get settings
+  SELECT to_jsonb(platform_settings.*) INTO v_settings
+  FROM public.platform_settings
+  ORDER BY id
+  LIMIT 1;
+  
+  RETURN v_settings;
+END;
+$$;

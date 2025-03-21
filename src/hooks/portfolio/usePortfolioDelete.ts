@@ -15,6 +15,23 @@ export const usePortfolioDelete = (onSuccess: () => void) => {
     
     try {
       console.log('Deleting portfolio:', portfolioId);
+      
+      // First, delete all artworks in this portfolio
+      const { error: artworkError } = await supabase
+        .from('artworks')
+        .delete()
+        .eq('portfolio_id', portfolioId);
+      
+      if (artworkError) {
+        console.error('Error deleting portfolio artworks:', artworkError);
+        
+        // If this is just a foreign key constraint, we can continue
+        if (!artworkError.message.includes('foreign key constraint')) {
+          throw artworkError;
+        }
+      }
+      
+      // Now delete the portfolio itself
       const { error } = await supabase
         .from('portfolios')
         .delete()
@@ -27,7 +44,11 @@ export const usePortfolioDelete = (onSuccess: () => void) => {
       
       console.log('Portfolio deleted successfully');
       toast.success('Portfolio deleted successfully');
-      onSuccess();
+      
+      // Call the success callback
+      if (onSuccess && typeof onSuccess === 'function') {
+        onSuccess();
+      }
     } catch (error: any) {
       console.error('Error deleting portfolio:', error);
       toast.error('Failed to delete portfolio: ' + (error.message || 'Unknown error'));
