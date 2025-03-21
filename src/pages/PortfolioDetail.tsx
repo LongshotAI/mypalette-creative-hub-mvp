@@ -20,19 +20,24 @@ const PortfolioDetail = () => {
   const [portfolio, setPortfolio] = useState<PortfolioWithArtist | null>(null);
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPortfolioData = async () => {
       if (!portfolioId) return;
       
       setLoading(true);
+      setError(null);
       
       try {
+        console.log('Fetching portfolio data for ID:', portfolioId);
+        
         // Fetch portfolio with user info
         const portfolioResponse = await portfolioApi.getPortfolioWithUser(portfolioId);
         
         if (portfolioResponse.status !== 'success' || !portfolioResponse.data) {
-          console.error('Portfolio not found');
+          console.error('Portfolio not found or error:', portfolioResponse.error);
+          setError('Portfolio not found or is not accessible');
           toast.error('Portfolio not found or is not accessible');
           setLoading(false);
           return;
@@ -47,9 +52,11 @@ const PortfolioDetail = () => {
           setArtworks(artworkResponse.data || []);
         } else {
           console.error('Error fetching artworks:', artworkResponse.error);
+          toast.error('Could not load artwork for this portfolio');
         }
       } catch (error) {
         console.error('Error fetching portfolio:', error);
+        setError('Failed to load portfolio details');
         toast.error('Error loading portfolio details');
       } finally {
         setLoading(false);
@@ -72,7 +79,7 @@ const PortfolioDetail = () => {
     );
   }
 
-  if (!portfolio) {
+  if (error || !portfolio) {
     return (
       <DefaultLayout>
         <div className="container mx-auto py-12 min-h-screen flex flex-col items-center justify-center">
@@ -129,7 +136,7 @@ const PortfolioDetail = () => {
                 className="flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 <User className="h-4 w-4 mr-1" />
-                {portfolio.profiles.full_name || portfolio.profiles.username || 'Artist'}
+                {portfolio.profiles?.full_name || portfolio.profiles?.username || 'Artist'}
               </Link>
             </div>
           </div>

@@ -146,32 +146,49 @@ export const getPublicPortfolios = async (limit = 10): Promise<ApiResponse<Portf
  */
 export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResponse<any>> => {
   try {
-    const { data, error } = await supabase
+    // First get the portfolio
+    const { data: portfolio, error: portfolioError } = await supabase
       .from('portfolios')
-      .select(`
-        *,
-        profiles:user_id (
-          id,
-          username,
-          full_name,
-          avatar_url,
-          bio,
-          banner_image_url,
-          instagram_url,
-          twitter_url,
-          website_url,
-          contact_email,
-          location,
-          artist_statement,
-          current_exhibition
-        )
-      `)
+      .select('*')
       .eq('id', portfolioId)
       .single();
     
-    if (error) throw error;
+    if (portfolioError) throw portfolioError;
     
-    return createSuccessResponse(data);
+    if (!portfolio) {
+      return createErrorResponse('Portfolio not found', new Error('Portfolio not found'));
+    }
+    
+    // Then fetch the profile information
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select(`
+        id,
+        username,
+        full_name,
+        avatar_url,
+        bio,
+        banner_image_url,
+        instagram_url,
+        twitter_url,
+        website_url,
+        contact_email,
+        location,
+        artist_statement,
+        current_exhibition
+      `)
+      .eq('id', portfolio.user_id)
+      .single();
+    
+    if (profileError) throw profileError;
+    
+    // Combine the data
+    const portfolioWithUser = {
+      ...portfolio,
+      profiles: profile
+    };
+    
+    return createSuccessResponse(portfolioWithUser);
   } catch (error) {
     return createErrorResponse('Failed to fetch portfolio with user', error);
   }
