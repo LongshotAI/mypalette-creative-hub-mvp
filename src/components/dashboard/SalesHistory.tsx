@@ -23,11 +23,42 @@ const SalesHistory = () => {
   const fetchSales = async (status: OrderStatus) => {
     setLoading(true);
     setSelectedStatus(status);
-    // We need to fetch seller orders here, but using loadOrderHistory for now
-    // This would need a proper implementation in the useArtworkPurchase hook
-    const result = await loadOrderHistory(status);
-    setOrders(result || []);
-    setLoading(false);
+    
+    try {
+      // We need to fetch seller orders here, but using loadOrderHistory for now
+      // This would need a proper implementation in the useArtworkPurchase hook
+      const result = await loadOrderHistory(status);
+      
+      // Ensure the result matches the Order type
+      const typedOrders: Order[] = result.map((order: any) => ({
+        id: order.id,
+        buyer_id: order.buyer_id,
+        artwork_id: order.artwork_id,
+        amount: order.amount,
+        currency: order.currency,
+        status: order.status,
+        created_at: order.created_at,
+        stripe_session_id: order.stripe_session_id,
+        artworks: order.artworks ? {
+          id: order.artworks.id,
+          title: order.artworks.title,
+          image_url: order.artworks.image_url,
+          portfolio_id: order.artworks.portfolio_id,
+          portfolios: order.artworks.portfolios ? {
+            id: order.artworks.portfolios.id,
+            name: order.artworks.portfolios.name,
+            user_id: order.artworks.portfolios.user_id,
+            profiles: order.artworks.portfolios.profiles
+          } : undefined
+        } : undefined
+      }));
+      
+      setOrders(typedOrders);
+    } catch (error) {
+      console.error('Error fetching sales:', error);
+    } finally {
+      setLoading(false);
+    }
   };
   
   const handleTabChange = (value: string) => {
@@ -96,7 +127,7 @@ const SalesHistory = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {orders.map((order: any) => (
+            {orders.map((order) => (
               <div key={order.id} className="border rounded-lg p-4">
                 <div className="flex flex-col md:flex-row justify-between gap-4">
                   <div className="flex items-center gap-4">
@@ -110,7 +141,7 @@ const SalesHistory = () => {
                     <div>
                       <h3 className="font-medium">{order.artworks?.title}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Purchased by {order.profiles?.full_name || order.profiles?.username || 'Anonymous'}
+                        Purchased by {order.artworks?.portfolios?.profiles?.full_name || order.artworks?.portfolios?.profiles?.username || 'Anonymous'}
                       </p>
                       <p className="text-sm mt-1">
                         {new Intl.NumberFormat('en-US', {

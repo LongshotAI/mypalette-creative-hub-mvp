@@ -88,11 +88,13 @@ export const useArtworkPurchase = () => {
         .from('orders')
         .select(`
           id,
+          buyer_id,
           artwork_id,
           amount,
           currency,
           status,
           created_at,
+          stripe_session_id,
           artworks:artwork_id (
             id,
             title,
@@ -100,6 +102,7 @@ export const useArtworkPurchase = () => {
             portfolios:portfolio_id (
               id,
               name,
+              user_id,
               profiles:user_id (
                 username,
                 full_name
