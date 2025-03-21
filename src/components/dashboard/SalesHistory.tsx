@@ -1,189 +1,169 @@
-import React, { useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+
+import React, { useEffect, useState } from 'react';
 import { useArtworkPurchase } from '@/hooks/purchase';
-import { Loader2, PackageOpen } from 'lucide-react';
-import { Order, Artwork, ProfileData, PortfolioData } from '@/types/portfolio';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { OrderStatus, Order } from '@/types/portfolio';
+import { useAuth } from '@/contexts/AuthContext';
 
 const SalesHistory = () => {
-  const { 
-    loadOrderHistory, 
-    orders, 
-    loadingOrders, 
-    selectedStatus, 
-    setSelectedStatus 
-  } = useArtworkPurchase();
-
+  const { user } = useAuth();
+  const { loadOrderHistory } = useArtworkPurchase();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedStatus, setSelectedStatus] = useState<OrderStatus>('all');
+  
   useEffect(() => {
-    const fetchOrders = async () => {
-      await loadOrderHistory(selectedStatus);
-    };
+    fetchSales(selectedStatus);
+  }, [user]);
+  
+  const fetchSales = async (status: OrderStatus) => {
+    setLoading(true);
+    setSelectedStatus(status);
     
-    fetchOrders();
-  }, [selectedStatus]);
-
-  const formatOrders = (): Order[] => {
     try {
-      return orders.map(order => {
-        // Extract portfolio data properly, handling different data structures
-        let portfolioData: PortfolioData | null = null;
-        
-        if (order.artworks) {
-          if (order.artworks.portfolios) {
-            // Handle both array and single object cases
-            if (Array.isArray(order.artworks.portfolios)) {
-              portfolioData = order.artworks.portfolios[0];
-            } else {
-              portfolioData = order.artworks.portfolios;
-            }
-          } else if (order.artworks.portfolio) {
-            portfolioData = order.artworks.portfolio;
-          }
-        }
-
-        return {
-          id: order.id,
-          buyer_id: order.buyer_id,
-          artwork_id: order.artwork_id,
-          amount: order.amount,
-          currency: order.currency,
-          status: order.status,
-          created_at: order.created_at,
-          stripe_session_id: order.stripe_session_id,
-          artworks: order.artworks ? {
-            id: order.artworks.id,
-            title: order.artworks.title,
-            description: order.artworks.description || "",
-            image_url: order.artworks.image_url,
-            price: order.artworks.price || null,
-            currency: order.artworks.currency || "USD",
-            for_sale: order.artworks.for_sale || false,
-            portfolio_id: order.artworks.portfolio_id,
-            created_at: order.artworks.created_at || order.created_at,
-            // Store portfolio data in both properties for compatibility
-            portfolio: portfolioData,
-            portfolios: portfolioData
+      // We need to fetch seller orders here, but using loadOrderHistory for now
+      // This would need a proper implementation in the useArtworkPurchase hook
+      const result = await loadOrderHistory(status);
+      
+      // Ensure the result matches the Order type
+      const typedOrders: Order[] = result.map((order: any) => ({
+        id: order.id,
+        buyer_id: order.buyer_id,
+        artwork_id: order.artwork_id,
+        amount: order.amount,
+        currency: order.currency,
+        status: order.status,
+        created_at: order.created_at,
+        stripe_session_id: order.stripe_session_id,
+        artworks: order.artworks ? {
+          id: order.artworks.id,
+          title: order.artworks.title,
+          image_url: order.artworks.image_url,
+          portfolio_id: order.artworks.portfolio_id,
+          portfolios: order.artworks.portfolios ? {
+            id: order.artworks.portfolios.id,
+            name: order.artworks.portfolios.name,
+            user_id: order.artworks.portfolios.user_id,
+            profiles: order.artworks.portfolios.profiles
           } : undefined
-        };
-      });
+        } : undefined
+      }));
+      
+      setOrders(typedOrders);
     } catch (error) {
-      console.error('Error formatting orders:', error);
-      return [];
+      console.error('Error fetching sales:', error);
+    } finally {
+      setLoading(false);
     }
   };
-
-  const formattedOrders = formatOrders();
+  
+  const handleTabChange = (value: string) => {
+    fetchSales(value as OrderStatus);
+  };
+  
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return (
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+            <CheckCircle className="mr-1 h-4 w-4" />
+            Completed
+          </Badge>
+        );
+      case 'pending':
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
+            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            Pending
+          </Badge>
+        );
+      case 'failed':
+        return (
+          <Badge className="bg-red-100 text-red-800 hover:bg-red-200">
+            <XCircle className="mr-1 h-4 w-4" />
+            Failed
+          </Badge>
+        );
+      default:
+        return (
+          <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-200">
+            <AlertTriangle className="mr-1 h-4 w-4" />
+            Unknown
+          </Badge>
+        );
+    }
+  };
   
   return (
-    <Card className="col-span-1 lg:col-span-2">
+    <Card>
       <CardHeader>
         <CardTitle>Sales History</CardTitle>
-        <CardDescription>
-          Track your artwork sales and transaction history
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
         <Tabs 
           defaultValue="all" 
-          value={selectedStatus} 
-          onValueChange={(value) => setSelectedStatus(value as any)}
+          value={selectedStatus}
+          onValueChange={handleTabChange}
+          className="w-full"
         >
-          <TabsList className="mb-4">
-            <TabsTrigger value="all">All Sales</TabsTrigger>
+          <TabsList className="grid grid-cols-4 w-full max-w-md">
+            <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="completed">Completed</TabsTrigger>
             <TabsTrigger value="pending">Pending</TabsTrigger>
             <TabsTrigger value="failed">Failed</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value={selectedStatus}>
-            {loadingOrders ? (
-              <div className="flex justify-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : formattedOrders.length === 0 ? (
-              <div className="text-center py-10">
-                <PackageOpen className="mx-auto h-12 w-12 text-muted-foreground/80" />
-                <h3 className="mt-4 text-lg font-medium">No sales found</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  When your artworks sell, they'll appear here.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Artwork</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {formattedOrders.map((order) => (
-                      <TableRow key={order.id}>
-                        <TableCell>
-                          {format(new Date(order.created_at), 'MMM d, yyyy')}
-                        </TableCell>
-                        <TableCell>
-                          {order.artworks?.title || "Untitled Artwork"}
-                        </TableCell>
-                        <TableCell>
-                          {order.currency} {order.amount}
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={order.status} />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </TabsContent>
         </Tabs>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="py-10 flex justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-muted-foreground">You haven't sold any artwork yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {orders.map((order) => (
+              <div key={order.id} className="border rounded-lg p-4">
+                <div className="flex flex-col md:flex-row justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded">
+                      <img
+                        src={order.artworks?.image_url || '/placeholder.svg'}
+                        alt={order.artworks?.title}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{order.artworks?.title}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Purchased by {order.artworks?.portfolios?.profiles?.full_name || order.artworks?.portfolios?.profiles?.username || 'Anonymous'}
+                      </p>
+                      <p className="text-sm mt-1">
+                        {new Intl.NumberFormat('en-US', {
+                          style: 'currency',
+                          currency: order.currency,
+                        }).format(order.amount)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col justify-between items-end">
+                    {getStatusColor(order.status)}
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
-  );
-};
-
-const StatusBadge = ({ status }: { status: string }) => {
-  let variant = "";
-  
-  switch (status) {
-    case "completed":
-      variant = "bg-green-500";
-      break;
-    case "pending":
-      variant = "bg-yellow-500";
-      break;
-    case "failed":
-      variant = "bg-red-500";
-      break;
-    default:
-      variant = "bg-gray-500";
-  }
-  
-  return (
-    <Badge className={variant}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </Badge>
   );
 };
 

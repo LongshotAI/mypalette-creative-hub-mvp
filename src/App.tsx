@@ -36,8 +36,7 @@ function App() {
           <Route path="/open-calls" element={<OpenCalls />} />
           <Route path="/education" element={<Education />} />
           <Route path="/payment/confirmation" element={<ProtectedRoute><PaymentConfirmation /></ProtectedRoute>} />
-          <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Admin /></ProtectedRoute>} />
-          <Route path="/admin/*" element={<ProtectedRoute adminOnly={true}><Admin /></ProtectedRoute>} />
+          <Route path="/admin/*" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AnalyticsProvider>
