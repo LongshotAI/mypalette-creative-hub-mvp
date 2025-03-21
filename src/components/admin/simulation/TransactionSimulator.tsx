@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Artwork, Portfolio } from '@/types/portfolio';
+import { Artwork, ProfileData, PortfolioData } from '@/types/portfolio';
 
 interface TransactionFormData {
   buyer_id: string;
@@ -62,7 +62,10 @@ const TransactionSimulator = () => {
       try {
         const { data, error } = await supabase
           .from('artworks')
-          .select('id, title, description, price, currency, for_sale, portfolio_id, image_url, created_at, portfolios:portfolio_id(id, name, user_id, profiles(id, full_name, username))');
+          .select(`
+            id, title, description, price, currency, for_sale, portfolio_id, image_url, created_at,
+            portfolios:portfolio_id(id, name, user_id, profiles(id, full_name, username))
+          `);
 
         if (error) {
           console.error('Error fetching artworks:', error);
@@ -77,9 +80,27 @@ const TransactionSimulator = () => {
         console.log('Fetched artwork data:', data);
 
         const formattedArtworks: Artwork[] = (data || []).map(item => {
-          const portfolioData = item.portfolios && item.portfolios.length > 0 
-            ? item.portfolios[0] 
-            : null;
+          let portfolioData: PortfolioData | null = null;
+          
+          if (item.portfolios) {
+            portfolioData = {
+              id: item.portfolios.id,
+              name: item.portfolios.name,
+              user_id: item.portfolios.user_id
+            };
+            
+            if (item.portfolios.profiles) {
+              const profileInfo = Array.isArray(item.portfolios.profiles) 
+                ? item.portfolios.profiles[0] 
+                : item.portfolios.profiles;
+                
+              portfolioData.profiles = {
+                id: profileInfo?.id,
+                full_name: profileInfo?.full_name,
+                username: profileInfo?.username
+              };
+            }
+          }
             
           return {
             id: item.id,
@@ -199,16 +220,23 @@ const TransactionSimulator = () => {
               <p className="text-xs">No artworks available</p>
             </div>
           ) : (
-            artworks.map((artwork) => (
-              <SelectItem key={artwork.id} value={artwork.id}>
-                {artwork.title} - {artwork.currency} {artwork.price} 
-                {artwork.portfolios && (
+            artworks.map((artwork) => {
+              const portfolioInfo = artwork.portfolios;
+              const artistName = portfolioInfo?.profiles 
+                ? (typeof portfolioInfo.profiles === 'object' && 'full_name' in portfolioInfo.profiles 
+                   ? portfolioInfo.profiles.full_name || portfolioInfo.profiles.username 
+                   : 'Unknown Artist')
+                : 'Unknown Artist';
+                
+              return (
+                <SelectItem key={artwork.id} value={artwork.id}>
+                  {artwork.title} - {artwork.currency} {artwork.price} 
                   <span className="ml-2 text-muted-foreground">
-                    by {artwork.portfolios.profiles?.full_name || artwork.portfolios.profiles?.username || 'Unknown Artist'}
+                    by {artistName}
                   </span>
-                )}
-              </SelectItem>
-            ))
+                </SelectItem>
+              );
+            })
           )}
         </SelectContent>
       </Select>

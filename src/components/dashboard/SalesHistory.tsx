@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useArtworkPurchase } from '@/hooks/purchase';
 import { Loader2, PackageOpen } from 'lucide-react';
-import { Order, Artwork } from '@/types/portfolio';
+import { Order, Artwork, ProfileData, PortfolioData } from '@/types/portfolio';
 
 const SalesHistory = () => {
   const { 
@@ -41,15 +41,15 @@ const SalesHistory = () => {
   const formatOrders = (): Order[] => {
     try {
       return orders.map(order => {
-        // Extract portfolio data properly, handling both array and single object cases
-        let portfolioData = null;
+        // Extract portfolio data properly, handling different data structures
+        let portfolioData: PortfolioData | null = null;
+        
         if (order.artworks) {
           if (order.artworks.portfolios) {
-            // If portfolios is an array, take the first item
+            // Handle both array and single object cases
             if (Array.isArray(order.artworks.portfolios)) {
               portfolioData = order.artworks.portfolios[0];
             } else {
-              // Otherwise use it directly
               portfolioData = order.artworks.portfolios;
             }
           } else if (order.artworks.portfolio) {

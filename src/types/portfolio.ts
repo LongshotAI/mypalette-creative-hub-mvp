@@ -1,3 +1,4 @@
+
 export interface Portfolio {
   id: string;
   name: string;
@@ -17,6 +18,19 @@ export interface PortfolioFormData {
   is_public: boolean;
 }
 
+export interface ProfileData {
+  id?: string;
+  username?: string;
+  full_name?: string;
+}
+
+export interface PortfolioData {
+  id?: string;
+  name?: string;
+  user_id?: string;
+  profiles?: ProfileData | ProfileData[];
+}
+
 export interface Artwork {
   id: string;
   title: string;
@@ -29,26 +43,8 @@ export interface Artwork {
   created_at: string;
   quantity?: number | null;
   sold_out?: boolean;
-  portfolios?: {
-    id?: string;
-    name?: string;
-    user_id?: string;
-    profiles?: {
-      id?: string;
-      username?: string;
-      full_name?: string;
-    }
-  } | null;
-  portfolio?: {
-    id?: string;
-    name?: string;
-    user_id?: string;
-    profiles?: {
-      id?: string;
-      username?: string;
-      full_name?: string;
-    }
-  } | null;
+  portfolios?: PortfolioData | null;
+  portfolio?: PortfolioData | null;
 }
 
 export interface ArtworkFormData {
@@ -107,16 +103,7 @@ export interface Order {
   created_at: string;
   seller_notified?: boolean;
   artworks?: Artwork & {
-    portfolios?: {
-      id: string;
-      name: string;
-      user_id: string;
-      profiles?: {
-        id: string;
-        username: string;
-        full_name?: string;
-      }
-    }
+    portfolios?: PortfolioData;
   };
 }
 
