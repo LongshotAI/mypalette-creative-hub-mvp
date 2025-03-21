@@ -39,16 +39,26 @@ const SalesHistory = () => {
         status: order.status,
         created_at: order.created_at,
         stripe_session_id: order.stripe_session_id,
+        seller_notified: order.seller_notified,
         artworks: order.artworks ? {
           id: order.artworks.id,
           title: order.artworks.title,
+          description: order.artworks.description || "",
           image_url: order.artworks.image_url,
+          price: order.artworks.price || 0,
+          currency: order.artworks.currency || "USD",
+          for_sale: order.artworks.for_sale || false,
           portfolio_id: order.artworks.portfolio_id,
+          created_at: order.artworks.created_at || order.created_at,
           portfolios: order.artworks.portfolios ? {
             id: order.artworks.portfolios.id,
             name: order.artworks.portfolios.name,
             user_id: order.artworks.portfolios.user_id,
-            profiles: order.artworks.portfolios.profiles
+            profiles: order.artworks.portfolios.profiles ? {
+              id: order.artworks.portfolios.profiles.id,
+              username: order.artworks.portfolios.profiles.username,
+              full_name: order.artworks.portfolios.profiles.full_name
+            } : undefined
           } : undefined
         } : undefined
       }));
