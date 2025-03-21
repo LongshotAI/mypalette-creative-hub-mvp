@@ -15,8 +15,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = f
 
   // Debug logging
   useEffect(() => {
-    console.log('ProtectedRoute: user =', user?.email, 'loading =', loading);
-  }, [user, loading]);
+    console.log('ProtectedRoute: user =', user);
+    console.log('Role check:', user?.app_metadata?.role);
+    console.log('Admin only?', adminOnly);
+    console.log('Loading state:', loading);
+  }, [user, loading, adminOnly]);
 
   if (loading) {
     return (
@@ -33,9 +36,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = f
     return <Navigate to="/sign-in" state={{ from: location }} replace />;
   }
 
-  // Check if admin access is required and user is not an admin
-  if (adminOnly && (!user.app_metadata?.role || user.app_metadata.role !== 'admin')) {
-    return <Navigate to="/dashboard" replace />;
+  // Enhanced admin check with more detailed logging
+  if (adminOnly) {
+    console.log('Checking admin access with metadata:', user.app_metadata);
+    const isAdmin = user.app_metadata?.role === 'admin';
+    console.log('Is admin?', isAdmin);
+    
+    if (!isAdmin) {
+      console.log('Access denied: Redirecting non-admin user to dashboard');
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return <>{children}</>;
