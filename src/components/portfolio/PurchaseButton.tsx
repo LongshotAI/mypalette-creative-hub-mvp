@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Artwork } from '@/types/portfolio';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useAnalytics } from '@/hooks/analytics';
 
 interface PurchaseButtonProps {
   artwork: Artwork;
@@ -24,6 +25,7 @@ interface PurchaseButtonProps {
 const PurchaseButton: React.FC<PurchaseButtonProps> = ({ artwork, className }) => {
   const { user } = useAuth();
   const { purchaseArtwork, isProcessing } = useArtworkPurchase();
+  const { trackCheckoutStart } = useAnalytics();
   const navigate = useNavigate();
   
   // Format price with currency
@@ -44,6 +46,11 @@ const PurchaseButton: React.FC<PurchaseButtonProps> = ({ artwork, className }) =
     if (artwork.portfolios && artwork.portfolios.user_id === user.id) {
       toast.error("You cannot purchase your own artwork");
       return;
+    }
+    
+    // Track checkout initiation in analytics
+    if (artwork.id && artwork.portfolio_id) {
+      trackCheckoutStart(artwork.id, artwork.price || 0, artwork.currency || 'USD');
     }
     
     await purchaseArtwork(artwork.id);
