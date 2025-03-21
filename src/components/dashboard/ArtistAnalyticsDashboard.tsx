@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -39,7 +38,6 @@ interface ArtworkAnalytics {
   views: number;
 }
 
-// Artist Analytics Dashboard component
 const ArtistAnalyticsDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -56,11 +54,9 @@ const ArtistAnalyticsDashboard = () => {
     viewsByDate: [],
     deviceBreakdown: []
   });
-  
-  // Colors for charts
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
-  
-  // Fetch user's portfolios
+
   useEffect(() => {
     const fetchPortfolios = async () => {
       if (!user) return;
@@ -89,8 +85,7 @@ const ArtistAnalyticsDashboard = () => {
     
     fetchPortfolios();
   }, [user, toast]);
-  
-  // Fetch analytics data for the selected portfolio and timeframe
+
   useEffect(() => {
     const fetchAnalyticsData = async () => {
       if (!selectedPortfolio || !user) return;
@@ -98,11 +93,9 @@ const ArtistAnalyticsDashboard = () => {
       setLoading(true);
       
       try {
-        // Calculate the date range based on the selected timeframe
         const now = new Date();
         const startDate = subDays(now, timeframe === '7days' ? 7 : timeframe === '30days' ? 30 : 90);
         
-        // Fetch actual portfolio view analytics
         const { data: viewData, error: viewError } = await supabase
           .from('analytics_events')
           .select('*')
@@ -113,7 +106,6 @@ const ArtistAnalyticsDashboard = () => {
           
         if (viewError) throw viewError;
         
-        // Fetch artwork views for this portfolio
         const { data: artworkData, error: artworkError } = await supabase
           .from('analytics_events')
           .select('artwork_id, event_metadata, created_at')
@@ -124,13 +116,10 @@ const ArtistAnalyticsDashboard = () => {
           
         if (artworkError) throw artworkError;
         
-        // Fetch artwork titles
         let artworkAnalytics: ArtworkAnalytics[] = [];
         if (artworkData && artworkData.length > 0) {
-          // Get unique artwork IDs
           const artworkIds = [...new Set(artworkData.map(item => item.artwork_id))];
           
-          // Fetch artwork details
           const { data: artworks, error: artworksError } = await supabase
             .from('artworks')
             .select('id, title')
@@ -138,7 +127,6 @@ const ArtistAnalyticsDashboard = () => {
             
           if (artworksError) throw artworksError;
           
-          // Count views per artwork
           const artworkViewCounts = artworkIds.map(id => {
             const count = artworkData.filter(item => item.artwork_id === id).length;
             const artwork = artworks?.find(a => a.id === id);
@@ -152,7 +140,6 @@ const ArtistAnalyticsDashboard = () => {
           artworkAnalytics = artworkViewCounts.sort((a, b) => b.views - a.views);
         }
         
-        // Generate daily view counts
         const dailyViews: { [key: string]: number } = {};
         const allViewEvents = [...(viewData || []), ...(artworkData || [])];
         
@@ -166,18 +153,14 @@ const ArtistAnalyticsDashboard = () => {
           count
         })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
-        // Create mock device breakdown data (in a real implementation, we would extract this from event_metadata)
         const deviceBreakdown = [
           { name: 'Desktop', value: Math.floor(Math.random() * 60) + 40 },
           { name: 'Mobile', value: Math.floor(Math.random() * 40) + 20 },
           { name: 'Tablet', value: Math.floor(Math.random() * 20) + 5 }
         ];
         
-        // Calculate total views
         const totalViews = viewData ? viewData.length : 0;
         
-        // For the purpose of this MVP, we'll use mock data for sales metrics
-        // In a real implementation, these would be calculated from orders table
         const mockSales = timeframe === '7days' ? 
           Math.floor(Math.random() * 3) + 1 : 
           timeframe === '30days' ? 
@@ -214,31 +197,28 @@ const ArtistAnalyticsDashboard = () => {
     
     fetchAnalyticsData();
   }, [selectedPortfolio, timeframe, user, toast]);
-  
+
   const handlePortfolioChange = (portfolioId: string) => {
     setSelectedPortfolio(portfolioId);
   };
-  
+
   const handleTimeframeChange = (value: string) => {
     setTimeframe(value as '7days' | '30days' | '90days');
   };
-  
-  // Format date for display in charts
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return format(date, 'MMM d');
   };
-  
-  // Format currency for sales display
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
     }).format(amount);
   };
-  
+
   const refreshData = () => {
-    // Re-fetch data by triggering the useEffect dependency
     setSelectedPortfolio(prev => {
       if (prev) {
         setTimeout(() => setSelectedPortfolio(prev), 100);
@@ -252,7 +232,7 @@ const ArtistAnalyticsDashboard = () => {
       description: "Your analytics data is being updated."
     });
   };
-  
+
   if (!user) {
     return (
       <Card>
@@ -265,9 +245,9 @@ const ArtistAnalyticsDashboard = () => {
       </Card>
     );
   }
-  
+
   const currentPortfolio = portfolios.find(p => p.id === selectedPortfolio);
-  
+
   return (
     <Card>
       <CardHeader>
@@ -359,7 +339,6 @@ const ArtistAnalyticsDashboard = () => {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Key Metrics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="pb-2">
@@ -410,7 +389,6 @@ const ArtistAnalyticsDashboard = () => {
               </Card>
             </div>
             
-            {/* Views Over Time Chart */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Views Over Time</CardTitle>
@@ -474,7 +452,6 @@ const ArtistAnalyticsDashboard = () => {
               </CardContent>
             </Card>
             
-            {/* Device Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <Card className="lg:col-span-1">
                 <CardHeader>
@@ -483,7 +460,14 @@ const ArtistAnalyticsDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="h-[300px]">
-                    <ChartContainer className="h-[300px]">
+                    <ChartContainer 
+                      className="h-[300px]"
+                      config={{
+                        mobile: { color: '#0088FE' },
+                        desktop: { color: '#00C49F' },
+                        tablet: { color: '#FFBB28' }
+                      }}
+                    >
                       <ResponsiveContainer width="100%" height="100%">
                         <RePieChart>
                           <Pie
@@ -508,7 +492,6 @@ const ArtistAnalyticsDashboard = () => {
                 </CardContent>
               </Card>
               
-              {/* Top Performing Artworks */}
               <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle className="text-lg">Top Performing Artworks</CardTitle>
