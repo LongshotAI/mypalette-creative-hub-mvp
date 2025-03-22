@@ -27,8 +27,10 @@ const Admin = () => {
         }
         
         const adminResponse = await isAdmin();
-        // Fix for the TypeScript error - check if data is true
-        if (!adminResponse.data) {
+        console.log('Admin check response:', adminResponse);
+        
+        // Check if admin status is true
+        if (adminResponse.status === 'error' || !adminResponse.data) {
           console.error('User does not have admin privileges:', user.email);
           toast.error('You do not have permission to access the admin dashboard');
           return;

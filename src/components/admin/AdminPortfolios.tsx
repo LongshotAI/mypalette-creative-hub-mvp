@@ -155,6 +155,7 @@ const AdminPortfolios = () => {
           portfolios={filteredPortfolios} 
           loading={loading} 
           onDeletePortfolio={handleDeletePortfolio} 
+          onRefetch={fetchPortfolios}
         />
       </CardContent>
     </Card>
