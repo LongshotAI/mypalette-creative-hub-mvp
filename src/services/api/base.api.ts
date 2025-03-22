@@ -15,7 +15,7 @@ export interface ApiError {
  * Standard success response format
  */
 export interface ApiResponse<T> {
-  data: T | null;
+  data: T;
   error: ApiError | null;
   status: 'success' | 'error';
 }
@@ -38,7 +38,7 @@ export function createErrorResponse<T>(message: string, details?: any): ApiRespo
   console.error(`API Error: ${message}`, details);
   
   return {
-    data: null,
+    data: null as unknown as T,
     error: {
       message,
       details,

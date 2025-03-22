@@ -67,9 +67,6 @@ const Admin = () => {
       checkAdminStatus();
     }
   }, [user]);
-
-  // Don't show anything until we've verified admin status
-  // AdminLayout already handles the loading state for the initial auth check
   
   return (
     <AdminLayout>

@@ -9,8 +9,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from '@/lib/supabase';
-import { Search } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from "@/components/ui/button";
 import AdminPortfoliosList from './portfolios/AdminPortfoliosList';
 
 interface PortfolioWithOwner {
@@ -30,6 +31,7 @@ const AdminPortfolios = () => {
   const [portfolios, setPortfolios] = useState<PortfolioWithOwner[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     fetchPortfolios();
@@ -38,6 +40,7 @@ const AdminPortfolios = () => {
   const fetchPortfolios = async () => {
     try {
       setLoading(true);
+      console.log('Fetching all portfolios for admin...');
       
       // Get all portfolios 
       const { data: portfoliosData, error } = await supabase
@@ -45,29 +48,40 @@ const AdminPortfolios = () => {
         .select('*');
       
       if (error) {
+        console.error('Error fetching portfolios:', error);
         throw error;
       }
+
+      console.log(`Found ${portfoliosData?.length || 0} portfolios`);
 
       // Get owner information for each portfolio
       const portfoliosWithOwners = await Promise.all(
         portfoliosData.map(async (portfolio) => {
           // Get owner information
-          const { data: profileData } = await supabase
+          const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('full_name, email')
             .eq('id', portfolio.user_id)
             .single();
           
+          if (profileError) {
+            console.warn(`Couldn't fetch owner for portfolio ${portfolio.id}:`, profileError);
+          }
+          
           // Get artwork count
-          const { count } = await supabase
+          const { count, error: countError } = await supabase
             .from('artworks')
             .select('*', { count: 'exact', head: true })
             .eq('portfolio_id', portfolio.id);
           
+          if (countError) {
+            console.warn(`Couldn't fetch artwork count for portfolio ${portfolio.id}:`, countError);
+          }
+          
           return {
             ...portfolio,
-            owner_name: profileData?.full_name || 'Unknown',
-            owner_email: profileData?.email || 'Unknown',
+            owner_name: profileData?.full_name || 'Unknown User',
+            owner_email: profileData?.email || 'No email',
             artwork_count: count || 0
           };
         })
@@ -83,7 +97,7 @@ const AdminPortfolios = () => {
     }
   };
 
-  const handleDeletePortfolio = async (id: string) => {
+  const handleDeletePortfolio = async (id: string): Promise<void> => {
     try {
       setLoading(true);
       
@@ -123,27 +137,47 @@ const AdminPortfolios = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchPortfolios();
+    setIsRefreshing(false);
+  };
+
   const filteredPortfolios = portfolios.filter(portfolio => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      portfolio.name.toLowerCase().includes(searchLower) ||
+      portfolio.name?.toLowerCase().includes(searchLower) ||
       (portfolio.description && portfolio.description.toLowerCase().includes(searchLower)) ||
-      portfolio.owner_name.toLowerCase().includes(searchLower)
+      portfolio.owner_name?.toLowerCase().includes(searchLower) ||
+      portfolio.owner_email?.toLowerCase().includes(searchLower)
     );
   });
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Manage Portfolios</CardTitle>
-        <CardDescription>
-          View and manage all portfolios on the platform
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Manage Portfolios</CardTitle>
+            <CardDescription>
+              View and manage all portfolios on the platform
+            </CardDescription>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh} 
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
         <div className="relative mt-4">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search portfolios..."
+            placeholder="Search portfolios by name, description or owner..."
             className="pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
