@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { 
-  createOpenCallSubmission, 
-  updateOpenCallSubmission,
-  getOpenCallSubmission
+  submitOpenCallApplication, 
+  updateSubmission,
+  getSubmission
 } from '@/services/api/openCall.api';
 import { 
   Card, 
@@ -68,7 +69,8 @@ const ApplicationForm = ({
 
   const fetchExistingDraft = async () => {
     try {
-      const response = await getOpenCallSubmission(openCallId, user?.id || '');
+      // Updated to use getSubmission with the correct parameters
+      const response = await getSubmission(openCallId);
       if (response.status === 'success' && response.data) {
         const draft = response.data;
         setDraftId(draft.id);
@@ -106,17 +108,20 @@ const ApplicationForm = ({
       
       const formData = getFormData();
       
-      // Save as draft
+      // Save as draft - update function names
       const response = user && draftId
-        ? await updateOpenCallSubmission(draftId, formData, 'draft')
-        : await createOpenCallSubmission(openCallId, user.id, formData, 'draft');
+        ? await updateSubmission(draftId, { submission_data: formData, status: 'draft' })
+        : await submitOpenCallApplication(openCallId, user.id, formData, 'draft');
       
       if (response.status === 'success') {
-        setDraftId(response.data as string);
+        // Handle the response correctly based on the API structure
+        if (draftId === null) {
+          setDraftId(response.data as string);
+        }
         setLastSaved(new Date());
         toast.success('Draft saved successfully');
         if (typeof onSubmit === 'function') {
-          onSubmit('draft', response.data as string);
+          onSubmit('draft', draftId || response.data as string);
         }
       } else {
         throw new Error(response.error?.message || 'Failed to save draft');
@@ -142,15 +147,15 @@ const ApplicationForm = ({
       
       const formData = getFormData();
       
-      // Submit application
+      // Submit application - update function names
       const response = draftId
-        ? await updateOpenCallSubmission(draftId, formData, 'submitted')
-        : await createOpenCallSubmission(openCallId, user.id, formData, 'submitted');
+        ? await updateSubmission(draftId, { submission_data: formData, status: 'submitted' })
+        : await submitOpenCallApplication(openCallId, user.id, formData, 'submitted');
       
       if (response.status === 'success') {
         toast.success('Application submitted successfully');
         if (typeof onSubmit === 'function') {
-          onSubmit('submitted', response.data as string);
+          onSubmit('submitted', draftId || response.data as string);
         }
       } else {
         throw new Error(response.error?.message || 'Failed to submit application');
