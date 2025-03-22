@@ -1,12 +1,9 @@
-
 import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { 
-  Input, 
-  Textarea, 
-  Label 
-} from "@/components/ui";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
