@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { toast } from 'sonner';
 
 interface PortfolioWithOwner {
   id: string;
@@ -59,6 +60,10 @@ const AdminPortfoliosList = ({
     try {
       setDeleting(true);
       await onDeletePortfolio(portfolio.id);
+      toast.success(`Portfolio "${portfolio.name}" has been deleted`);
+    } catch (error) {
+      console.error("Error deleting portfolio:", error);
+      toast.error("Failed to delete portfolio");
     } finally {
       setDeleting(false);
       setPortfolioToDelete(null);

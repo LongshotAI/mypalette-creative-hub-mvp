@@ -1,4 +1,3 @@
-
 export interface Portfolio {
   id: string;
   name: string;
@@ -8,6 +7,7 @@ export interface Portfolio {
   is_public: boolean;
   user_id: string;
   created_at: string;
+  updated_at: string;  // Add this line to include the updated_at property
 }
 
 export interface PortfolioFormData {

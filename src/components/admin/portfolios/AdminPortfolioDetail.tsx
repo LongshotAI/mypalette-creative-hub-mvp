@@ -183,6 +183,10 @@ const AdminPortfolioDetail = ({ portfolioId, onBack }: AdminPortfolioDetailProps
     try {
       await handleDeleteArtwork(artworkToDelete.id, portfolio.id);
       setArtworkToDelete(null);
+      toast.success('Artwork deleted successfully');
+    } catch (error) {
+      console.error('Error deleting artwork:', error);
+      toast.error('Failed to delete artwork');
     } finally {
       setDeleting(false);
     }
@@ -312,7 +316,7 @@ const AdminPortfolioDetail = ({ portfolioId, onBack }: AdminPortfolioDetailProps
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">Last Updated</TableCell>
-                  <TableCell>{getReadableDate(portfolio.updated_at)}</TableCell>
+                  <TableCell>{portfolio.updated_at ? getReadableDate(portfolio.updated_at) : getReadableDate(portfolio.created_at)}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
