@@ -41,9 +41,10 @@ interface AdminPortfoliosListProps {
   portfolios: PortfolioWithOwner[];
   loading: boolean;
   onDeletePortfolio: (id: string) => Promise<void>;
+  onRefetch?: () => Promise<void>;
 }
 
-const AdminPortfoliosList = ({ portfolios, loading, onDeletePortfolio }: AdminPortfoliosListProps) => {
+const AdminPortfoliosList = ({ portfolios, loading, onDeletePortfolio, onRefetch }: AdminPortfoliosListProps) => {
   const [portfolioToDelete, setPortfolioToDelete] = useState<PortfolioWithOwner | null>(null);
   const [deleting, setDeleting] = useState(false);
 
