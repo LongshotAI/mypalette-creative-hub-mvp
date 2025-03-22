@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { ApiResponse, createSuccessResponse, createErrorResponse } from './base.api';
 
@@ -163,7 +164,7 @@ export const getAdminStats = async (): Promise<ApiResponse<{
   artworkCount: number;
   educationCount: number;
   openCallCount: number;
-}>> {
+}>> => {
   try {
     const { count: userCount } = await supabase
       .from('profiles')

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Eye, Trash2 } from 'lucide-react';
+import { Loader2, Eye, Trash2, ExternalLink } from 'lucide-react';
 import { getReadableDate, truncateText } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { 
@@ -42,9 +42,16 @@ interface AdminPortfoliosListProps {
   loading: boolean;
   onDeletePortfolio: (id: string) => Promise<void>;
   onRefetch?: () => Promise<void>;
+  onViewPortfolio: (id: string) => void;
 }
 
-const AdminPortfoliosList = ({ portfolios, loading, onDeletePortfolio, onRefetch }: AdminPortfoliosListProps) => {
+const AdminPortfoliosList = ({ 
+  portfolios, 
+  loading, 
+  onDeletePortfolio, 
+  onRefetch,
+  onViewPortfolio 
+}: AdminPortfoliosListProps) => {
   const [portfolioToDelete, setPortfolioToDelete] = useState<PortfolioWithOwner | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -122,10 +129,19 @@ const AdminPortfoliosList = ({ portfolios, loading, onDeletePortfolio, onRefetch
                   <Button 
                     variant="outline" 
                     size="sm" 
+                    onClick={() => onViewPortfolio(portfolio.id)}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    Manage
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
                     asChild
                   >
                     <Link to={`/portfolio/${portfolio.id}`} target="_blank">
-                      <Eye className="h-4 w-4 mr-1" />
+                      <ExternalLink className="h-4 w-4 mr-1" />
                       View
                     </Link>
                   </Button>

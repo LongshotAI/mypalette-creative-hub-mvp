@@ -13,6 +13,7 @@ import { Search, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import AdminPortfoliosList from './portfolios/AdminPortfoliosList';
+import AdminPortfolioDetail from './portfolios/AdminPortfolioDetail';
 
 interface PortfolioWithOwner {
   id: string;
@@ -32,6 +33,7 @@ const AdminPortfolios = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPortfolios();
@@ -60,7 +62,7 @@ const AdminPortfolios = () => {
           // Get owner information
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('full_name, email')
+            .select('full_name, contact_email')
             .eq('id', portfolio.user_id)
             .single();
           
@@ -81,7 +83,7 @@ const AdminPortfolios = () => {
           return {
             ...portfolio,
             owner_name: profileData?.full_name || 'Unknown User',
-            owner_email: profileData?.email || 'No email',
+            owner_email: profileData?.contact_email || 'No email',
             artwork_count: count || 0
           };
         })
@@ -153,6 +155,15 @@ const AdminPortfolios = () => {
     );
   });
 
+  if (selectedPortfolioId) {
+    return (
+      <AdminPortfolioDetail 
+        portfolioId={selectedPortfolioId} 
+        onBack={() => setSelectedPortfolioId(null)} 
+      />
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -190,6 +201,7 @@ const AdminPortfolios = () => {
           loading={loading} 
           onDeletePortfolio={handleDeletePortfolio} 
           onRefetch={fetchPortfolios}
+          onViewPortfolio={(id) => setSelectedPortfolioId(id)}
         />
       </CardContent>
     </Card>
