@@ -7,11 +7,11 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getAdminEducationResources } from "@/services/api/education.api";
 import AdminEducationList from "./education/AdminEducationList";
+import EducationResourceFilter from "./education/EducationResourceFilter";
 
 interface EducationResource {
   id: string;
@@ -44,7 +44,6 @@ const AdminEducation = () => {
       if (response.status === 'success') {
         setResources(response.data || []);
       } else {
-        // Instead of directly accessing response.message, handle the error more safely
         throw new Error(response.error?.message || 'Failed to load resources');
       }
     } catch (error) {
@@ -86,16 +85,10 @@ const AdminEducation = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-4">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="published">Published</TabsTrigger>
-              <TabsTrigger value="drafts">Drafts</TabsTrigger>
-              <TabsTrigger value="articles">Articles</TabsTrigger>
-              <TabsTrigger value="videos">Videos</TabsTrigger>
-              <TabsTrigger value="guides">Guides</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <EducationResourceFilter 
+            activeTab={activeTab} 
+            onTabChange={setActiveTab} 
+          />
 
           {loading && resources.length === 0 ? (
             <div className="flex justify-center py-8">

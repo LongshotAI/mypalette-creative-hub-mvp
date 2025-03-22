@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -69,7 +68,6 @@ const ApplicationForm = ({
 
   const fetchExistingDraft = async () => {
     try {
-      // Updated to use getSubmission with the correct parameters
       const response = await getSubmission(openCallId);
       if (response.status === 'success' && response.data) {
         const draft = response.data;
@@ -108,22 +106,21 @@ const ApplicationForm = ({
       
       const formData = getFormData();
       
-      // Save as draft - update function names
       const response = user && draftId
         ? await updateSubmission(draftId, { submission_data: formData, status: 'draft' })
         : await submitOpenCallApplication(openCallId, user.id, formData, 'draft');
       
       if (response.status === 'success') {
-        // Handle the response correctly based on the API structure
-        if (draftId === null) {
-          // Cast to string only if we know it's a string ID coming back from the API
-          // The API returns a string ID for new submissions
-          setDraftId(response.data as string);
+        if (draftId === null && response.data) {
+          if (typeof response.data === 'string') {
+            setDraftId(response.data);
+          }
         }
         setLastSaved(new Date());
         toast.success('Draft saved successfully');
         if (typeof onSubmit === 'function') {
-          onSubmit('draft', draftId || (typeof response.data === 'string' ? response.data : undefined));
+          const submissionId = draftId || (typeof response.data === 'string' ? response.data : undefined);
+          onSubmit('draft', submissionId);
         }
       } else {
         throw new Error(response.error?.message || 'Failed to save draft');
@@ -149,7 +146,6 @@ const ApplicationForm = ({
       
       const formData = getFormData();
       
-      // Submit application - update function names
       const response = draftId
         ? await updateSubmission(draftId, { submission_data: formData, status: 'submitted' })
         : await submitOpenCallApplication(openCallId, user.id, formData, 'submitted');
@@ -157,7 +153,8 @@ const ApplicationForm = ({
       if (response.status === 'success') {
         toast.success('Application submitted successfully');
         if (typeof onSubmit === 'function') {
-          onSubmit('submitted', draftId || (typeof response.data === 'string' ? response.data : undefined));
+          const submissionId = draftId || (typeof response.data === 'string' ? response.data : undefined);
+          onSubmit('submitted', submissionId);
         }
       } else {
         throw new Error(response.error?.message || 'Failed to submit application');
@@ -175,7 +172,6 @@ const ApplicationForm = ({
       const reader = new FileReader()
 
       reader.onload = () => {
-        // Convert the file to base64
         const binaryStr = reader.result as string;
         const newFile = {
           name: file.name,
