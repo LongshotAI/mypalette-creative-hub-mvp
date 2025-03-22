@@ -1,37 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
-} from "@/components/ui/table";
-import { 
-  Card, CardContent, CardDescription, 
-  CardHeader, CardTitle 
-} from "@/components/ui/card";
-import { 
-  Dialog, DialogContent, DialogDescription, 
-  DialogHeader, DialogTitle, DialogTrigger 
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import { 
-  Select, SelectContent, SelectItem, 
-  SelectTrigger, SelectValue 
-} from "@/components/ui/select";
-import { 
-  Popover, PopoverContent, PopoverTrigger 
-} from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { format } from 'date-fns';
 import { supabase } from '@/lib/supabase';
-import { Loader2, Plus, Calendar as CalendarIcon, Pencil, Trash2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import { getReadableDate } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import AdminOpenCallDetail from './opencalls/AdminOpenCallDetail';
 
 interface OpenCall {
   id: string;
@@ -55,6 +25,8 @@ const AdminOpenCalls = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedOpenCall, setSelectedOpenCall] = useState<OpenCall | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
   
   const [callForm, setCallForm] = useState({
     id: '',
@@ -140,6 +112,11 @@ const AdminOpenCalls = () => {
     setDate(new Date(call.deadline));
     setIsEdit(true);
     setDialogOpen(true);
+  };
+
+  const handleViewSubmissions = (call: OpenCall) => {
+    setSelectedOpenCall(call);
+    setShowDetail(true);
   };
 
   const handleDeleteCall = async (id: string) => {
@@ -267,6 +244,19 @@ const AdminOpenCalls = () => {
     );
   });
 
+  if (showDetail && selectedOpenCall) {
+    return (
+      <AdminOpenCallDetail 
+        openCall={selectedOpenCall} 
+        onBack={() => {
+          setShowDetail(false);
+          setSelectedOpenCall(null);
+          fetchOpenCalls(); // Refresh data when returning to list
+        }} 
+      />
+    );
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -328,9 +318,24 @@ const AdminOpenCalls = () => {
                         <TableCell>{call.category}</TableCell>
                         <TableCell>{getStatusBadge(call.status)}</TableCell>
                         <TableCell>{getReadableDate(call.deadline)}</TableCell>
-                        <TableCell>{call.submission_count || 0}</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="ghost" 
+                            className="px-2 py-1 h-auto"
+                            onClick={() => handleViewSubmissions(call)}
+                          >
+                            {call.submission_count || 0}
+                          </Button>
+                        </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleViewSubmissions(call)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                             <Button 
                               variant="ghost" 
                               size="sm" 

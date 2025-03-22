@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Book, Video, FileText, Star, ExternalLink } from 'lucide-react';
+import { Book, Video, FileText, Star, ExternalLink, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,6 +15,7 @@ interface ResourceCardProps {
   imageUrl: string;
   author: string;
   externalUrl?: string;
+  fileUrl?: string;
   isFavorite?: boolean;
   onFavoriteToggle?: (id: string, isFavorite: boolean) => void;
 }
@@ -27,6 +28,7 @@ const ResourceCard = ({
   imageUrl,
   author,
   externalUrl,
+  fileUrl,
   isFavorite = false,
   onFavoriteToggle
 }: ResourceCardProps) => {
@@ -114,8 +116,23 @@ const ResourceCard = ({
           </Button>
         )}
         
-        {externalUrl && (
-          <div className="absolute bottom-3 right-3">
+        <div className="absolute bottom-3 right-3 flex gap-2">
+          {fileUrl && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="bg-white/90 backdrop-blur-sm rounded-full h-8 w-8 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(fileUrl, '_blank', 'noopener,noreferrer');
+              }}
+            >
+              <Download className="h-4 w-4" />
+              <span className="sr-only">Download resource</span>
+            </Button>
+          )}
+          
+          {externalUrl && (
             <Button
               variant="ghost"
               size="sm"
@@ -128,12 +145,14 @@ const ResourceCard = ({
               <ExternalLink className="h-4 w-4" />
               <span className="sr-only">Open external link</span>
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       
       <div className="p-4">
-        <div className="text-xs font-medium text-muted-foreground mb-1">{category}</div>
+        <div className="flex justify-between items-start">
+          <div className="text-xs font-medium text-muted-foreground mb-1">{category}</div>
+        </div>
         <h3 className="font-medium text-base line-clamp-2 mb-2 group-hover:text-primary transition-colors">{title}</h3>
         <p className="text-sm text-muted-foreground">By {author}</p>
       </div>

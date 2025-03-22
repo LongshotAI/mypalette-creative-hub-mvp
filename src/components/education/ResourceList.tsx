@@ -51,6 +51,7 @@ const ResourceList = ({
           imageUrl={resource.imageUrl || resource.image_url || ''}
           author={resource.author}
           externalUrl={resource.external_url}
+          fileUrl={resource.file_url}
           isFavorite={favoriteIds.includes(resource.id)}
           onFavoriteToggle={onFavoriteToggle}
         />

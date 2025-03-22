@@ -1,93 +1,129 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DefaultLayout from '@/components/layout/DefaultLayout';
-import { useAuth } from '@/contexts/AuthContext';
-import { useEducationResources } from '@/hooks/useEducationResources';
-import { toggleFavoriteResource } from '@/lib/supabase';
-import { toast } from 'sonner';
-
-// Importing our new components
 import EducationHeader from '@/components/education/EducationHeader';
 import SearchBar from '@/components/education/SearchBar';
+import ResourceList from '@/components/education/ResourceList';
 import ResourceTypeFilter from '@/components/education/ResourceTypeFilter';
 import TopicFilter from '@/components/education/TopicFilter';
-import ResourceList from '@/components/education/ResourceList';
+import { getEducationResources, toggleFavoriteResource, getUserFavorites, getFavoriteResources } from '@/services/api/education.api';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const Education = () => {
   const { user } = useAuth();
+  const [resources, setResources] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('all');
-  const [activeTopic, setActiveTopic] = useState('all');
-  
-  // Use our custom hook to get resources
-  const { resources, loading, favoriteIds, setFavoriteIds } = useEducationResources(
-    searchQuery,
-    activeTab,
-    activeTopic === 'favorites' ? 'all' : activeTopic
-  );
-  
-  // Handle favorite toggle
+  const [resourceType, setResourceType] = useState('all');
+  const [category, setCategory] = useState('all');
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchResources();
+  }, [searchQuery, resourceType, category, user?.id]);
+
+  const fetchResources = async () => {
+    try {
+      setLoading(true);
+      
+      // Special case for favorites filter
+      if (category === 'favorites' && user) {
+        const response = await getFavoriteResources(user.id);
+        if (response.status === 'success') {
+          setResources(response.data || []);
+        } else {
+          throw new Error(response.message);
+        }
+      } else {
+        // Regular resources fetch with filters
+        const response = await getEducationResources(searchQuery, resourceType, category === 'favorites' ? 'all' : category);
+        if (response.status === 'success') {
+          setResources(response.data || []);
+        } else {
+          throw new Error(response.message);
+        }
+      }
+      
+      // Fetch user favorites if logged in
+      if (user) {
+        const favResponse = await getUserFavorites(user.id);
+        if (favResponse.status === 'success') {
+          setFavoriteIds(favResponse.data || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching resources:', error);
+      toast.error('Failed to load resources');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const handleTypeChange = (type: string) => {
+    setResourceType(type);
+  };
+
+  const handleCategoryChange = (newCategory: string) => {
+    setCategory(newCategory);
+  };
+
   const handleFavoriteToggle = async (resourceId: string, isFavorite: boolean) => {
     if (!user) {
       toast.error('Please sign in to save favorites');
       return;
     }
     
-    // Optimistically update UI
-    if (isFavorite) {
-      setFavoriteIds(prev => prev.filter(id => id !== resourceId));
-    } else {
-      setFavoriteIds(prev => [...prev, resourceId]);
-    }
-    
-    // Call API to update favorite status
-    const success = await toggleFavoriteResource(resourceId, user.id, isFavorite);
-    
-    if (!success) {
-      // If API call fails, revert UI change
-      toast.error('Failed to update favorites');
-      if (isFavorite) {
-        setFavoriteIds(prev => [...prev, resourceId]);
+    try {
+      const response = await toggleFavoriteResource(resourceId, user.id, isFavorite);
+      
+      if (response.status === 'success') {
+        // Update local state
+        if (isFavorite) {
+          setFavoriteIds(prev => prev.filter(id => id !== resourceId));
+          toast.success('Removed from favorites');
+        } else {
+          setFavoriteIds(prev => [...prev, resourceId]);
+          toast.success('Added to favorites');
+        }
       } else {
-        setFavoriteIds(prev => prev.filter(id => id !== resourceId));
+        throw new Error(response.message);
       }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Failed to update favorites');
     }
   };
 
-  // Filter resources for favorites view
-  const displayedResources = activeTopic === 'favorites'
-    ? resources.filter(resource => favoriteIds.includes(resource.id))
-    : resources;
-
-  // Clear all filters
   const handleClearFilters = () => {
     setSearchQuery('');
-    setActiveTab('all');
-    setActiveTopic('all');
+    setResourceType('all');
+    setCategory('all');
   };
 
   return (
     <DefaultLayout>
-      <section className="py-16 md:py-24">
-        <div className="container-custom">
-          <EducationHeader />
-          <SearchBar onSearch={setSearchQuery} initialQuery={searchQuery} />
-          
-          <ResourceTypeFilter activeTab={activeTab} onTabChange={setActiveTab} />
-          
-          <div className="mt-8">
-            <ResourceList 
-              resources={displayedResources} 
-              loading={loading} 
-              favoriteIds={favoriteIds} 
-              onFavoriteToggle={handleFavoriteToggle}
-              onClearFilters={handleClearFilters}
-            />
-          </div>
-          
-          <TopicFilter activeTopic={activeTopic} onTopicChange={setActiveTopic} />
-        </div>
-      </section>
+      <div className="container mx-auto px-4 py-8">
+        <EducationHeader />
+        
+        <SearchBar onSearch={handleSearchChange} initialQuery={searchQuery} />
+        
+        <ResourceTypeFilter activeTab={resourceType} onTabChange={handleTypeChange} />
+        
+        <TopicFilter activeTopic={category} onTopicChange={handleCategoryChange} />
+        
+        <ResourceList 
+          resources={resources}
+          loading={loading}
+          favoriteIds={favoriteIds}
+          onFavoriteToggle={handleFavoriteToggle}
+          onClearFilters={handleClearFilters}
+        />
+      </div>
     </DefaultLayout>
   );
 };

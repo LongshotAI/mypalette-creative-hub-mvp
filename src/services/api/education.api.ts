@@ -7,11 +7,24 @@ import {
   ApiResponse 
 } from './base.api';
 
+interface EducationResource {
+  id?: string;
+  title: string;
+  description: string;
+  type: 'article' | 'video' | 'guide';
+  category: string;
+  author: string;
+  external_url?: string;
+  image_url?: string;
+  is_published: boolean;
+  content?: string;
+}
+
 /**
- * Get education resources with search and filters
+ * Get education resources with filters
  */
 export async function getEducationResources(
-  searchQuery: string = '',
+  searchQuery: string = '', 
   resourceType: string = 'all',
   category: string = 'all'
 ): Promise<ApiResponse<any[]>> {
@@ -49,7 +62,124 @@ export async function getEducationResources(
 }
 
 /**
- * Toggle favorite status for education resources
+ * Get all education resources (including unpublished) for admin
+ */
+export async function getAdminEducationResources(): Promise<ApiResponse<any[]>> {
+  try {
+    const { data, error } = await supabase
+      .from('education_resources')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return createSuccessResponse(data || []);
+  } catch (error) {
+    handleApiError(error, 'Failed to fetch education resources');
+    return createErrorResponse(
+      'Failed to fetch education resources', 
+      error
+    );
+  }
+}
+
+/**
+ * Get a single education resource by ID
+ */
+export async function getEducationResource(id: string): Promise<ApiResponse<any>> {
+  try {
+    const { data, error } = await supabase
+      .from('education_resources')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    
+    return createSuccessResponse(data);
+  } catch (error) {
+    handleApiError(error, 'Failed to fetch education resource');
+    return createErrorResponse(
+      'Failed to fetch education resource', 
+      error
+    );
+  }
+}
+
+/**
+ * Create new education resource
+ */
+export async function createEducationResource(resource: EducationResource): Promise<ApiResponse<any>> {
+  try {
+    const { data, error } = await supabase
+      .from('education_resources')
+      .insert([resource])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return createSuccessResponse(data);
+  } catch (error) {
+    handleApiError(error, 'Failed to create education resource');
+    return createErrorResponse(
+      'Failed to create education resource', 
+      error
+    );
+  }
+}
+
+/**
+ * Update existing education resource
+ */
+export async function updateEducationResource(id: string, updates: Partial<EducationResource>): Promise<ApiResponse<any>> {
+  try {
+    const { data, error } = await supabase
+      .from('education_resources')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return createSuccessResponse(data);
+  } catch (error) {
+    handleApiError(error, 'Failed to update education resource');
+    return createErrorResponse(
+      'Failed to update education resource', 
+      error
+    );
+  }
+}
+
+/**
+ * Delete education resource
+ */
+export async function deleteEducationResource(id: string): Promise<ApiResponse<boolean>> {
+  try {
+    const { error } = await supabase
+      .from('education_resources')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    
+    return createSuccessResponse(true);
+  } catch (error) {
+    handleApiError(error, 'Failed to delete education resource');
+    return createErrorResponse(
+      'Failed to delete education resource', 
+      error
+    );
+  }
+}
+
+/**
+ * Toggle favorite status for a resource
  */
 export async function toggleFavoriteResource(
   resourceId: string, 
@@ -90,8 +220,6 @@ export async function toggleFavoriteResource(
  */
 export async function getUserFavorites(userId: string): Promise<ApiResponse<string[]>> {
   try {
-    if (!userId) return createSuccessResponse([]);
-    
     const { data, error } = await supabase
       .from('education_favorites')
       .select('resource_id')
@@ -99,11 +227,50 @@ export async function getUserFavorites(userId: string): Promise<ApiResponse<stri
       
     if (error) throw error;
     
-    return createSuccessResponse(data.map(fav => fav.resource_id));
+    const favoriteIds = data.map(fav => fav.resource_id);
+    
+    return createSuccessResponse(favoriteIds);
   } catch (error) {
-    handleApiError(error, 'Failed to fetch favorites');
+    handleApiError(error, 'Failed to fetch favorite resources');
     return createErrorResponse(
-      'Failed to fetch favorites', 
+      'Failed to fetch favorite resources', 
+      error
+    );
+  }
+}
+
+/**
+ * Get education resources by favorite status
+ */
+export async function getFavoriteResources(userId: string): Promise<ApiResponse<any[]>> {
+  try {
+    const { data: favorites, error: favError } = await supabase
+      .from('education_favorites')
+      .select('resource_id')
+      .eq('user_id', userId);
+      
+    if (favError) throw favError;
+    
+    if (favorites.length === 0) {
+      return createSuccessResponse([]);
+    }
+    
+    const favoriteIds = favorites.map(fav => fav.resource_id);
+    
+    const { data, error } = await supabase
+      .from('education_resources')
+      .select('*')
+      .in('id', favoriteIds)
+      .eq('is_published', true)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return createSuccessResponse(data || []);
+  } catch (error) {
+    handleApiError(error, 'Failed to fetch favorite resources');
+    return createErrorResponse(
+      'Failed to fetch favorite resources', 
       error
     );
   }
