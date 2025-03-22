@@ -116,12 +116,14 @@ const ApplicationForm = ({
       if (response.status === 'success') {
         // Handle the response correctly based on the API structure
         if (draftId === null) {
+          // Cast to string only if we know it's a string ID coming back from the API
+          // The API returns a string ID for new submissions
           setDraftId(response.data as string);
         }
         setLastSaved(new Date());
         toast.success('Draft saved successfully');
         if (typeof onSubmit === 'function') {
-          onSubmit('draft', draftId || response.data as string);
+          onSubmit('draft', draftId || (typeof response.data === 'string' ? response.data : undefined));
         }
       } else {
         throw new Error(response.error?.message || 'Failed to save draft');
@@ -155,7 +157,7 @@ const ApplicationForm = ({
       if (response.status === 'success') {
         toast.success('Application submitted successfully');
         if (typeof onSubmit === 'function') {
-          onSubmit('submitted', draftId || response.data as string);
+          onSubmit('submitted', draftId || (typeof response.data === 'string' ? response.data : undefined));
         }
       } else {
         throw new Error(response.error?.message || 'Failed to submit application');
