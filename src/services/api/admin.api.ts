@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { ApiResponse, createSuccessResponse, createErrorResponse } from './base.api';
 
@@ -158,14 +157,13 @@ export const updatePlatformSettings = async (settings: Record<string, any>): Pro
   }
 };
 
-// Function to get admin statistics
 export const getAdminStats = async (): Promise<ApiResponse<{
   userCount: number;
   portfolioCount: number;
   artworkCount: number;
   educationCount: number;
   openCallCount: number;
-}>> => {
+}>> {
   try {
     const { count: userCount } = await supabase
       .from('profiles')
@@ -195,12 +193,12 @@ export const getAdminStats = async (): Promise<ApiResponse<{
       openCallCount: openCallCount || 0
     });
   } catch (error: any) {
-    return createErrorResponse({
-      userCount: 0,
-      portfolioCount: 0,
-      artworkCount: 0,
-      educationCount: 0,
-      openCallCount: 0
-    }, error.message || 'Failed to fetch admin statistics');
+    return createErrorResponse<{
+      userCount: number;
+      portfolioCount: number;
+      artworkCount: number;
+      educationCount: number;
+      openCallCount: number;
+    }>(error.message || 'Failed to fetch admin statistics', error);
   }
 };
