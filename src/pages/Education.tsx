@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DefaultLayout from '@/components/layout/DefaultLayout';
 import EducationHeader from '@/components/education/EducationHeader';
@@ -33,7 +32,7 @@ const Education = () => {
         if (response.status === 'success') {
           setResources(response.data || []);
         } else {
-          throw new Error(response.message);
+          throw new Error(response.error?.message || 'Failed to load favorite resources');
         }
       } else {
         // Regular resources fetch with filters
@@ -41,7 +40,7 @@ const Education = () => {
         if (response.status === 'success') {
           setResources(response.data || []);
         } else {
-          throw new Error(response.message);
+          throw new Error(response.error?.message || 'Failed to load resources');
         }
       }
       
@@ -91,7 +90,7 @@ const Education = () => {
           toast.success('Added to favorites');
         }
       } else {
-        throw new Error(response.message);
+        throw new Error(response.error?.message || 'Failed to update favorites');
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);

@@ -87,7 +87,7 @@ const AdminSubmissionsList = ({
         toast.success('Status updated successfully');
         onRefetch();
       } else {
-        throw new Error(response.message);
+        throw new Error(response.error?.message || 'Failed to update status');
       }
     } catch (error) {
       console.error('Error updating status:', error);
@@ -108,7 +108,7 @@ const AdminSubmissionsList = ({
         toast.success('Submission deleted successfully');
         onRefetch();
       } else {
-        throw new Error(response.message);
+        throw new Error(response.error?.message || 'Failed to delete submission');
       }
     } catch (error) {
       console.error('Error deleting submission:', error);
@@ -130,7 +130,7 @@ const AdminSubmissionsList = ({
         toast.success('Feedback saved successfully');
         onRefetch();
       } else {
-        throw new Error(response.message);
+        throw new Error(response.error?.message || 'Failed to save feedback');
       }
     } catch (error) {
       console.error('Error saving feedback:', error);

@@ -44,7 +44,8 @@ const AdminEducation = () => {
       if (response.status === 'success') {
         setResources(response.data || []);
       } else {
-        throw new Error(response.message);
+        // Instead of directly accessing response.message, handle the error more safely
+        throw new Error(response.error?.message || 'Failed to load resources');
       }
     } catch (error) {
       console.error('Error fetching resources:', error);

@@ -53,7 +53,7 @@ const AdminOpenCallDetail = ({ openCall, onBack }: AdminOpenCallDetailProps) => 
       if (response.status === 'success') {
         setSubmissions(response.data || []);
       } else {
-        throw new Error(response.message);
+        throw new Error(response.error?.message || 'Failed to load submissions');
       }
     } catch (error) {
       console.error('Error fetching submissions:', error);

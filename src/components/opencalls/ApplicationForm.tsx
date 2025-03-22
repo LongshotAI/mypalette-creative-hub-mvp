@@ -1,113 +1,137 @@
-
-import React, { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { 
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Loader2, Upload, FileText, Check, X } from 'lucide-react';
-import { toast } from 'sonner';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import { 
-  submitOpenCallApplication, 
-  uploadSubmissionFile 
+  createOpenCallSubmission, 
+  updateOpenCallSubmission,
+  getOpenCallSubmission
 } from '@/services/api/openCall.api';
-
-// Define form validation schema with Zod
-const applicationSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  email: z.string().email({ message: 'Please enter a valid email address' }),
-  project_title: z.string().min(3, { message: 'Project title must be at least 3 characters' }),
-  project_description: z.string().min(20, { message: 'Project description must be at least 20 characters' }),
-  artist_statement: z.string().min(20, { message: 'Artist statement must be at least 20 characters' }),
-  portfolio_url: z.string().url({ message: 'Please enter a valid URL' }).optional().or(z.literal('')),
-  additional_notes: z.string().optional()
-});
-
-export type ApplicationFormValues = z.infer<typeof applicationSchema>;
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription 
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { useDropzone } from 'react-dropzone';
+import { FileText, Upload, X } from 'lucide-react';
 
 interface ApplicationFormProps {
   openCallId: string;
-  onSuccess: () => void;
+  initialData?: any | null;
+  onSubmit?: (status: string, submissionId?: string) => void;
+  onCancel?: () => void;
 }
 
-const ApplicationForm = ({ openCallId, onSuccess }: ApplicationFormProps) => {
-  const { user } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDraftSaving, setIsDraftSaving] = useState(false);
-  const [uploadingFile, setUploadingFile] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<{name: string, url: string}[]>([]);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  
-  const form = useForm<ApplicationFormValues>({
-    resolver: zodResolver(applicationSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      project_title: '',
-      project_description: '',
-      artist_statement: '',
-      portfolio_url: '',
-      additional_notes: ''
-    }
-  });
+interface FileUpload {
+  name: string;
+  url: string;
+}
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0 || !user) return;
-    
-    const file = files[0];
-    
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError('File size must be less than 5MB');
-      return;
+const ApplicationForm = ({ 
+  openCallId, 
+  initialData = null, 
+  onSubmit, 
+  onCancel 
+}: ApplicationFormProps) => {
+  const { user } = useAuth();
+  const [projectTitle, setProjectTitle] = useState('');
+  const [projectDescription, setProjectDescription] = useState('');
+  const [artistStatement, setArtistStatement] = useState('');
+  const [additionalNotes, setAdditionalNotes] = useState('');
+  const [email, setEmail] = useState('');
+  const [portfolioUrl, setPortfolioUrl] = useState('');
+  const [files, setFiles] = useState<FileUpload[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  useEffect(() => {
+    if (initialData) {
+      setProjectTitle(initialData.project_title || '');
+      setProjectDescription(initialData.project_description || '');
+      setArtistStatement(initialData.artist_statement || '');
+      setAdditionalNotes(initialData.additional_notes || '');
+      setEmail(initialData.email || '');
+      setPortfolioUrl(initialData.portfolio_url || '');
+      setFiles(initialData.files || []);
+      setDraftId(initialData.id || null);
+    } else if (user) {
+      fetchExistingDraft();
     }
-    
-    // Check file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
-    if (!allowedTypes.includes(file.type)) {
-      setUploadError('File type not supported. Please upload an image (JPG, PNG, GIF) or PDF');
-      return;
-    }
-    
+  }, [initialData, user]);
+
+  const fetchExistingDraft = async () => {
     try {
-      setUploadingFile(true);
-      setUploadError(null);
-      
-      const response = await uploadSubmissionFile(file, user.id, openCallId);
-      
-      if (response.status === 'success') {
-        setUploadedFiles(prev => [
-          ...prev, 
-          {name: file.name, url: response.data}
-        ]);
-        toast.success('File uploaded successfully');
-      } else {
-        throw new Error(response.message);
+      const response = await getOpenCallSubmission(openCallId, user?.id || '');
+      if (response.status === 'success' && response.data) {
+        const draft = response.data;
+        setDraftId(draft.id);
+        setProjectTitle(draft.submission_data.project_title || '');
+        setProjectDescription(draft.submission_data.project_description || '');
+        setArtistStatement(draft.submission_data.artist_statement || '');
+        setAdditionalNotes(draft.submission_data.additional_notes || '');
+        setEmail(draft.submission_data.email || '');
+        setPortfolioUrl(draft.submission_data.portfolio_url || '');
+        setFiles(draft.submission_data.files || []);
       }
     } catch (error) {
-      console.error('Error uploading file:', error);
-      setUploadError('Failed to upload file. Please try again.');
-      toast.error('Failed to upload file');
-    } finally {
-      setUploadingFile(false);
-      // Clear the input
-      e.target.value = '';
+      console.error('Error fetching existing draft:', error);
     }
   };
 
-  const handleSubmitApplication = async (values: ApplicationFormValues) => {
+  const getFormData = useCallback(() => ({
+    project_title: projectTitle,
+    project_description: projectDescription,
+    artist_statement: artistStatement,
+    additional_notes: additionalNotes,
+    email: email,
+    portfolio_url: portfolioUrl,
+    files: files
+  }), [projectTitle, projectDescription, artistStatement, additionalNotes, email, portfolioUrl, files]);
+
+  const handleSaveDraft = async () => {
+    if (!user) {
+      toast.error('You must be logged in to save a draft');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      
+      const formData = getFormData();
+      
+      // Save as draft
+      const response = user && draftId
+        ? await updateOpenCallSubmission(draftId, formData, 'draft')
+        : await createOpenCallSubmission(openCallId, user.id, formData, 'draft');
+      
+      if (response.status === 'success') {
+        setDraftId(response.data as string);
+        setLastSaved(new Date());
+        toast.success('Draft saved successfully');
+        if (typeof onSubmit === 'function') {
+          onSubmit('draft', response.data as string);
+        }
+      } else {
+        throw new Error(response.error?.message || 'Failed to save draft');
+      }
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      toast.error('Failed to save draft');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSubmitForm = async (event: React.FormEvent) => {
+    event.preventDefault();
+    
     if (!user) {
       toast.error('You must be logged in to submit an application');
       return;
@@ -116,23 +140,20 @@ const ApplicationForm = ({ openCallId, onSuccess }: ApplicationFormProps) => {
     try {
       setIsSubmitting(true);
       
-      const formData = {
-        ...values,
-        files: uploadedFiles
-      };
+      const formData = getFormData();
       
-      const response = await submitOpenCallApplication(
-        openCallId, 
-        user.id, 
-        formData,
-        'submitted'
-      );
+      // Submit application
+      const response = draftId
+        ? await updateOpenCallSubmission(draftId, formData, 'submitted')
+        : await createOpenCallSubmission(openCallId, user.id, formData, 'submitted');
       
       if (response.status === 'success') {
         toast.success('Application submitted successfully');
-        onSuccess();
+        if (typeof onSubmit === 'function') {
+          onSubmit('submitted', response.data as string);
+        }
       } else {
-        throw new Error(response.message);
+        throw new Error(response.error?.message || 'Failed to submit application');
       }
     } catch (error) {
       console.error('Error submitting application:', error);
@@ -142,261 +163,186 @@ const ApplicationForm = ({ openCallId, onSuccess }: ApplicationFormProps) => {
     }
   };
 
-  const handleSaveDraft = async () => {
-    if (!user) {
-      toast.error('You must be logged in to save a draft');
-      return;
-    }
-    
-    try {
-      setIsDraftSaving(true);
-      
-      // Get current form values, even if they're not valid
-      const currentValues = form.getValues();
-      
-      const formData = {
-        ...currentValues,
-        files: uploadedFiles
-      };
-      
-      const response = await submitOpenCallApplication(
-        openCallId, 
-        user.id, 
-        formData,
-        'draft'
-      );
-      
-      if (response.status === 'success') {
-        toast.success('Draft saved successfully');
-      } else {
-        throw new Error(response.message);
-      }
-    } catch (error) {
-      console.error('Error saving draft:', error);
-      toast.error('Failed to save draft');
-    } finally {
-      setIsDraftSaving(false);
-    }
-  };
+  const onDrop = useCallback(acceptedFiles => {
+    acceptedFiles.map(file => {
+      const reader = new FileReader()
 
-  const removeFile = (fileUrl: string) => {
-    setUploadedFiles(prev => prev.filter(file => file.url !== fileUrl));
+      reader.onload = () => {
+        // Convert the file to base64
+        const binaryStr = reader.result as string;
+        const newFile = {
+          name: file.name,
+          url: binaryStr
+        };
+        setFiles(prevFiles => [...prevFiles, newFile]);
+      }
+      reader.readAsDataURL(file)
+
+      return file;
+    })
+  }, [])
+  
+  const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
+
+  const removeFile = (fileToRemove: FileUpload) => {
+    setFiles(prevFiles => prevFiles.filter(file => file.name !== fileToRemove.name));
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmitApplication)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Full Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Your full name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <form onSubmit={handleSubmitForm} className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Project Information</CardTitle>
+          <CardDescription>
+            Tell us about your project for this open call
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="project_title">Project Title</Label>
+            <Input
+              id="project_title"
+              placeholder="e.g., The Future of Art"
+              value={projectTitle}
+              onChange={(e) => setProjectTitle(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="project_description">Project Description</Label>
+            <Textarea
+              id="project_description"
+              placeholder="Describe your project in detail"
+              rows={3}
+              value={projectDescription}
+              onChange={(e) => setProjectDescription(e.target.value)}
+              required
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input placeholder="Your email address" type="email" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Artist Statement</CardTitle>
+          <CardDescription>
+            Share your perspective and artistic vision
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="artist_statement">Statement</Label>
+            <Textarea
+              id="artist_statement"
+              placeholder="Share your thoughts and artistic vision"
+              rows={5}
+              value={artistStatement}
+              onChange={(e) => setArtistStatement(e.target.value)}
+              required
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-        <FormField
-          control={form.control}
-          name="project_title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Project Title</FormLabel>
-              <FormControl>
-                <Input placeholder="Title of your project" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <Card>
+        <CardHeader>
+          <CardTitle>Additional Information</CardTitle>
+          <CardDescription>
+            Provide any extra details or links
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="additional_notes">Additional Notes</Label>
+            <Textarea
+              id="additional_notes"
+              placeholder="Anything else you'd like to share?"
+              rows={3}
+              value={additionalNotes}
+              onChange={(e) => setAdditionalNotes(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              type="email"
+              id="email"
+              placeholder="Your email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="portfolio_url">Portfolio URL</Label>
+            <Input
+              type="url"
+              id="portfolio_url"
+              placeholder="Link to your online portfolio"
+              value={portfolioUrl}
+              onChange={(e) => setPortfolioUrl(e.target.value)}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-        <FormField
-          control={form.control}
-          name="project_description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Project Description</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Describe your project in detail" 
-                  rows={5}
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <Card>
+        <CardHeader>
+          <CardTitle>File Uploads</CardTitle>
+          <CardDescription>
+            Attach relevant files to support your application
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div {...getRootProps()} className="dropzone border rounded-md p-4 flex flex-col items-center justify-center">
+            <input {...getInputProps()} />
+            {
+              isDragActive ?
+                <p>Drop the files here ...</p> :
+                <>
+                  <Upload className="h-6 w-6 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">Drag 'n' drop some files here, or click to select files</p>
+                </>
+            }
+          </div>
 
-        <FormField
-          control={form.control}
-          name="artist_statement"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Artist Statement</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Share your artist statement" 
-                  rows={4}
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="portfolio_url"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Portfolio URL (Optional)</FormLabel>
-              <FormControl>
-                <Input placeholder="https://your-portfolio.com" {...field} />
-              </FormControl>
-              <FormDescription>
-                Link to your portfolio website or social media
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="space-y-3">
-          <FormLabel>Upload Files</FormLabel>
-          <div className="border border-input rounded-md p-4">
-            <div className="flex flex-col items-center justify-center gap-2 text-center">
-              <Upload className="h-8 w-8 text-muted-foreground" />
-              <div className="text-sm text-muted-foreground">
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  className="text-primary underline" 
-                  onClick={() => document.getElementById('file-upload')?.click()}
-                  disabled={uploadingFile}
-                >
-                  Click to upload
-                </Button> or drag and drop
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Images (JPG, PNG, GIF) or PDF up to 5MB
-              </div>
-              <Input
-                id="file-upload"
-                type="file"
-                className="hidden"
-                onChange={handleFileUpload}
-                accept=".jpg,.jpeg,.png,.gif,.pdf"
-                disabled={uploadingFile}
-              />
-              {uploadingFile && (
-                <div className="flex items-center mt-2">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  <span className="text-sm">Uploading...</span>
-                </div>
-              )}
-              {uploadError && (
-                <div className="text-sm text-destructive mt-2">{uploadError}</div>
-              )}
-            </div>
-
-            {uploadedFiles.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <div className="text-sm font-medium">Uploaded Files:</div>
-                {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between bg-accent/50 p-2 rounded-md">
+          {files.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-sm font-medium">Uploaded Files:</h4>
+              <ul className="mt-2 space-y-2">
+                {files.map((file) => (
+                  <li key={file.name} className="flex items-center justify-between rounded-md border p-2">
                     <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                      <FileText className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm">{file.name}</span>
                     </div>
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => removeFile(file.url)}
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => removeFile(file)}>
                       <X className="h-4 w-4" />
                     </Button>
-                  </div>
+                  </li>
                 ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <FormField
-          control={form.control}
-          name="additional_notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Additional Notes (Optional)</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Any additional information you'd like to share" 
-                  rows={3}
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+              </ul>
+            </div>
           )}
-        />
+        </CardContent>
+      </Card>
 
-        <div className="flex flex-col sm:flex-row gap-4 pt-4">
-          <Button 
-            type="button" 
-            variant="outline" 
-            className="sm:flex-1"
-            onClick={handleSaveDraft}
-            disabled={isDraftSaving || isSubmitting}
-          >
-            {isDraftSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              'Save as Draft'
-            )}
-          </Button>
-          <Button 
-            type="submit" 
-            className="sm:flex-1"
-            disabled={isSubmitting || isDraftSaving}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              'Submit Application'
-            )}
+      <div className="flex justify-between">
+        <Button variant="outline" type="button" onClick={handleSaveDraft} disabled={isSaving || isSubmitting}>
+          {isSaving ? 'Saving...' : 'Save Draft'}
+        </Button>
+        <div>
+          {lastSaved && (
+            <p className="text-sm text-muted-foreground italic mr-4 inline-block">
+              Last saved: {lastSaved.toLocaleTimeString()}
+            </p>
+          )}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Submitting...' : 'Submit Application'}
           </Button>
         </div>
-      </form>
-    </Form>
+      </div>
+    </form>
   );
 };
 
