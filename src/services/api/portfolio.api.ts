@@ -146,6 +146,10 @@ export const getPublicPortfolios = async (limit = 10): Promise<ApiResponse<Portf
  */
 export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResponse<any>> => {
   try {
+    if (!portfolioId) {
+      return createErrorResponse('Portfolio ID is required', new Error('Portfolio ID is required'));
+    }
+    
     // First check if the portfolio exists and get its data
     const { data: portfolio, error: portfolioError } = await supabase
       .from('portfolios')
@@ -172,7 +176,6 @@ export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResp
     let profileData = null;
     
     try {
-      // Using a non-single query to avoid 406 errors when profile doesn't exist
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select(`
@@ -194,6 +197,8 @@ export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResp
       
       if (!profileError && profiles && profiles.length > 0) {
         profileData = profiles[0];
+      } else if (profileError) {
+        console.warn('Profile fetch error:', profileError);
       } else {
         console.warn('No profile found for user_id:', portfolio.user_id);
       }

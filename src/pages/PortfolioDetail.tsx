@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Artwork, PortfolioWithArtist } from '@/types/portfolio';
 import { Loader2, User, ArrowLeft, AlertTriangle, Info } from 'lucide-react';
@@ -16,6 +16,7 @@ import * as portfolioApi from '@/services/api/portfolio.api';
 import * as artworkApi from '@/services/api/artwork.api';
 import { toast } from 'sonner';
 import { useAnalytics } from '@/hooks/analytics';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const PortfolioDetail = () => {
   const { portfolioId } = useParams<{ portfolioId: string }>();
@@ -23,7 +24,72 @@ const PortfolioDetail = () => {
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dataFetched, setDataFetched] = useState(false);
   const analytics = useAnalytics();
+
+  // Memoize the fetch function to prevent infinite loops
+  const fetchPortfolioData = useCallback(async () => {
+    if (!portfolioId) {
+      setError('No portfolio ID provided');
+      setLoading(false);
+      setDataFetched(true);
+      return;
+    }
+    
+    try {
+      console.log('Fetching portfolio data for ID:', portfolioId);
+      
+      // Fetch portfolio with user info
+      const portfolioResponse = await portfolioApi.getPortfolioWithUser(portfolioId);
+      
+      if (portfolioResponse.status !== 'success' || !portfolioResponse.data) {
+        console.error('Portfolio fetch error:', portfolioResponse.error);
+        setError(portfolioResponse.error?.message || 'Portfolio not found or is not accessible');
+        toast.error('Portfolio not found or is not accessible');
+        setLoading(false);
+        setDataFetched(true);
+        return;
+      }
+      
+      console.log('Portfolio data retrieved:', portfolioResponse.data);
+      setPortfolio(portfolioResponse.data);
+      
+      // Track portfolio view after successful retrieval
+      try {
+        analytics.trackPortfolioView(portfolioId);
+      } catch (analyticsError) {
+        console.error('Error storing portfolio view analytics:', analyticsError);
+        // Don't block the main flow for analytics errors
+      }
+      
+      // Fetch artworks for the portfolio
+      try {
+        const artworkResponse = await artworkApi.getPortfolioArtworks(portfolioId);
+        
+        if (artworkResponse.status === 'success') {
+          console.log('Artworks retrieved:', artworkResponse.data?.length || 0);
+          setArtworks(artworkResponse.data || []);
+        } else {
+          console.error('Error fetching artworks:', artworkResponse.error);
+          toast.error('Could not load artwork for this portfolio');
+          // Still continue with empty artworks array
+          setArtworks([]);
+        }
+      } catch (artworkError) {
+        console.error('Error fetching artworks:', artworkError);
+        // Continue with empty artworks array
+        setArtworks([]);
+        toast.error('Failed to load artwork for this portfolio');
+      }
+    } catch (error) {
+      console.error('Error in portfolio fetch flow:', error);
+      setError('Failed to load portfolio details');
+      toast.error('Error loading portfolio details');
+    } finally {
+      setLoading(false);
+      setDataFetched(true);
+    }
+  }, [portfolioId, analytics]);
 
   useEffect(() => {
     // Reset state when portfolio ID changes
@@ -31,69 +97,13 @@ const PortfolioDetail = () => {
     setArtworks([]);
     setError(null);
     setLoading(true);
+    setDataFetched(false);
     
-    const fetchPortfolioData = async () => {
-      if (!portfolioId) {
-        setError('No portfolio ID provided');
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        console.log('Fetching portfolio data for ID:', portfolioId);
-        
-        // Fetch portfolio with user info
-        const portfolioResponse = await portfolioApi.getPortfolioWithUser(portfolioId);
-        
-        if (portfolioResponse.status !== 'success' || !portfolioResponse.data) {
-          console.error('Portfolio fetch error:', portfolioResponse.error);
-          setError(portfolioResponse.error?.message || 'Portfolio not found or is not accessible');
-          toast.error('Portfolio not found or is not accessible');
-          setLoading(false);
-          return;
-        }
-        
-        console.log('Portfolio data retrieved:', portfolioResponse.data);
-        setPortfolio(portfolioResponse.data);
-        
-        // Track portfolio view after successful retrieval
-        try {
-          analytics.trackPortfolioView(portfolioId);
-        } catch (analyticsError) {
-          console.error('Error storing portfolio view analytics:', analyticsError);
-          // Don't block the main flow for analytics errors
-        }
-        
-        // Fetch artworks for the portfolio
-        try {
-          const artworkResponse = await artworkApi.getPortfolioArtworks(portfolioId);
-          
-          if (artworkResponse.status === 'success') {
-            console.log('Artworks retrieved:', artworkResponse.data?.length || 0);
-            setArtworks(artworkResponse.data || []);
-          } else {
-            console.error('Error fetching artworks:', artworkResponse.error);
-            toast.error('Could not load artwork for this portfolio');
-            // Still continue with empty artworks array
-            setArtworks([]);
-          }
-        } catch (artworkError) {
-          console.error('Error fetching artworks:', artworkError);
-          // Continue with empty artworks array
-          setArtworks([]);
-          toast.error('Failed to load artwork for this portfolio');
-        }
-      } catch (error) {
-        console.error('Error in portfolio fetch flow:', error);
-        setError('Failed to load portfolio details');
-        toast.error('Error loading portfolio details');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchPortfolioData();
-  }, [portfolioId, analytics]);
+    // Only fetch if we haven't already
+    if (!dataFetched) {
+      fetchPortfolioData();
+    }
+  }, [portfolioId, fetchPortfolioData, dataFetched]);
 
   // Track artwork view when a user interacts with an artwork
   const handleArtworkView = (artworkId: string) => {

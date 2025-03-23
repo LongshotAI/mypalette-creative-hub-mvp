@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Artwork } from '@/types/portfolio';
 import ArtworkDetailModal from '../ArtworkDetailModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Info, ImageOff } from 'lucide-react';
 import { useDebouncedCallback } from '@/hooks/use-debounce';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface GridTemplateProps {
   artworks: Artwork[];
@@ -16,7 +17,17 @@ const GridTemplate = ({ artworks = [], onArtworkView }: GridTemplateProps) => {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [isLoading, setIsLoading] = useState(true);
   const isMobile = useIsMobile();
+
+  // Set loading to false after component mounts
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // Use debounced callback to prevent multiple rapid calls when viewing artworks
   const debouncedArtworkView = useDebouncedCallback((artworkId: string) => {
@@ -36,6 +47,8 @@ const GridTemplate = ({ artworks = [], onArtworkView }: GridTemplateProps) => {
   };
 
   const handleImageError = (artworkId: string) => {
+    if (!artworkId) return;
+    
     setImageErrors(prev => ({
       ...prev,
       [artworkId]: true
@@ -60,7 +73,25 @@ const GridTemplate = ({ artworks = [], onArtworkView }: GridTemplateProps) => {
   };
 
   // Validate artworks array
-  const validArtworks = Array.isArray(artworks) ? artworks : [];
+  const validArtworks = Array.isArray(artworks) ? artworks.filter(artwork => artwork && artwork.id) : [];
+
+  // If loading, show skeleton grid
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {[1, 2, 3, 4, 5, 6].map((item) => (
+          <div key={item} className="flex flex-col bg-card rounded-lg overflow-hidden shadow-sm">
+            <Skeleton className="aspect-square w-full" />
+            <div className="p-5">
+              <Skeleton className="h-6 w-3/4 mb-2" />
+              <Skeleton className="h-4 w-full mb-1" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   // Handle empty state gracefully
   if (validArtworks.length === 0) {
@@ -106,7 +137,7 @@ const GridTemplate = ({ artworks = [], onArtworkView }: GridTemplateProps) => {
                 layout
               >
                 <div className="aspect-square overflow-hidden bg-muted/20 relative">
-                  {!imageErrors[artwork.id] ? (
+                  {artwork.image_url && !imageErrors[artwork.id] ? (
                     <motion.img 
                       src={artwork.image_url} 
                       alt={artwork.title || 'Untitled artwork'}
