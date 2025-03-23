@@ -3,6 +3,8 @@ import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
+import PixelWave from '@/components/animations/PixelWave';
+import { motion } from 'framer-motion';
 
 interface HeroProps {
   scrollPosition?: number;
@@ -142,45 +144,77 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
     <section ref={heroRef} className="relative overflow-hidden py-16 md:py-24 lg:py-32 bg-ppn-light -mt-20 pt-20">
       <div className="absolute inset-0 z-0 pointer-events-none flex justify-center">
         <div ref={pixelGridRef} className="relative w-full max-w-6xl h-full"></div>
+        
+        <PixelWave width={1400} height={600} className="z-10 opacity-40" />
       </div>
       
       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-secondary/20 pointer-events-none" />
       
       <div className="container-custom relative z-10">
         <div className="max-w-3xl mx-auto text-center transition-transform duration-200">
-          <h1 
+          <motion.h1 
             className={cn(
-              "animate-fade-up font-sans text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 md:mb-6",
+              "font-sans text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 md:mb-6",
               "transition-opacity duration-500",
               headingVisible ? "opacity-100" : "opacity-0"
             )}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
           >
-            Create a 
+            Create a{" "}
             <span className="relative mx-2 inline-block">
-              <span className="text-brand-red">stunning</span>{" "}
-              <span className="text-brand-green">digital</span>{" "}
-              <span className="text-brand-blue">portfolio</span>
-            </span> 
+              <motion.span 
+                className="text-brand-red"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+              >
+                stunning
+              </motion.span>{" "}
+              <motion.span 
+                className="text-brand-green"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.6 }}
+              >
+                digital
+              </motion.span>{" "}
+              <motion.span 
+                className="text-brand-blue"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7, duration: 0.6 }}
+              >
+                portfolio
+              </motion.span>
+            </span>{" "}
             in minutes
-          </h1>
+          </motion.h1>
           
-          <p 
+          <motion.p 
             className={cn(
-              "animate-fade-up animate-delay-100 text-base md:text-lg lg:text-xl text-muted-foreground mb-6 md:mb-8 max-w-2xl mx-auto",
+              "text-base md:text-lg lg:text-xl text-muted-foreground mb-6 md:mb-8 max-w-2xl mx-auto",
               "transition-opacity duration-500",
               headingVisible ? "opacity-100" : "opacity-0"
             )}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8, duration: 0.6 }}
           >
             MyPalette helps artists showcase their work, sell physical artwork, access educational resources,
             and discover creative opportunities.
-          </p>
+          </motion.p>
           
-          <div 
+          <motion.div 
             className={cn(
-              "animate-fade-up animate-delay-200 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4",
+              "flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4",
               "transition-opacity duration-500", 
               headingVisible ? "opacity-100" : "opacity-0"
             )}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1, duration: 0.6 }}
           >
             <Button asChild size="lg" className="rounded-full px-6 sm:px-8 py-5 sm:py-6 font-medium bg-brand-blue text-white hover:shadow-md transition-all duration-300">
               <Link to="/sign-up">
@@ -198,15 +232,20 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
                 Explore Portfolios
               </Link>
             </Button>
-          </div>
+          </motion.div>
         </div>
         
-        <div className="mt-12 md:mt-16 lg:mt-24 animate-fade-in animate-delay-300">
-          <div className={cn(
-            "relative mx-auto max-w-4xl md:max-w-5xl rounded-xl overflow-hidden shadow-2xl",
-            "transform transition-all duration-700 hover:scale-[1.01]",
-            "before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:pointer-events-none"
-          )}>
+        <div className="mt-12 md:mt-16 lg:mt-24">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2, duration: 0.8 }}
+            className={cn(
+              "relative mx-auto max-w-4xl md:max-w-5xl rounded-xl overflow-hidden shadow-2xl",
+              "transform transition-all duration-700 hover:scale-[1.01]",
+              "before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/20 before:to-transparent before:pointer-events-none"
+            )}
+          >
             <div className="aspect-[16/9] relative bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg p-4 md:p-6 flex items-center justify-center">
               <div className="absolute inset-0 opacity-10 pointer-events-none">
                 <div className="absolute top-1/4 left-1/4 w-12 md:w-16 h-12 md:h-16 bg-brand-red/50 rounded-full filter blur-xl" />
@@ -232,7 +271,7 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
