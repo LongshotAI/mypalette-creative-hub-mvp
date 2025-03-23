@@ -130,13 +130,37 @@ const PortfolioDetail = () => {
     }
   };
 
+  // Get template component with fallback to grid
+  const renderTemplate = () => {
+    // Default to grid if template is missing or invalid
+    const template = portfolio.template || 'grid';
+    
+    switch(template) {
+      case 'grid':
+        return <GridTemplate artworks={artworks} onArtworkView={handleArtworkView} />;
+      case 'masonry':
+        return <MasonryTemplate artworks={artworks} onArtworkView={handleArtworkView} />;
+      case 'slideshow':
+        return <SlideshowTemplate artworks={artworks} onArtworkView={handleArtworkView} />;
+      case 'minimal':
+        return <MinimalTemplate artworks={artworks} onArtworkView={handleArtworkView} />;
+      case 'gallery':
+        return <GalleryTemplate artworks={artworks} onArtworkView={handleArtworkView} />;
+      case 'studio':
+        return <StudioTemplate artworks={artworks} onArtworkView={handleArtworkView} />;
+      default:
+        // Fallback to grid for any unrecognized template
+        return <GridTemplate artworks={artworks} onArtworkView={handleArtworkView} />;
+    }
+  };
+
   const artistName = portfolio.profiles?.full_name || portfolio.profiles?.username || 'Artist';
 
   return (
     <DefaultLayout>
       <div className={`min-h-screen ${getThemeStyles()}`}>
-        <div className="container mx-auto py-12">
-          <div className="mb-8">
+        <div className="container mx-auto py-8 md:py-12 px-4 md:px-6">
+          <div className="mb-6 md:mb-8">
             <Button variant="outline" size="sm" asChild className="mb-4">
               <Link to={`/user/${portfolio.user_id}`}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -144,10 +168,10 @@ const PortfolioDetail = () => {
               </Link>
             </Button>
             
-            <h1 className="text-3xl font-bold mb-2">{portfolio.name}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">{portfolio.name}</h1>
             
             {portfolio.description && (
-              <p className="text-lg mb-4 max-w-3xl">{portfolio.description}</p>
+              <p className="text-md md:text-lg mb-4 max-w-3xl">{portfolio.description}</p>
             )}
             
             <div className="flex items-center">
@@ -161,24 +185,10 @@ const PortfolioDetail = () => {
             </div>
           </div>
           
-          {artworks.length === 0 ? (
-            <div className="bg-muted/30 border border-border/50 rounded-lg p-12 text-center">
-              <h3 className="text-xl font-medium mb-2">No Artworks Yet</h3>
-              <p className="text-muted-foreground mb-6">
-                This portfolio is empty. The artist hasn't added any artworks yet.
-              </p>
-            </div>
-          ) : (
-            <div className="mb-8">
-              {/* Pass the handleArtworkView callback to each template */}
-              {portfolio.template === 'grid' && <GridTemplate artworks={artworks} onArtworkView={handleArtworkView} />}
-              {portfolio.template === 'masonry' && <MasonryTemplate artworks={artworks} onArtworkView={handleArtworkView} />}
-              {portfolio.template === 'slideshow' && <SlideshowTemplate artworks={artworks} onArtworkView={handleArtworkView} />}
-              {portfolio.template === 'minimal' && <MinimalTemplate artworks={artworks} onArtworkView={handleArtworkView} />}
-              {portfolio.template === 'gallery' && <GalleryTemplate artworks={artworks} onArtworkView={handleArtworkView} />}
-              {portfolio.template === 'studio' && <StudioTemplate artworks={artworks} onArtworkView={handleArtworkView} />}
-            </div>
-          )}
+          {/* Render the appropriate template based on portfolio settings */}
+          <div className="mb-8">
+            {renderTemplate()}
+          </div>
         </div>
       </div>
     </DefaultLayout>
