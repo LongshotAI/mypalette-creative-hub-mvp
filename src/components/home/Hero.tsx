@@ -145,7 +145,7 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
       <div className="absolute inset-0 z-0 pointer-events-none flex justify-center">
         <div ref={pixelGridRef} className="relative w-full max-w-6xl h-full"></div>
         
-        <PixelWave width={1400} height={600} className="z-10 opacity-40" />
+        <PixelWave width={1400} height={600} className="z-10 opacity-70" />
       </div>
       
       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-secondary/20 pointer-events-none" />

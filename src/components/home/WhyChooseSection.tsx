@@ -39,8 +39,10 @@ const WhyChooseSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-24 bg-white">
-      <div className="container-custom">
+    <section className="py-24 bg-white relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-white via-gray-50 to-white opacity-60 pointer-events-none" />
+      
+      <div className="container-custom relative z-10">
         <motion.div 
           className="text-center max-w-3xl mx-auto mb-16"
           initial={{ opacity: 0, y: 20 }}
@@ -66,7 +68,7 @@ const WhyChooseSection: React.FC = () => {
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
               <GlareCard 
-                className="bg-white hover:shadow-lg hover:-translate-y-1 transition-all duration-300 h-full"
+                className="bg-white hover:shadow-xl hover:-translate-y-2 transition-all duration-500 h-full"
                 iconColor={benefit.color}
               >
                 <div className="mb-4">{benefit.icon}</div>

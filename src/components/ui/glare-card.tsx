@@ -51,7 +51,7 @@ export const GlareCard = ({
           y: percentage.y - 50,
         };
         
-        const rotateFactor = 0.2;
+        const rotateFactor = 0.5; // Increased for more pronounced effect
         
         refElement.current.style.setProperty("--m-x", `${percentage.x}%`);
         refElement.current.style.setProperty("--m-y", `${percentage.y}%`);
@@ -63,7 +63,7 @@ export const GlareCard = ({
       onPointerEnter={() => {
         isPointerInside.current = true;
         if (refElement.current) {
-          refElement.current.style.setProperty("--opacity", "0.2");
+          refElement.current.style.setProperty("--opacity", "0.4"); // Increased opacity
           setTimeout(() => {
             if (isPointerInside.current) {
               refElement.current?.style.setProperty("--duration", "0ms");

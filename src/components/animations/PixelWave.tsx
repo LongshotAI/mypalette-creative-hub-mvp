@@ -20,7 +20,7 @@ const Pixel: React.FC<PixelProps> = ({ x, y, delay, color, size }) => {
       fill={color}
       initial={{ opacity: 0 }}
       animate={{ 
-        opacity: [0, 0.7, 0],
+        opacity: [0, 1, 0],
         x: x + Math.random() * 10 - 5,
         y: y + Math.random() * 10 - 5,
       }}
@@ -50,44 +50,67 @@ const PixelWave: React.FC<PixelWaveProps> = ({
   const [pixels, setPixels] = useState<PixelProps[]>([]);
   
   useEffect(() => {
-    // Create wave paths as a guide for pixel placement
-    const generateWavePaths = () => {
+    // Generate wave paths using pixels
+    const generatePixelWavePaths = () => {
       const paths = [];
-      const waveCount = 5;
-      const pixelsPerWave = 40;
+      const waveCount = 8; // More waves for a denser effect
+      const pixelsPerWave = 60; // More pixels per wave for smoother effect
       
       for (let w = 0; w < waveCount; w++) {
-        const amplitude = 30 + (w * 10);
-        const period = width / 2;
+        const amplitude = 30 + (w * 15);
+        const period = width / (1 + Math.random() * 0.5);
         const phaseShift = w * (Math.PI / 4);
         
         for (let i = 0; i < pixelsPerWave; i++) {
           const t = (i / pixelsPerWave) * width;
           const x = t;
+          // Create a more dynamic wave pattern
           const y = (height / 2) + amplitude * Math.sin((2 * Math.PI * t / period) + phaseShift);
           
-          const pixelSize = 3 + Math.random() * 5;
+          // Vary pixel sizes for more dynamic look
+          const pixelSize = 2 + Math.random() * 6;
           
-          // Colors based on your brand palette
+          // Use brand colors with varying opacity
           let color;
-          if (w % 3 === 0) color = "rgba(237, 51, 59, 0.3)"; // brand-red
-          else if (w % 3 === 1) color = "rgba(49, 162, 76, 0.3)"; // brand-green
-          else color = "rgba(40, 111, 180, 0.3)"; // brand-blue
+          if (w % 3 === 0) color = `rgba(237, 51, 59, ${0.2 + Math.random() * 0.3})`; // brand-red
+          else if (w % 3 === 1) color = `rgba(49, 162, 76, ${0.2 + Math.random() * 0.3})`; // brand-green
+          else color = `rgba(40, 111, 180, ${0.2 + Math.random() * 0.3})`; // brand-blue
           
           paths.push({
             x,
             y, 
-            delay: i * 0.03 + w * 0.5,
+            delay: i * 0.02 + w * 0.3, // Faster appearance of pixels
             color,
             size: pixelSize
           });
         }
       }
       
+      // Add some scattered pixels for added visual interest
+      for (let i = 0; i < 40; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const size = 1 + Math.random() * 3;
+        
+        const colors = [
+          `rgba(237, 51, 59, ${0.1 + Math.random() * 0.2})`, // brand-red
+          `rgba(49, 162, 76, ${0.1 + Math.random() * 0.2})`, // brand-green
+          `rgba(40, 111, 180, ${0.1 + Math.random() * 0.2})`, // brand-blue
+        ];
+        
+        paths.push({
+          x,
+          y,
+          delay: Math.random() * 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size
+        });
+      }
+      
       return paths;
     };
     
-    setPixels(generateWavePaths());
+    setPixels(generatePixelWavePaths());
   }, [width, height]);
   
   return (
