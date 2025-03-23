@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Artwork, PortfolioWithArtist } from '@/types/portfolio';
-import { Loader2, User, ArrowLeft } from 'lucide-react';
+import { Loader2, User, ArrowLeft, AlertTriangle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import DefaultLayout from '@/components/layout/DefaultLayout';
 import GridTemplate from '@/components/portfolio/templates/GridTemplate';
 import MasonryTemplate from '@/components/portfolio/templates/MasonryTemplate';
@@ -25,15 +26,18 @@ const PortfolioDetail = () => {
   const analytics = useAnalytics();
 
   useEffect(() => {
+    // Reset state when portfolio ID changes
+    setPortfolio(null);
+    setArtworks([]);
+    setError(null);
+    setLoading(true);
+    
     const fetchPortfolioData = async () => {
       if (!portfolioId) {
         setError('No portfolio ID provided');
         setLoading(false);
         return;
       }
-      
-      setLoading(true);
-      setError(null);
       
       try {
         console.log('Fetching portfolio data for ID:', portfolioId);
@@ -53,17 +57,31 @@ const PortfolioDetail = () => {
         setPortfolio(portfolioResponse.data);
         
         // Track portfolio view after successful retrieval
-        analytics.trackPortfolioView(portfolioId);
+        try {
+          analytics.trackPortfolioView(portfolioId);
+        } catch (analyticsError) {
+          console.error('Error storing portfolio view analytics:', analyticsError);
+          // Don't block the main flow for analytics errors
+        }
         
         // Fetch artworks for the portfolio
-        const artworkResponse = await artworkApi.getPortfolioArtworks(portfolioId);
-        
-        if (artworkResponse.status === 'success') {
-          console.log('Artworks retrieved:', artworkResponse.data?.length || 0);
-          setArtworks(artworkResponse.data || []);
-        } else {
-          console.error('Error fetching artworks:', artworkResponse.error);
-          toast.error('Could not load artwork for this portfolio');
+        try {
+          const artworkResponse = await artworkApi.getPortfolioArtworks(portfolioId);
+          
+          if (artworkResponse.status === 'success') {
+            console.log('Artworks retrieved:', artworkResponse.data?.length || 0);
+            setArtworks(artworkResponse.data || []);
+          } else {
+            console.error('Error fetching artworks:', artworkResponse.error);
+            toast.error('Could not load artwork for this portfolio');
+            // Still continue with empty artworks array
+            setArtworks([]);
+          }
+        } catch (artworkError) {
+          console.error('Error fetching artworks:', artworkError);
+          // Continue with empty artworks array
+          setArtworks([]);
+          toast.error('Failed to load artwork for this portfolio');
         }
       } catch (error) {
         console.error('Error in portfolio fetch flow:', error);
@@ -79,8 +97,13 @@ const PortfolioDetail = () => {
 
   // Track artwork view when a user interacts with an artwork
   const handleArtworkView = (artworkId: string) => {
-    if (portfolioId) {
+    if (!portfolioId || !artworkId) return;
+    
+    try {
       analytics.trackArtworkView(artworkId, portfolioId);
+    } catch (error) {
+      console.error('Error tracking artwork view:', error);
+      // Non-blocking analytics error
     }
   };
 
@@ -101,8 +124,11 @@ const PortfolioDetail = () => {
     return (
       <DefaultLayout>
         <div className="container mx-auto py-12 min-h-screen flex flex-col items-center justify-center">
+          <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
           <h2 className="text-2xl font-semibold mb-4">Portfolio not found</h2>
-          <p className="text-muted-foreground mb-6">{error || 'The portfolio you\'re looking for might have been removed or is private.'}</p>
+          <p className="text-muted-foreground mb-6 text-center max-w-md">
+            {error || 'The portfolio you\'re looking for might have been removed or is private.'}
+          </p>
           <Button asChild>
             <Link to="/portfolios">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -114,9 +140,11 @@ const PortfolioDetail = () => {
     );
   }
 
-  // Apply theme-based styles
+  // Apply theme-based styles (with fallback to default)
   const getThemeStyles = () => {
-    switch(portfolio.theme) {
+    const theme = portfolio.theme || 'default';
+    
+    switch(theme) {
       case 'minimal':
         return 'bg-white text-gray-900';
       case 'bold':
@@ -154,7 +182,11 @@ const PortfolioDetail = () => {
     }
   };
 
-  const artistName = portfolio.profiles?.full_name || portfolio.profiles?.username || 'Artist';
+  // Get artist info with proper fallbacks
+  const artistInfo = {
+    name: portfolio.profiles?.full_name || portfolio.profiles?.username || 'Artist',
+    id: portfolio.user_id || ''
+  };
 
   return (
     <DefaultLayout>
@@ -162,27 +194,29 @@ const PortfolioDetail = () => {
         <div className="container mx-auto py-8 md:py-12 px-4 md:px-6">
           <div className="mb-6 md:mb-8">
             <Button variant="outline" size="sm" asChild className="mb-4">
-              <Link to={`/user/${portfolio.user_id}`}>
+              <Link to="/portfolios">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Artist Profile
+                Back to Portfolios
               </Link>
             </Button>
             
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">{portfolio.name}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">{portfolio.name || 'Untitled Portfolio'}</h1>
             
             {portfolio.description && (
               <p className="text-md md:text-lg mb-4 max-w-3xl">{portfolio.description}</p>
             )}
             
-            <div className="flex items-center">
-              <Link 
-                to={`/user/${portfolio.user_id}`} 
-                className="flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                <User className="h-4 w-4 mr-1" />
-                {artistName}
-              </Link>
-            </div>
+            {artistInfo.id && (
+              <div className="flex items-center">
+                <Link 
+                  to={`/user/${artistInfo.id}`} 
+                  className="flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <User className="h-4 w-4 mr-1" />
+                  {artistInfo.name}
+                </Link>
+              </div>
+            )}
           </div>
           
           {/* Render the appropriate template based on portfolio settings */}

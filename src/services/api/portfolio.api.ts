@@ -168,46 +168,45 @@ export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResp
       return createErrorResponse('Portfolio not found', new Error('Portfolio not found'));
     }
     
-    // Then fetch the profile information
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select(`
-        id,
-        username,
-        full_name,
-        avatar_url,
-        bio,
-        banner_image_url,
-        instagram_url,
-        twitter_url,
-        website_url,
-        contact_email,
-        location,
-        artist_statement,
-        current_exhibition
-      `)
-      .eq('id', portfolio.user_id)
-      .single();
+    // Then try to fetch the profile information
+    let profileData = null;
     
-    if (profileError) {
-      console.error('Profile fetch error:', profileError);
+    try {
+      // Using a non-single query to avoid 406 errors when profile doesn't exist
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          username,
+          full_name,
+          avatar_url,
+          bio,
+          banner_image_url,
+          instagram_url,
+          twitter_url,
+          website_url,
+          contact_email,
+          location,
+          artist_statement,
+          current_exhibition
+        `)
+        .eq('id', portfolio.user_id);
       
+      if (!profileError && profiles && profiles.length > 0) {
+        profileData = profiles[0];
+      } else {
+        console.warn('No profile found for user_id:', portfolio.user_id);
+      }
+    } catch (profileFetchError) {
+      console.error('Profile fetch error:', profileFetchError);
       // Continue even if profile fetch fails - we'll return the portfolio without profile data
-      const portfolioWithoutProfile = {
-        ...portfolio,
-        profiles: null
-      };
-      
-      return createSuccessResponse(portfolioWithoutProfile);
     }
     
     // Combine the data
     const portfolioWithUser = {
       ...portfolio,
-      profiles: profile
+      profiles: profileData
     };
-    
-    // Record analytics for this view (moved to component to avoid duplicate tracking)
     
     return createSuccessResponse(portfolioWithUser);
   } catch (error) {

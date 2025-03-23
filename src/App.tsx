@@ -32,6 +32,7 @@ function App() {
           <Route path="/user-info" element={<ProtectedRoute><UserInfo /></ProtectedRoute>} />
           <Route path="/portfolios" element={<Portfolios />} />
           <Route path="/portfolio/:portfolioId" element={<PortfolioDetail />} />
+          <Route path="/user/:userId" element={<UserProfile />} />
           <Route path="/search" element={<Search />} />
           <Route path="/open-calls" element={<OpenCalls />} />
           <Route path="/education" element={<Education />} />
