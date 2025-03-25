@@ -1,3 +1,4 @@
+
 export interface Portfolio {
   id: string;
   name: string;
@@ -112,3 +113,9 @@ export interface Order {
 }
 
 export type OrderStatus = 'all' | 'pending' | 'completed' | 'failed';
+
+// Template types for clear representation in the UI
+export type PortfolioTemplateType = 'grid' | 'masonry' | 'slideshow' | 'minimal' | 'gallery' | 'studio';
+
+// Theme types for consistent styling
+export type PortfolioThemeType = 'default' | 'minimal' | 'bold' | 'elegant' | 'dark';

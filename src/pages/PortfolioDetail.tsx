@@ -99,7 +99,7 @@ const PortfolioDetail = () => {
     setLoading(true);
     setDataFetched(false);
     
-    // Only fetch if we haven't already
+    // Only fetch if we haven't already for this ID
     if (!dataFetched) {
       fetchPortfolioData();
     }
@@ -117,13 +117,25 @@ const PortfolioDetail = () => {
     }
   };
 
+  // If still loading, show skeleton loader
   if (loading) {
     return (
       <DefaultLayout>
-        <div className="container mx-auto py-12 min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-            <p className="mt-2 text-muted-foreground">Loading portfolio...</p>
+        <div className="container mx-auto py-12 min-h-screen">
+          <div className="mb-6">
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-full max-w-2xl mb-4" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="flex flex-col space-y-3">
+                <Skeleton className="h-64 w-full rounded-md" />
+                <Skeleton className="h-5 w-2/3" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+            ))}
           </div>
         </div>
       </DefaultLayout>
@@ -188,6 +200,7 @@ const PortfolioDetail = () => {
         return <StudioTemplate artworks={artworks} onArtworkView={handleArtworkView} />;
       default:
         // Fallback to grid for any unrecognized template
+        console.warn(`Unknown template "${template}", falling back to grid`);
         return <GridTemplate artworks={artworks} onArtworkView={handleArtworkView} />;
     }
   };

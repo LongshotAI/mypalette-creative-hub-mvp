@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { toast } from 'sonner';
 
 interface PortfolioFormProps {
   open: boolean;
@@ -404,15 +404,23 @@ const PortfolioForm = (props: PortfolioFormProps) => {
 
   useEffect(() => {
     const fetchTemplates = async () => {
+      if (!props.open) return;
+      
       setLoading(true);
       try {
+        console.log('Fetching portfolio templates...');
         const { data, error } = await supabase
           .from('portfolio_templates')
           .select('*')
           .eq('is_active', true)
           .order('name');
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching templates:', error);
+          throw error;
+        }
+        
+        console.log('Templates fetched:', data);
         
         // Transform the data to ensure settings is treated as Record<string, any>
         const transformedData = data?.map(template => ({
@@ -420,18 +428,22 @@ const PortfolioForm = (props: PortfolioFormProps) => {
           settings: template.settings as Record<string, any>
         })) || [];
         
-        setTemplates(transformedData.length > 0 ? transformedData : defaultTemplates);
+        if (transformedData.length === 0) {
+          console.log('No templates found in database, using defaults');
+          setTemplates(defaultTemplates);
+        } else {
+          setTemplates(transformedData);
+        }
       } catch (err) {
         console.error('Error fetching templates:', err);
+        toast.error('Failed to load portfolio templates. Using defaults.');
         setTemplates(defaultTemplates);
       } finally {
         setLoading(false);
       }
     };
     
-    if (props.open) {
-      fetchTemplates();
-    }
+    fetchTemplates();
   }, [props.open]);
 
   if (loading) {
