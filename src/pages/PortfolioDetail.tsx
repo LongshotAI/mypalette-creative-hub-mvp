@@ -51,7 +51,7 @@ const PortfolioDetail = () => {
         return;
       }
       
-      console.log('Portfolio data retrieved:', portfolioResponse.data);
+      console.log('Portfolio data retrieved successfully:', portfolioResponse.data);
       setPortfolio(portfolioResponse.data);
       
       // Track portfolio view after successful retrieval
@@ -93,17 +93,17 @@ const PortfolioDetail = () => {
 
   useEffect(() => {
     // Reset state when portfolio ID changes
-    setPortfolio(null);
-    setArtworks([]);
-    setError(null);
-    setLoading(true);
-    setDataFetched(false);
-    
-    // Only fetch if we haven't already for this ID
-    if (!dataFetched) {
+    if (portfolioId) {
+      setPortfolio(null);
+      setArtworks([]);
+      setError(null);
+      setLoading(true);
+      setDataFetched(false);
+      
+      // Only fetch if we haven't already for this ID
       fetchPortfolioData();
     }
-  }, [portfolioId, fetchPortfolioData, dataFetched]);
+  }, [portfolioId, fetchPortfolioData]);
 
   // Track artwork view when a user interacts with an artwork
   const handleArtworkView = (artworkId: string) => {

@@ -7,10 +7,11 @@ import { toast } from 'sonner';
 export const usePortfolioList = (userId: string | undefined) => {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [selectedPortfolio, setSelectedPortfolio] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   
   const loadUserPortfolios = async () => {
     if (!userId) {
+      console.warn('Cannot load portfolios without a userId');
       setLoading(false);
       return;
     }
@@ -29,7 +30,7 @@ export const usePortfolioList = (userId: string | undefined) => {
         throw error;
       }
       
-      console.log('Portfolios loaded:', data);
+      console.log('Portfolios loaded:', data?.length || 0);
       setPortfolios(data || []);
       
       if (data && data.length > 0 && !selectedPortfolio) {
@@ -46,7 +47,13 @@ export const usePortfolioList = (userId: string | undefined) => {
   };
 
   useEffect(() => {
-    loadUserPortfolios();
+    if (userId) {
+      loadUserPortfolios();
+    } else {
+      setLoading(false);
+      setPortfolios([]);
+      setSelectedPortfolio(null);
+    }
   }, [userId]);
 
   return {

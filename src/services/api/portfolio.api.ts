@@ -120,21 +120,27 @@ export const deletePortfolio = async (portfolioId: string): Promise<ApiResponse<
  */
 export const getPortfolio = async (portfolioId: string): Promise<ApiResponse<Portfolio>> => {
   try {
-    console.log('Fetching portfolio by ID:', portfolioId);
-    
     if (!portfolioId) {
+      console.error('Portfolio ID is required');
       return createErrorResponse('Portfolio ID is required', new Error('Portfolio ID is required'));
     }
+    
+    console.log('Fetching portfolio by ID:', portfolioId);
     
     const { data, error } = await supabase
       .from('portfolios')
       .select('*')
       .eq('id', portfolioId)
-      .single();
+      .maybeSingle();  // Using maybeSingle instead of single to avoid errors
     
     if (error) {
       console.error('Error fetching portfolio:', error);
       throw error;
+    }
+    
+    if (!data) {
+      console.error('Portfolio not found:', portfolioId);
+      return createErrorResponse('Portfolio not found', new Error('Portfolio not found'));
     }
     
     return createSuccessResponse(data);
@@ -194,16 +200,10 @@ export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResp
       .from('portfolios')
       .select('*')
       .eq('id', portfolioId)
-      .single();
+      .maybeSingle();  // Using maybeSingle instead of single for better error handling
     
     if (portfolioError) {
       console.error('Portfolio fetch error:', portfolioError);
-      
-      // Check if it's a not found error
-      if (portfolioError.code === 'PGRST116') {
-        return createErrorResponse('Portfolio not found', new Error('Portfolio not found'));
-      }
-      
       throw portfolioError;
     }
     
@@ -233,10 +233,11 @@ export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResp
           artist_statement,
           current_exhibition
         `)
-        .eq('id', portfolio.user_id);
+        .eq('id', portfolio.user_id)
+        .maybeSingle();  // Using maybeSingle for better error handling
       
-      if (!profileError && profiles && profiles.length > 0) {
-        profileData = profiles[0];
+      if (!profileError && profiles) {
+        profileData = profiles;
       } else if (profileError) {
         console.warn('Profile fetch error:', profileError);
       } else {
