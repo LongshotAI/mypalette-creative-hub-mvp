@@ -47,13 +47,21 @@ const PixelWave: React.FC<PixelWaveProps> = ({
   className = "" 
 }) => {
   const [pixels, setPixels] = useState<PixelProps[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
   
   useEffect(() => {
-    // Generate wave paths using pixels
+    const refreshInterval = setInterval(() => {
+      setRefreshKey(prevKey => prevKey + 1);
+    }, 10000); // Refresh every 10 seconds
+    
+    return () => clearInterval(refreshInterval);
+  }, []);
+  
+  useEffect(() => {
     const generatePixelWavePaths = () => {
       const paths = [];
-      const waveCount = 10; // More waves for a denser effect
-      const pixelsPerWave = 80; // More pixels per wave for smoother effect
+      const waveCount = 12; // More waves for a denser effect
+      const pixelsPerWave = 100; // More pixels per wave for smoother effect
       
       for (let w = 0; w < waveCount; w++) {
         const amplitude = 30 + (w * 15);
@@ -86,7 +94,7 @@ const PixelWave: React.FC<PixelWaveProps> = ({
       }
       
       // Add more scattered pixels for added visual interest
-      for (let i = 0; i < 60; i++) {
+      for (let i = 0; i < 80; i++) {
         const x = Math.random() * width;
         const y = Math.random() * height;
         const size = 1 + Math.random() * 3;
@@ -111,13 +119,40 @@ const PixelWave: React.FC<PixelWaveProps> = ({
     
     setPixels(generatePixelWavePaths());
     
-    // Refresh pixels every 10 seconds to keep animation fresh
-    const intervalId = setInterval(() => {
-      setPixels(generatePixelWavePaths());
-    }, 10000);
+    const continuousRefreshInterval = setInterval(() => {
+      setPixels(prevPixels => {
+        const newPixels = [...prevPixels];
+        const pixelsToReplace = Math.floor(newPixels.length * 0.2);
+        const startIndex = Math.floor(Math.random() * (newPixels.length - pixelsToReplace));
+        
+        const replacementPixels = [];
+        for (let i = 0; i < pixelsToReplace; i++) {
+          const x = Math.random() * width;
+          const y = Math.random() * height;
+          const size = 1 + Math.random() * 5;
+          
+          const colors = [
+            `rgba(237, 51, 59, ${0.2 + Math.random() * 0.3})`, // brand-red
+            `rgba(49, 162, 76, ${0.2 + Math.random() * 0.3})`, // brand-green
+            `rgba(40, 111, 180, ${0.2 + Math.random() * 0.3})`, // brand-blue
+          ];
+          
+          replacementPixels.push({
+            x,
+            y,
+            delay: Math.random() * 3,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            size
+          });
+        }
+        
+        newPixels.splice(startIndex, pixelsToReplace, ...replacementPixels);
+        return newPixels;
+      });
+    }, 3000);
     
-    return () => clearInterval(intervalId);
-  }, [width, height]);
+    return () => clearInterval(continuousRefreshInterval);
+  }, [width, height, refreshKey]);
   
   return (
     <svg 
@@ -129,7 +164,7 @@ const PixelWave: React.FC<PixelWaveProps> = ({
       preserveAspectRatio="xMidYMid meet"
     >
       {pixels.map((pixel, i) => (
-        <Pixel key={i} {...pixel} />
+        <Pixel key={`${i}-${refreshKey}`} {...pixel} />
       ))}
     </svg>
   );

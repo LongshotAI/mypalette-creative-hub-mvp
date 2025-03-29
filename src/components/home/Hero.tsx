@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -5,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import PixelWave from '@/components/animations/PixelWave';
 import { motion } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
 
 interface HeroProps {
   scrollPosition?: number;
@@ -15,11 +17,51 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pixelGridRef = useRef<HTMLDivElement>(null);
   const [headingVisible, setHeadingVisible] = useState(true);
+  const [artworks, setArtworks] = useState<any[]>([]);
   
   useEffect(() => {
     const threshold = 100;
     setHeadingVisible(scrollPosition < threshold);
   }, [scrollPosition]);
+  
+  useEffect(() => {
+    // Fetch featured artworks from the database
+    const fetchArtworks = async () => {
+      try {
+        const { data: portfolioData } = await supabase
+          .from('portfolios')
+          .select('id, is_public')
+          .eq('is_public', true)
+          .limit(10);
+        
+        if (portfolioData && portfolioData.length > 0) {
+          // Get a random selection of 3 portfolio IDs
+          const randomPortfolios = portfolioData.sort(() => 0.5 - Math.random()).slice(0, 3);
+          
+          // Fetch artworks from these portfolios
+          const promises = randomPortfolios.map(portfolio => {
+            return supabase
+              .from('artworks')
+              .select('id, title, image_url, portfolio_id')
+              .eq('portfolio_id', portfolio.id)
+              .limit(1)
+              .single();
+          });
+          
+          const results = await Promise.all(promises);
+          const artworkData = results
+            .filter(result => !result.error && result.data)
+            .map(result => result.data);
+          
+          setArtworks(artworkData);
+        }
+      } catch (error) {
+        console.error('Error fetching artworks for hero:', error);
+      }
+    };
+    
+    fetchArtworks();
+  }, []);
   
   useEffect(() => {
     if (!pixelGridRef.current) return;
@@ -155,6 +197,13 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
     };
   }, []);
   
+  // Fallback images in case no real artworks are found
+  const fallbackImages = [
+    "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400&h=300&fit=crop",
+    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=300&fit=crop",
+    "https://images.unsplash.com/photo-1615184697985-c9bde1b07da7?w=400&h=300&fit=crop"
+  ];
+  
   return (
     <section ref={heroRef} className="relative overflow-hidden py-16 md:py-24 lg:py-32 bg-ppn-light -mt-20 pt-20">
       <div className="absolute inset-0 z-0 pointer-events-none flex justify-center">
@@ -269,24 +318,18 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 w-full max-w-xs md:max-w-2xl">
-                <div className="col-span-1 bg-white rounded-lg shadow-md p-2 md:p-4 hover-pixel">
-                  <div className="bg-brand-red/10 h-20 md:h-32 rounded mb-2" 
-                       style={{backgroundImage: "url('https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400&h=300&fit=crop')", backgroundSize: 'cover'}}></div>
-                  <div className="h-3 md:h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-2 md:h-3 bg-gray-200 rounded w-1/2"></div>
-                </div>
-                <div className="col-span-1 bg-white rounded-lg shadow-md p-2 md:p-4 hover-pixel">
-                  <div className="bg-brand-green/10 h-20 md:h-32 rounded mb-2"
-                       style={{backgroundImage: "url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=300&fit=crop')", backgroundSize: 'cover'}}></div>
-                  <div className="h-3 md:h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-2 md:h-3 bg-gray-200 rounded w-1/2"></div>
-                </div>
-                <div className="col-span-1 bg-white rounded-lg shadow-md p-2 md:p-4 hover-pixel">
-                  <div className="bg-brand-blue/10 h-20 md:h-32 rounded mb-2"
-                       style={{backgroundImage: "url('https://images.unsplash.com/photo-1615184697985-c9bde1b07da7?w=400&h=300&fit=crop')", backgroundSize: 'cover'}}></div>
-                  <div className="h-3 md:h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-2 md:h-3 bg-gray-200 rounded w-1/2"></div>
-                </div>
+                {[0, 1, 2].map((index) => {
+                  const artwork = artworks[index];
+                  const imageUrl = artwork?.image_url || fallbackImages[index];
+                  return (
+                    <div key={index} className="col-span-1 bg-white rounded-lg shadow-md p-2 md:p-4 hover-pixel">
+                      <div className="bg-brand-red/10 h-20 md:h-32 rounded mb-2" 
+                          style={{backgroundImage: `url('${imageUrl}')`, backgroundSize: 'cover'}}></div>
+                      <div className="h-3 md:h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-2 md:h-3 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </motion.div>
