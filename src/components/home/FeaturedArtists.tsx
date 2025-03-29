@@ -14,10 +14,18 @@ interface ArtistCardProps {
   userId: string;
   delay: number;
   portfolioId?: string;
-  parallaxFactor?: number;
+  translateY: number;
 }
 
-const ArtistCard: React.FC<ArtistCardProps> = ({ name, specialty, imageUrl, userId, delay, portfolioId, parallaxFactor = 1 }) => {
+const ArtistCard: React.FC<ArtistCardProps> = ({ 
+  name, 
+  specialty, 
+  imageUrl, 
+  userId, 
+  delay, 
+  portfolioId,
+  translateY 
+}) => {
   const [artworkImageUrl, setArtworkImageUrl] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   
@@ -48,14 +56,13 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ name, specialty, imageUrl, user
   
   return (
     <div 
-      ref={cardRef}
       className={cn(
         "group relative bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200",
         "transform transition-all duration-300 hover:shadow-md hover:-translate-y-1",
         `animate-fade-up animate-delay-${delay * 100}`
       )}
       style={{
-        transform: parallaxFactor !== 1 ? `translateY(${parallaxFactor}px)` : undefined,
+        transform: `translateY(${translateY}px)`,
         transition: 'transform 0.3s ease-out'
       }}
     >
@@ -126,6 +133,20 @@ const FeaturedArtists: React.FC<{ scrollPosition?: number }> = ({ scrollPosition
   const [loading, setLoading] = useState(true);
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [sectionOffset, setSectionOffset] = useState(0);
+
+  useEffect(() => {
+    const updateSectionOffset = () => {
+      if (sectionRef.current) {
+        const rect = sectionRef.current.getBoundingClientRect();
+        setSectionOffset(rect.top + window.scrollY);
+      }
+    };
+
+    updateSectionOffset();
+    window.addEventListener('resize', updateSectionOffset);
+    return () => window.removeEventListener('resize', updateSectionOffset);
+  }, []);
 
   const fetchArtists = async () => {
     try {
@@ -253,18 +274,26 @@ const FeaturedArtists: React.FC<{ scrollPosition?: number }> = ({ scrollPosition
 
   const displayArtists = artists.length > 0 ? artists : fallbackArtists;
 
-  const calculateParallaxFactor = (index: number): number => {
+  const calculateParallaxTransform = (index: number): number => {
     if (!isVisible) return 0;
     
     const columnPosition = index % 4;
     const rowPosition = Math.floor(index / 4);
     
-    const baseFactors = [0.15, 0.2, 0.25, 0.3];
-    const speedFactor = baseFactors[columnPosition] || 0.2;
+    // Adjust these values to control parallax intensity
+    const baseSpeed = 0.15;
+    const speedVariation = 0.05;
+    const maxOffset = 50;
     
-    const rowVariation = rowPosition * 0.05;
+    // Calculate relative scroll position
+    const relativeScroll = Math.max(0, scrollPosition - sectionOffset);
     
-    return (scrollPosition * (speedFactor + rowVariation)) * (columnPosition % 2 === 0 ? 1 : -1);
+    // Apply different speeds based on position
+    const speed = baseSpeed + (columnPosition * speedVariation) + (rowPosition * 0.03);
+    const offset = (relativeScroll * speed) % maxOffset;
+    
+    // Alternate direction based on column
+    return columnPosition % 2 === 0 ? offset : -offset;
   };
 
   return (
@@ -313,7 +342,7 @@ const FeaturedArtists: React.FC<{ scrollPosition?: number }> = ({ scrollPosition
                 userId={artist.userId}
                 portfolioId={artist.portfolioId}
                 delay={index + 1}
-                parallaxFactor={calculateParallaxFactor(index)}
+                translateY={calculateParallaxTransform(index)}
               />
             ))}
           </div>

@@ -1,4 +1,3 @@
-
 export interface Portfolio {
   id: string;
   name: string;
@@ -52,6 +51,26 @@ export interface ArtworkFormData {
   currency: string;
   for_sale: boolean;
   listing_url?: string;
+}
+
+export interface ProfileData {
+  id: string | null;
+  full_name: string | null;
+  username: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+}
+
+export interface PortfolioWithProfile {
+  id: string;
+  name: string;
+  user_id: string;
+  is_public: boolean;
+  profiles: ProfileData;
+  artwork?: {
+    id: string;
+    image_url: string;
+  } | null;
 }
 
 export interface PortfolioWithArtist {

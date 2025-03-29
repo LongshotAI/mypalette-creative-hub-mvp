@@ -23,8 +23,16 @@ const resourceDescriptions = [
   "Master the fundamentals of color theory and composition to take your artwork to the next level. Includes practical exercises and examples."
 ];
 
+// Function to ensure type safety for education resources
+const validateResourceType = (type: string): "article" | "video" | "guide" => {
+  if (type === "article" || type === "video" || type === "guide") {
+    return type;
+  }
+  return "article"; // Default fallback
+};
+
 // Sample education resources for mock data
-const mockEducationResources = [
+const mockEducationResources: EducationResource[] = [
   {
     id: "1",
     title: "Digital Art Composition Masterclass",
@@ -124,9 +132,10 @@ const mockEducationResources = [
 ];
 
 // This will enhance any function that returns education resources
-export const enhanceEducationResourcesWithImages = (resources) => {
+export const enhanceEducationResourcesWithImages = (resources: any[]): EducationResource[] => {
   return resources.map((resource, index) => ({
     ...resource,
+    type: validateResourceType(resource.type),
     image_url: resource.image_url || resourceImages[index % resourceImages.length],
     description: resource.description || resourceDescriptions[index % resourceDescriptions.length]
   }));
