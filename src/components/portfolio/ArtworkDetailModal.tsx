@@ -10,6 +10,8 @@ import {
 import { Artwork } from '@/types/portfolio';
 import PurchaseButton from './PurchaseButton';
 import { useAnalytics } from '@/hooks/analytics/useAnalytics';
+import { Button } from '@/components/ui/button';
+import { ExternalLink } from 'lucide-react';
 
 interface ArtworkDetailModalProps {
   artwork: Artwork | null;
@@ -89,6 +91,19 @@ const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                       ? 'Sold Out' 
                       : `${artwork.quantity} available`}
                   </p>
+                </div>
+              )}
+              
+              {artwork.listing_url && (
+                <div className="mt-2">
+                  <Button 
+                    variant="outline" 
+                    className="w-full flex items-center justify-center gap-2"
+                    onClick={() => window.open(artwork.listing_url, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    View Artwork Listing
+                  </Button>
                 </div>
               )}
             </div>

@@ -1,3 +1,4 @@
+
 import { Portfolio, PortfolioFormData } from '@/types/portfolio';
 import { supabase } from '@/lib/supabase';
 import { ApiResponse, createSuccessResponse, createErrorResponse } from './base.api';
@@ -74,13 +75,26 @@ export const createPortfolio = async (userId: string, portfolioData: PortfolioFo
 export const updatePortfolio = async (portfolioId: string, portfolioData: PortfolioFormData): Promise<ApiResponse<Portfolio>> => {
   try {
     console.log('Updating portfolio:', portfolioId, portfolioData);
+    
+    // Ensure the template and theme are valid values
+    const validTemplates = ['grid', 'masonry', 'slideshow', 'minimal', 'gallery', 'studio'];
+    const validThemes = ['default', 'minimal', 'bold', 'elegant', 'dark'];
+    
+    const template = validTemplates.includes(portfolioData.template) 
+      ? portfolioData.template 
+      : 'grid';
+      
+    const theme = validThemes.includes(portfolioData.theme)
+      ? portfolioData.theme
+      : 'default';
+    
     const { data, error } = await supabase
       .from('portfolios')
       .update({
         name: portfolioData.name,
         description: portfolioData.description,
-        template: portfolioData.template,
-        theme: portfolioData.theme,
+        template: template,
+        theme: theme,
         is_public: portfolioData.is_public,
         updated_at: new Date().toISOString()
       })
@@ -223,6 +237,18 @@ export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResp
     if (!portfolio) {
       console.error('No portfolio found for ID:', portfolioId);
       return createErrorResponse('Portfolio not found', new Error('Portfolio not found'));
+    }
+    
+    // Ensure portfolio has valid template and theme
+    const validTemplates = ['grid', 'masonry', 'slideshow', 'minimal', 'gallery', 'studio'];
+    const validThemes = ['default', 'minimal', 'bold', 'elegant', 'dark'];
+    
+    if (!validTemplates.includes(portfolio.template)) {
+      portfolio.template = 'grid';
+    }
+    
+    if (!validThemes.includes(portfolio.theme)) {
+      portfolio.theme = 'default';
     }
     
     // Then try to fetch the profile information
