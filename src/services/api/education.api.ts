@@ -1,5 +1,4 @@
-
-// This file will likely be read-only in your app, but we need to add some sample data
+import { EducationResource, APIResponse } from '@/types/education';
 
 // Sample images
 const resourceImages = [
@@ -8,7 +7,6 @@ const resourceImages = [
   "https://images.unsplash.com/photo-1561214115-f2f134cc4912?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
   "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
   "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1615184697985-c9bde1b07da7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
   "https://images.unsplash.com/photo-1579783928621-7a13d66a62b1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
   "https://images.unsplash.com/photo-1602532305019-3dbbd482dae9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
 ];
@@ -139,7 +137,7 @@ export const getEducationResources = async (
   searchQuery = '',
   resourceType = 'all',
   category = 'all'
-) => {
+): Promise<APIResponse<EducationResource[]>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   
@@ -179,7 +177,7 @@ export const getEducationResources = async (
 };
 
 // Get all education resources for admin (including drafts)
-export const getAdminEducationResources = async () => {
+export const getAdminEducationResources = async (): Promise<APIResponse<EducationResource[]>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   
@@ -190,7 +188,11 @@ export const getAdminEducationResources = async () => {
 };
 
 // Function to toggle favorite status
-export const toggleFavoriteResource = async (resourceId, userId, isFavorite) => {
+export const toggleFavoriteResource = async (
+  resourceId: string,
+  userId: string,
+  isFavorite: boolean
+): Promise<APIResponse<{ resourceId: string; userId: string; isFavorite: boolean }>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300));
   
@@ -203,7 +205,7 @@ export const toggleFavoriteResource = async (resourceId, userId, isFavorite) => 
 };
 
 // Get user's favorite resource IDs
-export const getUserFavorites = async (userId) => {
+export const getUserFavorites = async (userId: string): Promise<APIResponse<string[]>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300));
   
@@ -219,7 +221,7 @@ export const getUserFavorites = async (userId) => {
 };
 
 // Get user's favorite resources (full objects)
-export const getFavoriteResources = async (userId) => {
+export const getFavoriteResources = async (userId: string): Promise<APIResponse<EducationResource[]>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   
@@ -238,7 +240,9 @@ export const getFavoriteResources = async (userId) => {
 };
 
 // Create a new education resource
-export const createEducationResource = async (resourceData) => {
+export const createEducationResource = async (
+  resourceData: Omit<EducationResource, 'id' | 'created_at' | 'updated_at'>
+): Promise<APIResponse<EducationResource>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 700));
   
@@ -258,7 +262,10 @@ export const createEducationResource = async (resourceData) => {
 };
 
 // Update an existing education resource
-export const updateEducationResource = async (resourceId, updates) => {
+export const updateEducationResource = async (
+  resourceId: string, 
+  updates: Partial<EducationResource>
+): Promise<APIResponse<EducationResource>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 700));
   
@@ -287,7 +294,7 @@ export const updateEducationResource = async (resourceId, updates) => {
 };
 
 // Delete an education resource
-export const deleteEducationResource = async (resourceId) => {
+export const deleteEducationResource = async (resourceId: string): Promise<APIResponse<{ id: string }>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   

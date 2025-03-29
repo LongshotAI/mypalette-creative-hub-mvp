@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import DefaultLayout from '@/components/layout/DefaultLayout';
 import EducationHeader from '@/components/education/EducationHeader';
@@ -9,10 +8,11 @@ import TopicFilter from '@/components/education/TopicFilter';
 import { getEducationResources, toggleFavoriteResource, getUserFavorites, getFavoriteResources, enhanceEducationResourcesWithImages } from '@/services/api/education.api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { EducationResource } from '@/types/education';
 
 const Education = () => {
   const { user } = useAuth();
-  const [resources, setResources] = useState([]);
+  const [resources, setResources] = useState<EducationResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [resourceType, setResourceType] = useState('all');
@@ -27,29 +27,24 @@ const Education = () => {
     try {
       setLoading(true);
       
-      // Special case for favorites filter
       if (category === 'favorites' && user) {
         const response = await getFavoriteResources(user.id);
-        if (response.status === 'success') {
-          // Enhance resources with images and descriptions
-          const enhancedResources = enhanceEducationResourcesWithImages(response.data || []);
+        if (response.status === 'success' && response.data) {
+          const enhancedResources = enhanceEducationResourcesWithImages(response.data);
           setResources(enhancedResources);
-        } else {
-          throw new Error(response.error?.message || 'Failed to load favorite resources');
+        } else if (response.error) {
+          throw new Error(response.error.message);
         }
       } else {
-        // Regular resources fetch with filters
         const response = await getEducationResources(searchQuery, resourceType, category === 'favorites' ? 'all' : category);
-        if (response.status === 'success') {
-          // Enhance resources with images and descriptions
-          const enhancedResources = enhanceEducationResourcesWithImages(response.data || []);
+        if (response.status === 'success' && response.data) {
+          const enhancedResources = enhanceEducationResourcesWithImages(response.data);
           setResources(enhancedResources);
-        } else {
-          throw new Error(response.error?.message || 'Failed to load resources');
+        } else if (response.error) {
+          throw new Error(response.error.message);
         }
       }
       
-      // Fetch user favorites if logged in
       if (user) {
         const favResponse = await getUserFavorites(user.id);
         if (favResponse.status === 'success') {
@@ -86,7 +81,6 @@ const Education = () => {
       const response = await toggleFavoriteResource(resourceId, user.id, isFavorite);
       
       if (response.status === 'success') {
-        // Update local state
         if (isFavorite) {
           setFavoriteIds(prev => prev.filter(id => id !== resourceId));
           toast.success('Removed from favorites');

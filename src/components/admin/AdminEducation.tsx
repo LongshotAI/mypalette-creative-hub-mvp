@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -41,10 +40,10 @@ const AdminEducation = () => {
       setLoading(true);
       const response = await getAdminEducationResources();
       
-      if (response.status === 'success') {
-        setResources(response.data || []);
-      } else {
-        throw new Error(response.error?.message || 'Failed to load resources');
+      if (response.status === 'success' && response.data) {
+        setResources(response.data);
+      } else if (response.error) {
+        throw new Error(response.error.message);
       }
     } catch (error) {
       console.error('Error fetching resources:', error);
