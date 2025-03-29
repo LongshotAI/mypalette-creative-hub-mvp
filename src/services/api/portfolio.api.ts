@@ -1,4 +1,3 @@
-
 import { Portfolio, PortfolioFormData } from '@/types/portfolio';
 import { supabase } from '@/lib/supabase';
 import { ApiResponse, createSuccessResponse, createErrorResponse } from './base.api';
@@ -46,11 +45,16 @@ export const createPortfolio = async (userId: string, portfolioData: PortfolioFo
       .from('portfolios')
       .insert([newPortfolio])
       .select()
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error('Error creating portfolio:', error);
       throw error;
+    }
+    
+    if (!data) {
+      console.error('No data returned after creating portfolio');
+      return createErrorResponse('Failed to create portfolio', new Error('No data returned'));
     }
     
     return createSuccessResponse(data);
@@ -78,11 +82,16 @@ export const updatePortfolio = async (portfolioId: string, portfolioData: Portfo
       })
       .eq('id', portfolioId)
       .select()
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error('Error updating portfolio:', error);
       throw error;
+    }
+    
+    if (!data) {
+      console.error('No data returned after updating portfolio');
+      return createErrorResponse('Failed to update portfolio', new Error('No data returned'));
     }
     
     return createSuccessResponse(data);
@@ -131,7 +140,7 @@ export const getPortfolio = async (portfolioId: string): Promise<ApiResponse<Por
       .from('portfolios')
       .select('*')
       .eq('id', portfolioId)
-      .maybeSingle();  // Using maybeSingle instead of single to avoid errors
+      .maybeSingle();
     
     if (error) {
       console.error('Error fetching portfolio:', error);
@@ -200,7 +209,7 @@ export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResp
       .from('portfolios')
       .select('*')
       .eq('id', portfolioId)
-      .maybeSingle();  // Using maybeSingle instead of single for better error handling
+      .maybeSingle();
     
     if (portfolioError) {
       console.error('Portfolio fetch error:', portfolioError);
@@ -234,7 +243,7 @@ export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResp
           current_exhibition
         `)
         .eq('id', portfolio.user_id)
-        .maybeSingle();  // Using maybeSingle for better error handling
+        .maybeSingle();
       
       if (!profileError && profiles) {
         profileData = profiles;
@@ -254,7 +263,6 @@ export const getPortfolioWithUser = async (portfolioId: string): Promise<ApiResp
       profiles: profileData
     };
     
-    console.log('Returning portfolio with user data:', portfolioWithUser);
     return createSuccessResponse(portfolioWithUser);
   } catch (error) {
     console.error('Failed to fetch portfolio with user:', error);

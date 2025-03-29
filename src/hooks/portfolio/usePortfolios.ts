@@ -2,6 +2,7 @@
 import { usePortfolioList } from './usePortfolioList';
 import { usePortfolioForm } from './usePortfolioForm';
 import { usePortfolioDelete } from './usePortfolioDelete';
+import { useCallback } from 'react';
 
 export const usePortfolios = (userId: string | undefined) => {
   if (!userId) {
@@ -29,18 +30,26 @@ export const usePortfolios = (userId: string | undefined) => {
     resetForm: resetPortfolioForm
   } = usePortfolioForm(userId, loadUserPortfolios);
 
-  const {
-    deletePortfolio,
-    deleteLoading
-  } = usePortfolioDelete(() => {
+  const handlePortfolioDeleted = useCallback(() => {
     loadUserPortfolios();
     
-    if (portfolios.length > 0) {
-      setSelectedPortfolio(portfolios[0].id);
+    if (portfolios.length > 1) {
+      // Find a portfolio that's not the one being deleted
+      const nextPortfolio = portfolios.find(p => p.id !== selectedPortfolio);
+      if (nextPortfolio) {
+        setSelectedPortfolio(nextPortfolio.id);
+      } else {
+        setSelectedPortfolio(null);
+      }
     } else {
       setSelectedPortfolio(null);
     }
-  });
+  }, [portfolios, selectedPortfolio, setSelectedPortfolio, loadUserPortfolios]);
+
+  const {
+    deletePortfolio,
+    deleteLoading
+  } = usePortfolioDelete(handlePortfolioDeleted);
 
   return {
     // From usePortfolioList

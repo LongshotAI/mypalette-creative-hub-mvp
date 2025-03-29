@@ -45,7 +45,6 @@ const PortfolioDetail = () => {
       if (portfolioResponse.status !== 'success' || !portfolioResponse.data) {
         console.error('Portfolio fetch error:', portfolioResponse.error);
         setError(portfolioResponse.error?.message || 'Portfolio not found or is not accessible');
-        toast.error('Portfolio not found or is not accessible');
         setLoading(false);
         setDataFetched(true);
         return;
@@ -71,7 +70,6 @@ const PortfolioDetail = () => {
           setArtworks(artworkResponse.data || []);
         } else {
           console.error('Error fetching artworks:', artworkResponse.error);
-          toast.error('Could not load artwork for this portfolio');
           // Still continue with empty artworks array
           setArtworks([]);
         }
@@ -79,33 +77,44 @@ const PortfolioDetail = () => {
         console.error('Error fetching artworks:', artworkError);
         // Continue with empty artworks array
         setArtworks([]);
-        toast.error('Failed to load artwork for this portfolio');
       }
+      
+      setLoading(false);
+      setDataFetched(true);
     } catch (error) {
       console.error('Error in portfolio fetch flow:', error);
       setError('Failed to load portfolio details');
-      toast.error('Error loading portfolio details');
-    } finally {
       setLoading(false);
       setDataFetched(true);
     }
   }, [portfolioId, analytics]);
 
   useEffect(() => {
-    // Reset state when portfolio ID changes
-    if (portfolioId) {
+    // Important: Only fetch if not already fetched for this ID
+    if (portfolioId && !dataFetched) {
       setPortfolio(null);
       setArtworks([]);
       setError(null);
       setLoading(true);
-      setDataFetched(false);
       
-      // Only fetch if we haven't already for this ID
-      fetchPortfolioData();
+      // Added timeout to avoid potential race conditions
+      const timeoutId = setTimeout(() => {
+        fetchPortfolioData();
+      }, 0);
+      
+      // Cleanup
+      return () => {
+        clearTimeout(timeoutId);
+      };
     }
-  }, [portfolioId, fetchPortfolioData]);
+  }, [portfolioId, fetchPortfolioData, dataFetched]);
 
-  // Track artwork view when a user interacts with an artwork
+  // Reset dataFetched when portfolioId changes
+  useEffect(() => {
+    setDataFetched(false);
+  }, [portfolioId]);
+
+  // Track artwork view when a user interacts with an artwork  
   const handleArtworkView = (artworkId: string) => {
     if (!portfolioId || !artworkId) return;
     
