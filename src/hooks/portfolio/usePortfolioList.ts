@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Portfolio } from '@/types/portfolio';
 import { toast } from 'sonner';
@@ -9,21 +9,22 @@ export const usePortfolioList = (userId: string | undefined) => {
   const [selectedPortfolio, setSelectedPortfolio] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const loadingRef = useRef(false);
   
   const loadUserPortfolios = useCallback(async () => {
-    if (!userId) {
-      console.warn('Cannot load portfolios without a userId');
-      setLoading(false);
-      setIsLoaded(true);
+    // Prevent concurrent loading using ref to avoid state update issues
+    if (!userId || loadingRef.current) {
+      if (!userId) {
+        console.warn('Cannot load portfolios without a userId');
+        setLoading(false);
+        setIsLoaded(true);
+      }
       return;
     }
     
-    if (loading) {
-      console.warn('Already loading portfolios, skipping duplicate request');
-      return;
-    }
-    
+    loadingRef.current = true;
     setLoading(true);
+    
     try {
       console.log('Fetching portfolios for user:', userId);
       const { data, error } = await supabase
@@ -52,10 +53,12 @@ export const usePortfolioList = (userId: string | undefined) => {
     } finally {
       setLoading(false);
       setIsLoaded(true);
+      loadingRef.current = false;
     }
-  }, [userId, loading, selectedPortfolio]);
+  }, [userId, selectedPortfolio]);
 
   useEffect(() => {
+    // Only load portfolios if userId changes or not loaded yet
     if (userId && !isLoaded) {
       loadUserPortfolios();
     } else if (!userId) {

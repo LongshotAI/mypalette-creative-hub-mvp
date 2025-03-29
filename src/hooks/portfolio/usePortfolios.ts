@@ -2,11 +2,14 @@
 import { usePortfolioList } from './usePortfolioList';
 import { usePortfolioForm } from './usePortfolioForm';
 import { usePortfolioDelete } from './usePortfolioDelete';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export const usePortfolios = (userId: string | undefined) => {
-  if (!userId) {
+  const hasLoggedWarning = useRef(false);
+  
+  if (!userId && !hasLoggedWarning.current) {
     console.warn('usePortfolios called without userId, some functionality may be limited');
+    hasLoggedWarning.current = true;
   }
   
   const {

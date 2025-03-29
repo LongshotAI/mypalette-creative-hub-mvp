@@ -7,6 +7,10 @@ import { ApiResponse, createSuccessResponse, createErrorResponse } from './base.
  */
 export const getUserPortfolios = async (userId: string): Promise<ApiResponse<Portfolio[]>> => {
   try {
+    if (!userId) {
+      return createErrorResponse('User ID is required', new Error('User ID is required'));
+    }
+    
     console.log('Fetching portfolios for user ID:', userId);
     const { data, error } = await supabase
       .from('portfolios')
