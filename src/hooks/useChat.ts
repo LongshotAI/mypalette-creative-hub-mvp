@@ -55,6 +55,11 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       // Add the new user message
       chatHistory.push({ role: 'user', content });
       
+      console.log('Calling Anthropic edge function with:', {
+        messageCount: chatHistory.length,
+        usingKnowledgeBase: options.useKnowledgeBase
+      });
+      
       // Call our Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('anthropic-chat', {
         body: {
@@ -73,13 +78,21 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         };
         
         setMessages(prev => [...prev, assistantMessage]);
+      } else if (data?.error) {
+        throw new Error(data.error.message || 'Invalid response from Anthropic API');
       } else {
         throw new Error('Invalid response from Anthropic API');
       }
     } catch (err: any) {
       console.error('Error in chat:', err);
-      setError(err.message || 'Failed to get a response. Please try again.');
-      toast.error('Failed to get a response. Please try again.');
+      const errorMessage = err.message || 'Failed to get a response. Please try again.';
+      setError(errorMessage);
+      
+      if (errorMessage.includes('credit balance is too low')) {
+        toast.error('AI assistant is currently unavailable due to API credit limitations.');
+      } else {
+        toast.error('Failed to get a response. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

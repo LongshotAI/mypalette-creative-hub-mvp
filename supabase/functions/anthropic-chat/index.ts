@@ -58,28 +58,42 @@ serve(async (req) => {
       }
     }
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': anthropicApiKey || '',
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 1024,
-        messages,
-        system: finalSystemPrompt,
-      }),
-    });
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': anthropicApiKey || '',
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-3-haiku-20240307',
+          max_tokens: 1024,
+          messages,
+          system: finalSystemPrompt,
+        }),
+      });
 
-    const data = await response.json();
-    
-    console.log('Anthropic response received:', JSON.stringify(data).slice(0, 200) + '...');
+      const data = await response.json();
+      
+      // Check if there's an error in the response
+      if (data.type === 'error') {
+        console.error('Error from Anthropic API:', data.error);
+        return new Response(JSON.stringify({ error: data.error }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      console.log('Anthropic response received:', JSON.stringify(data).slice(0, 200) + '...');
 
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      console.error('Error calling Anthropic API:', error);
+      throw new Error(`Failed to call Anthropic API: ${error.message}`);
+    }
   } catch (error) {
     console.error('Error in anthropic-chat function:', error);
     return new Response(JSON.stringify({ error: error.message }), {

@@ -6,6 +6,7 @@ import { MessageCircle, X, Send, Loader2, RefreshCw } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,7 +19,7 @@ export const ChatWidget = () => {
     error,
     resetChat
   } = useChat({
-    useKnowledgeBase: true, // Always use knowledge base for enhanced responses
+    useKnowledgeBase: true,
     customSystemPrompt: `
       You are a helpful assistant for MyPalette, a creative hub platform.
       You help users with questions about using the platform, creating portfolios,
@@ -133,9 +134,13 @@ export const ChatWidget = () => {
               </div>
             )}
             {error && (
-              <div className="text-destructive text-sm p-2 rounded bg-destructive/10">
-                {error}
-              </div>
+              <Alert variant="destructive" className="max-w-[95%] mx-auto">
+                <AlertDescription>
+                  {error.includes("credit balance is too low") 
+                    ? "The AI assistant is currently unavailable due to API credit limitations. Please try again later." 
+                    : error}
+                </AlertDescription>
+              </Alert>
             )}
             <div ref={messagesEndRef} />
           </div>
