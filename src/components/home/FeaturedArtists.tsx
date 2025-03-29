@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -14,10 +13,12 @@ interface ArtistCardProps {
   userId: string;
   delay: number;
   portfolioId?: string;
+  parallaxFactor?: number;
 }
 
-const ArtistCard: React.FC<ArtistCardProps> = ({ name, specialty, imageUrl, userId, delay, portfolioId }) => {
+const ArtistCard: React.FC<ArtistCardProps> = ({ name, specialty, imageUrl, userId, delay, portfolioId, parallaxFactor = 1 }) => {
   const [artworkImageUrl, setArtworkImageUrl] = useState<string | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     const fetchArtistArtwork = async () => {
@@ -48,11 +49,16 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ name, specialty, imageUrl, user
   
   return (
     <div 
+      ref={cardRef}
       className={cn(
         "group relative bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200",
         "transform transition-all duration-300 hover:shadow-md hover:-translate-y-1",
         `animate-fade-up animate-delay-${delay * 100}`
       )}
+      style={{
+        transform: parallaxFactor !== 1 ? `translateY(${parallaxFactor}px)` : undefined,
+        transition: 'transform 0.3s ease-out'
+      }}
     >
       <div className="aspect-square bg-gray-100 overflow-hidden">
         <div 
@@ -119,9 +125,11 @@ interface PortfolioWithProfile {
   } | null;
 }
 
-const FeaturedArtists: React.FC = () => {
+const FeaturedArtists: React.FC<{ scrollPosition?: number }> = ({ scrollPosition = 0 }) => {
   const [artists, setArtists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const fetchArtists = async () => {
@@ -186,18 +194,31 @@ const FeaturedArtists: React.FC = () => {
         const portfoliosWithData = portfoliosWithArtwork.filter(p => p.artwork);
         
         // Create an array of artists with mapped data
-        const artistData = portfoliosWithData.slice(0, 8).map((portfolio, index) => ({
-          id: portfolio.profiles?.id || `temp-${index}`,
-          name: portfolio.profiles?.full_name || portfolio.profiles?.username || portfolio.name || 'Artist',
-          specialty: portfolio.profiles?.bio ? 
-            portfolio.profiles.bio.substring(0, 30) + (portfolio.profiles.bio.length > 30 ? '...' : '') : 
-            'Digital Artist',
-          imageUrl: portfolio.artwork?.image_url || 
-                   portfolio.profiles?.avatar_url || 
-                   sampleArtworks[index % sampleArtworks.length],
-          userId: portfolio.profiles?.id || portfolio.user_id,
-          portfolioId: portfolio.id
-        }));
+        const artistData = portfoliosWithData.slice(0, 8).map((portfolio, index) => {
+          if (!portfolio.profiles) {
+            return {
+              id: `temp-${index}`,
+              name: portfolio.name || 'Artist',
+              specialty: 'Digital Artist',
+              imageUrl: portfolio.artwork?.image_url || sampleArtworks[index % sampleArtworks.length],
+              userId: portfolio.user_id,
+              portfolioId: portfolio.id
+            };
+          }
+
+          return {
+            id: portfolio.profiles.id || `temp-${index}`,
+            name: portfolio.profiles.full_name || portfolio.profiles.username || portfolio.name || 'Artist',
+            specialty: portfolio.profiles.bio ? 
+              portfolio.profiles.bio.substring(0, 30) + (portfolio.profiles.bio.length > 30 ? '...' : '') : 
+              'Digital Artist',
+            imageUrl: portfolio.artwork?.image_url || 
+                    portfolio.profiles.avatar_url || 
+                    sampleArtworks[index % sampleArtworks.length],
+            userId: portfolio.profiles.id || portfolio.user_id,
+            portfolioId: portfolio.id
+          };
+        });
         
         setArtists(artistData);
       } catch (error) {
@@ -209,6 +230,30 @@ const FeaturedArtists: React.FC = () => {
     };
 
     fetchArtists();
+  }, []);
+
+  // Check if section is visible
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+      }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => {
+      if (sectionRef.current) {
+        observer.unobserve(sectionRef.current);
+      }
+    };
   }, []);
 
   // Fallback data in case there are no artists in the database
@@ -225,8 +270,27 @@ const FeaturedArtists: React.FC = () => {
 
   const displayArtists = artists.length > 0 ? artists : fallbackArtists;
 
+  // Calculate parallax effect based on scroll position and visibility
+  const calculateParallaxFactor = (index: number): number => {
+    if (!isVisible) return 0;
+    
+    // Create a staggered effect based on column position
+    const columnPosition = index % 4; // For a 4-column grid
+    const rowPosition = Math.floor(index / 4);
+    
+    // Different parallax speeds based on column position
+    const baseFactors = [0.15, 0.2, 0.25, 0.3];
+    const speedFactor = baseFactors[columnPosition] || 0.2;
+    
+    // Add slight variation based on row
+    const rowVariation = rowPosition * 0.05;
+    
+    // Calculate final parallax offset
+    return (scrollPosition * (speedFactor + rowVariation)) * (columnPosition % 2 === 0 ? 1 : -1);
+  };
+
   return (
-    <section className="py-24 bg-gray-50">
+    <section ref={sectionRef} className="py-24 bg-gray-50 overflow-hidden">
       <div className="container-custom">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12">
           <div className="max-w-xl">
@@ -271,6 +335,7 @@ const FeaturedArtists: React.FC = () => {
                 userId={artist.userId}
                 portfolioId={artist.portfolioId}
                 delay={index + 1}
+                parallaxFactor={calculateParallaxFactor(index)}
               />
             ))}
           </div>
