@@ -165,15 +165,15 @@ const FeaturedArtists: React.FC = () => {
         
         // Create an array of artists with mapped data
         const artistData = portfoliosWithData.slice(0, 8).map((portfolio, index) => ({
-          id: portfolio.profiles.id,
-          name: portfolio.profiles.full_name || portfolio.profiles.username || portfolio.name || 'Artist',
-          specialty: portfolio.profiles.bio ? 
+          id: portfolio.profiles?.id,
+          name: portfolio.profiles?.full_name || portfolio.profiles?.username || portfolio.name || 'Artist',
+          specialty: portfolio.profiles?.bio ? 
             portfolio.profiles.bio.substring(0, 30) + (portfolio.profiles.bio.length > 30 ? '...' : '') : 
             'Digital Artist',
           imageUrl: portfolio.artwork?.image_url || 
-                   portfolio.profiles.avatar_url || 
+                   portfolio.profiles?.avatar_url || 
                    sampleArtworks[index % sampleArtworks.length],
-          userId: portfolio.profiles.id,
+          userId: portfolio.profiles?.id,
           portfolioId: portfolio.id
         }));
         
