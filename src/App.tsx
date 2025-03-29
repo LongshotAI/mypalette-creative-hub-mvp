@@ -18,6 +18,7 @@ import PaymentConfirmation from './pages/PaymentConfirmation';
 import Admin from './pages/Admin';
 import { AuthProvider } from './contexts/AuthContext';
 import { AnalyticsProvider } from './contexts/AnalyticsContext';
+import ChatWidget from './components/chat/ChatWidget';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
           <Route path="/admin/*" element={<ProtectedRoute adminOnly={true}><Admin /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <ChatWidget />
       </AnalyticsProvider>
     </AuthProvider>
   );

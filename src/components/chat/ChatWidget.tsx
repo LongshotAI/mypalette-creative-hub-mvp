@@ -18,7 +18,19 @@ export const ChatWidget = () => {
     error,
     resetChat
   } = useChat({
-    useKnowledgeBase: true
+    useKnowledgeBase: true, // Always use knowledge base for enhanced responses
+    customSystemPrompt: `
+      You are a helpful assistant for MyPalette, a creative hub platform.
+      You help users with questions about using the platform, creating portfolios,
+      submitting to open calls, and other art-related queries.
+      
+      If you are asked about Pixel Palette Nation (PPN), you have specific knowledge about their
+      collections, organization structure, and community resources. Provide detailed information
+      about PPN collections, marketing strategies, and narrative development when relevant.
+      
+      Always be friendly, helpful, and concise in your responses.
+      If you don't know the answer to something, say so honestly.
+    `
   });
 
   const handleToggle = () => {
@@ -97,7 +109,7 @@ export const ChatWidget = () => {
           <div className="flex-1 overflow-y-auto p-3 space-y-4">
             {messages.length === 0 ? (
               <div className="text-center text-muted-foreground p-4">
-                How can I help you with MyPalette today?
+                How can I help you with MyPalette today? You can also ask about Pixel Palette Nation (PPN) collections and resources.
               </div>
             ) : (
               messages.map((message, index) => (

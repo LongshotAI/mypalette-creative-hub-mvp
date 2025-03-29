@@ -38,7 +38,7 @@ serve(async (req) => {
           const { data: knowledgeItems, error } = await supabase
             .from('knowledge_base')
             .select('title, content')
-            .limit(5);
+            .limit(15); // Increased limit to accommodate more knowledge entries
             
           if (!error && knowledgeItems && knowledgeItems.length > 0) {
             // Append knowledge base content to system prompt
@@ -47,6 +47,10 @@ serve(async (req) => {
             ).join('\n\n');
             
             finalSystemPrompt += "\n\nHere is some information from our knowledge base that might help you answer the user's question:\n" + knowledgeText;
+            
+            console.log('Knowledge base entries found: ' + knowledgeItems.length);
+          } else {
+            console.log('No knowledge base entries found or error occurred:', error);
           }
         } catch (e) {
           console.error('Error fetching knowledge base:', e);
