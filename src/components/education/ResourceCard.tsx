@@ -1,11 +1,18 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Book, Video, FileText, Star, ExternalLink, Download } from 'lucide-react';
+import { Book, Video, FileText, Star, ExternalLink, Download, Image, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 interface ResourceCardProps {
   id: string;
@@ -14,6 +21,7 @@ interface ResourceCardProps {
   category: string;
   imageUrl: string;
   author: string;
+  description?: string;
   externalUrl?: string;
   fileUrl?: string;
   isFavorite?: boolean;
@@ -27,6 +35,7 @@ const ResourceCard = ({
   category,
   imageUrl,
   author,
+  description,
   externalUrl,
   fileUrl,
   isFavorite = false,
@@ -34,6 +43,7 @@ const ResourceCard = ({
 }: ResourceCardProps) => {
   const { user } = useAuth();
   const [favoriteLoading, setFavoriteLoading] = React.useState(false);
+  const [imageOpen, setImageOpen] = useState(false);
   
   const iconMap = {
     'article': <Book className="h-5 w-5" />,
@@ -68,29 +78,46 @@ const ResourceCard = ({
   const handleCardClick = () => {
     if (externalUrl) {
       window.open(externalUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      setImageOpen(true);
     }
   };
+
+  // Ensure we have a valid image URL
+  const displayImageUrl = imageUrl || `https://images.unsplash.com/photo-${1500000000000 + parseInt(id) * 10000}?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80`;
 
   return (
     <Card 
       className={cn(
         "group bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 transition-all duration-300 hover:shadow-md hover:-translate-y-1",
-        externalUrl && "cursor-pointer"
+        "cursor-pointer"
       )}
-      onClick={externalUrl ? handleCardClick : undefined}
+      onClick={handleCardClick}
     >
       <div className="aspect-video bg-gray-100 overflow-hidden relative">
         <div 
           className="w-full h-full bg-gray-200 flex items-center justify-center"
           style={{
-            backgroundImage: imageUrl ? `url(${imageUrl})` : 'none',
+            backgroundImage: `url(${displayImageUrl})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
         >
-          {!imageUrl && (
-            <span className="text-gray-400">Image placeholder</span>
-          )}
+          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <Button size="sm" variant="secondary" className="bg-white/80">
+              {externalUrl ? (
+                <>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open Resource
+                </>
+              ) : (
+                <>
+                  <Image className="h-4 w-4 mr-2" />
+                  View Image
+                </>
+              )}
+            </Button>
+          </div>
         </div>
         
         <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium flex items-center">
@@ -156,6 +183,40 @@ const ResourceCard = ({
         <h3 className="font-medium text-base line-clamp-2 mb-2 group-hover:text-primary transition-colors">{title}</h3>
         <p className="text-sm text-muted-foreground">By {author}</p>
       </div>
+
+      {/* Image Dialog */}
+      <Dialog open={imageOpen} onOpenChange={setImageOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>
+              {category} {type} by {author}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 overflow-hidden rounded-md">
+            <img 
+              src={displayImageUrl} 
+              alt={title} 
+              className="w-full h-auto object-contain max-h-[70vh]" 
+            />
+          </div>
+          {description && (
+            <div className="mt-4 text-sm text-muted-foreground">
+              {description}
+            </div>
+          )}
+          {externalUrl && (
+            <div className="mt-4 flex justify-end">
+              <Button 
+                onClick={() => window.open(externalUrl, '_blank', 'noopener,noreferrer')}
+                className="flex items-center"
+              >
+                Visit Resource <ExternalLink className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
