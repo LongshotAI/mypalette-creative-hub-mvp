@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
@@ -20,15 +19,15 @@ const Pixel: React.FC<PixelProps> = ({ x, y, delay, color, size }) => {
       fill={color}
       initial={{ opacity: 0 }}
       animate={{ 
-        opacity: [0, 1, 0],
+        opacity: [0, 0.7, 0],  // Increased middle opacity for better visibility
         x: x + Math.random() * 10 - 5,
         y: y + Math.random() * 10 - 5,
       }}
       transition={{
-        duration: 5 + Math.random() * 2,
+        duration: 3 + Math.random() * 2, // Faster animation cycle
         delay: delay,
         repeat: Infinity,
-        repeatType: "reverse",
+        repeatType: "loop",
         ease: "easeInOut",
       }}
       style={{ borderRadius: '2px' }}
@@ -53,8 +52,8 @@ const PixelWave: React.FC<PixelWaveProps> = ({
     // Generate wave paths using pixels
     const generatePixelWavePaths = () => {
       const paths = [];
-      const waveCount = 8; // More waves for a denser effect
-      const pixelsPerWave = 60; // More pixels per wave for smoother effect
+      const waveCount = 10; // More waves for a denser effect
+      const pixelsPerWave = 80; // More pixels per wave for smoother effect
       
       for (let w = 0; w < waveCount; w++) {
         const amplitude = 30 + (w * 15);
@@ -72,36 +71,36 @@ const PixelWave: React.FC<PixelWaveProps> = ({
           
           // Use brand colors with varying opacity
           let color;
-          if (w % 3 === 0) color = `rgba(237, 51, 59, ${0.2 + Math.random() * 0.3})`; // brand-red
-          else if (w % 3 === 1) color = `rgba(49, 162, 76, ${0.2 + Math.random() * 0.3})`; // brand-green
-          else color = `rgba(40, 111, 180, ${0.2 + Math.random() * 0.3})`; // brand-blue
+          if (w % 3 === 0) color = `rgba(237, 51, 59, ${0.3 + Math.random() * 0.4})`; // brand-red, increased opacity
+          else if (w % 3 === 1) color = `rgba(49, 162, 76, ${0.3 + Math.random() * 0.4})`; // brand-green, increased opacity
+          else color = `rgba(40, 111, 180, ${0.3 + Math.random() * 0.4})`; // brand-blue, increased opacity
           
           paths.push({
             x,
             y, 
-            delay: i * 0.02 + w * 0.3, // Faster appearance of pixels
+            delay: i * 0.01 + w * 0.2, // Faster appearance of pixels
             color,
             size: pixelSize
           });
         }
       }
       
-      // Add some scattered pixels for added visual interest
-      for (let i = 0; i < 40; i++) {
+      // Add more scattered pixels for added visual interest
+      for (let i = 0; i < 60; i++) {
         const x = Math.random() * width;
         const y = Math.random() * height;
         const size = 1 + Math.random() * 3;
         
         const colors = [
-          `rgba(237, 51, 59, ${0.1 + Math.random() * 0.2})`, // brand-red
-          `rgba(49, 162, 76, ${0.1 + Math.random() * 0.2})`, // brand-green
-          `rgba(40, 111, 180, ${0.1 + Math.random() * 0.2})`, // brand-blue
+          `rgba(237, 51, 59, ${0.2 + Math.random() * 0.3})`, // brand-red
+          `rgba(49, 162, 76, ${0.2 + Math.random() * 0.3})`, // brand-green
+          `rgba(40, 111, 180, ${0.2 + Math.random() * 0.3})`, // brand-blue
         ];
         
         paths.push({
           x,
           y,
-          delay: Math.random() * 5,
+          delay: Math.random() * 3,
           color: colors[Math.floor(Math.random() * colors.length)],
           size
         });
@@ -111,6 +110,13 @@ const PixelWave: React.FC<PixelWaveProps> = ({
     };
     
     setPixels(generatePixelWavePaths());
+    
+    // Refresh pixels every 10 seconds to keep animation fresh
+    const intervalId = setInterval(() => {
+      setPixels(generatePixelWavePaths());
+    }, 10000);
+    
+    return () => clearInterval(intervalId);
   }, [width, height]);
   
   return (

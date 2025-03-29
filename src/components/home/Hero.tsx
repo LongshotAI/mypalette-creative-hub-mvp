@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,43 +30,40 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
     
     pixelGrid.innerHTML = '';
     
-    for (let i = 0; i < gridSize; i++) {
-      for (let j = 0; j < gridSize; j++) {
-        const pixel = document.createElement('div');
-        pixel.className = 'absolute transition-all duration-2000 rounded-sm opacity-0';
-        pixel.style.width = `${pixelSize}px`;
-        pixel.style.height = `${pixelSize}px`;
-        pixel.style.left = `${j * pixelSize}px`;
-        pixel.style.top = `${i * pixelSize}px`;
-        
-        if (Math.random() > 0.7) {
-          const delay = Math.random() * 5000;
-          setTimeout(() => {
+    const createPixels = () => {
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          const pixel = document.createElement('div');
+          pixel.className = 'absolute transition-all duration-2000 rounded-sm opacity-0';
+          pixel.style.width = `${pixelSize}px`;
+          pixel.style.height = `${pixelSize}px`;
+          pixel.style.left = `${j * pixelSize}px`;
+          pixel.style.top = `${i * pixelSize}px`;
+          
+          if (Math.random() > 0.7) {
             const colors = [
               'bg-brand-red/15', 'bg-brand-green/15', 'bg-brand-blue/15', 
               'bg-primary/10', 'bg-secondary/10'
             ];
             const color = colors[Math.floor(Math.random() * colors.length)];
-            pixel.className = `absolute transition-all duration-2000 ${color} rounded-sm`;
+            pixel.className = `absolute transition-all duration-2000 ${color} rounded-sm opacity-0`;
             
-            if (Math.random() > 0.8) {
-              pixel.style.opacity = '0.3';
-            }
-          }, delay);
-          
-          pixelGrid.appendChild(pixel);
+            pixelGrid.appendChild(pixel);
+          }
         }
       }
-    }
+    };
+    
+    createPixels();
     
     const animatePixels = () => {
       Array.from(pixelGrid.children).forEach((pixel) => {
-        if (Math.random() > 0.995) {
+        if (Math.random() > 0.98) {
           const elem = pixel as HTMLElement;
-          if (elem.style.opacity !== '0') {
+          if (elem.style.opacity === '0' || elem.style.opacity === '') {
+            elem.style.opacity = Math.random() > 0.5 ? '0.3' : '0.5';
+          } else {
             elem.style.opacity = '0';
-          } else if (Math.random() > 0.8) {
-            elem.style.opacity = '0.3';
           }
         }
       });
@@ -76,6 +72,18 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
     };
     
     const animationId = requestAnimationFrame(animatePixels);
+    
+    const refreshInterval = setInterval(() => {
+      if (pixelGrid.children.length > 100) {
+        for (let i = 0; i < 20; i++) {
+          if (pixelGrid.children.length > 0) {
+            pixelGrid.removeChild(pixelGrid.children[Math.floor(Math.random() * pixelGrid.children.length)]);
+          }
+        }
+      }
+      
+      createPixels();
+    }, 5000);
     
     const handleResize = () => {
       if (pixelGrid) {
@@ -98,7 +106,7 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
       const pixelTextContainer = document.createElement('div');
       pixelTextContainer.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none';
       
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 15; i++) {
         const floatingPixel = document.createElement('div');
         const size = 4 + Math.random() * 8;
         const xPos = (Math.random() - 0.5) * 100;
@@ -124,6 +132,10 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
     
     setTimeout(addPixelText, 1000);
     
+    const floatingPixelsInterval = setInterval(() => {
+      addPixelText();
+    }, 8000);
+    
     console.log(`
     ███╗   ███╗██╗   ██╗██████╗  █████╗ ██╗     ███████╗████████╗████████╗███████╗
     ████╗ ████║╚██╗ ██╔╝██╔══██╗██╔══██╗██║     ██╔════╝╚══██╔══╝╚══██╔══╝██╔════╝
@@ -137,6 +149,8 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
     
     return () => {
       cancelAnimationFrame(animationId);
+      clearInterval(refreshInterval);
+      clearInterval(floatingPixelsInterval);
       window.removeEventListener('resize', handleResize);
     };
   }, []);
@@ -256,17 +270,20 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 w-full max-w-xs md:max-w-2xl">
                 <div className="col-span-1 bg-white rounded-lg shadow-md p-2 md:p-4 hover-pixel">
-                  <div className="bg-brand-red/10 h-20 md:h-32 rounded mb-2"></div>
+                  <div className="bg-brand-red/10 h-20 md:h-32 rounded mb-2" 
+                       style={{backgroundImage: "url('https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400&h=300&fit=crop')", backgroundSize: 'cover'}}></div>
                   <div className="h-3 md:h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                   <div className="h-2 md:h-3 bg-gray-200 rounded w-1/2"></div>
                 </div>
                 <div className="col-span-1 bg-white rounded-lg shadow-md p-2 md:p-4 hover-pixel">
-                  <div className="bg-brand-green/10 h-20 md:h-32 rounded mb-2"></div>
+                  <div className="bg-brand-green/10 h-20 md:h-32 rounded mb-2"
+                       style={{backgroundImage: "url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=300&fit=crop')", backgroundSize: 'cover'}}></div>
                   <div className="h-3 md:h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                   <div className="h-2 md:h-3 bg-gray-200 rounded w-1/2"></div>
                 </div>
                 <div className="col-span-1 bg-white rounded-lg shadow-md p-2 md:p-4 hover-pixel">
-                  <div className="bg-brand-blue/10 h-20 md:h-32 rounded mb-2"></div>
+                  <div className="bg-brand-blue/10 h-20 md:h-32 rounded mb-2"
+                       style={{backgroundImage: "url('https://images.unsplash.com/photo-1615184697985-c9bde1b07da7?w=400&h=300&fit=crop')", backgroundSize: 'cover'}}></div>
                   <div className="h-3 md:h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                   <div className="h-2 md:h-3 bg-gray-200 rounded w-1/2"></div>
                 </div>

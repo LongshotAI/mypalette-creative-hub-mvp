@@ -31,7 +31,7 @@ const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
     if (open && artwork) {
       trackArtworkView(artwork.id, artwork.portfolio_id);
     }
-  }, [open, artwork]);
+  }, [open, artwork, trackArtworkView]);
 
   if (!artwork) return null;
 
@@ -96,6 +96,7 @@ const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
               
               {artwork.listing_url && (
                 <div className="mt-2">
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">External Listing</h4>
                   <Button 
                     variant="outline" 
                     className="w-full flex items-center justify-center gap-2"

@@ -55,6 +55,18 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ name, specialty, imageUrl, user
   );
 };
 
+// Sample images from Unsplash for demo purposes
+const sampleArtworks = [
+  "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1615184697985-c9bde1b07da7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1579783928621-7a13d66a62b1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1613989668327-fc08ea519c09?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1602532305019-3dbbd482dae9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1637847999747-6efb359e49f6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1513364776144-60967b0f800f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
+];
+
 const FeaturedArtists: React.FC = () => {
   const [artists, setArtists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,11 +91,11 @@ const FeaturedArtists: React.FC = () => {
         console.log('Fetched artists:', data);
         
         // Create an array of artists with mapped data
-        const artistData = data ? data.map(profile => ({
+        const artistData = data ? data.map((profile, index) => ({
           id: profile.id,
           name: profile.full_name || profile.username || 'Artist',
           specialty: profile.bio ? profile.bio.substring(0, 30) + (profile.bio.length > 30 ? '...' : '') : 'Artist',
-          imageUrl: profile.avatar_url || '',
+          imageUrl: profile.avatar_url || sampleArtworks[index % sampleArtworks.length], // Use sample artwork if no avatar
           userId: profile.id
         })) : [];
         
@@ -101,10 +113,14 @@ const FeaturedArtists: React.FC = () => {
 
   // Fallback data in case there are no artists in the database
   const fallbackArtists = [
-    { id: "1", name: "Alex Riviera", specialty: "Digital Illustration", imageUrl: "", userId: "1" },
-    { id: "2", name: "Sophia Chen", specialty: "Pixel Art", imageUrl: "", userId: "2" },
-    { id: "3", name: "Marcus Johnson", specialty: "3D Modeling", imageUrl: "", userId: "3" },
-    { id: "4", name: "Naomi Wright", specialty: "Traditional Painting", imageUrl: "", userId: "4" },
+    { id: "1", name: "Alex Riviera", specialty: "Digital Illustration", imageUrl: sampleArtworks[0], userId: "1" },
+    { id: "2", name: "Sophia Chen", specialty: "Pixel Art", imageUrl: sampleArtworks[1], userId: "2" },
+    { id: "3", name: "Marcus Johnson", specialty: "3D Modeling", imageUrl: sampleArtworks[2], userId: "3" },
+    { id: "4", name: "Naomi Wright", specialty: "Traditional Painting", imageUrl: sampleArtworks[3], userId: "4" },
+    { id: "5", name: "Jordan Blake", specialty: "Digital Collage", imageUrl: sampleArtworks[4], userId: "5" },
+    { id: "6", name: "Emma Liu", specialty: "Vector Art", imageUrl: sampleArtworks[5], userId: "6" },
+    { id: "7", name: "Carlos Rodriguez", specialty: "Abstract Digital", imageUrl: sampleArtworks[6], userId: "7" },
+    { id: "8", name: "Aisha Khan", specialty: "Generative Art", imageUrl: sampleArtworks[7], userId: "8" }
   ];
 
   const displayArtists = artists.length > 0 ? artists : fallbackArtists;
