@@ -1,4 +1,3 @@
-
 import React from 'react';
 import DefaultLayout from '@/components/layout/DefaultLayout';
 import Hero from '@/components/home/Hero';
@@ -16,7 +15,7 @@ const Index: React.FC<IndexProps> = ({ scrollPosition }) => {
   return (
     <DefaultLayout>
       <Hero scrollPosition={scrollPosition} />
-      <FeaturedArtists scrollPosition={scrollPosition} />
+      <FeaturedArtists />
       
       {/* Why Choose MyPalette Section */}
       <WhyChooseSection />

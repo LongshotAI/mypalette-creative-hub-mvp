@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { PortfolioWithProfile } from '@/types/portfolio';
 
 interface ArtistCardProps {
   name: string;
@@ -14,25 +14,16 @@ interface ArtistCardProps {
   userId: string;
   delay: number;
   portfolioId?: string;
-  translateY: number;
 }
 
-const ArtistCard: React.FC<ArtistCardProps> = ({ 
-  name, 
-  specialty, 
-  imageUrl, 
-  userId, 
-  delay, 
-  portfolioId,
-  translateY 
-}) => {
+const ArtistCard: React.FC<ArtistCardProps> = ({ name, specialty, imageUrl, userId, delay, portfolioId }) => {
   const [artworkImageUrl, setArtworkImageUrl] = useState<string | null>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     const fetchArtistArtwork = async () => {
       if (portfolioId) {
         try {
+          // Fetch one artwork from artist's portfolio to use as a background
           const { data, error } = await supabase
             .from('artworks')
             .select('image_url')
@@ -52,6 +43,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
     fetchArtistArtwork();
   }, [portfolioId]);
   
+  // Use artwork image if available, otherwise use provided imageUrl
   const displayImageUrl = artworkImageUrl || imageUrl;
   
   return (
@@ -61,10 +53,6 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
         "transform transition-all duration-300 hover:shadow-md hover:-translate-y-1",
         `animate-fade-up animate-delay-${delay * 100}`
       )}
-      style={{
-        transform: `translateY(${translateY}px)`,
-        transition: 'transform 0.3s ease-out'
-      }}
     >
       <div className="aspect-square bg-gray-100 overflow-hidden">
         <div 
@@ -97,6 +85,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   );
 };
 
+// Sample images from Unsplash for fallback purposes
 const sampleArtworks = [
   "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
   "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
@@ -108,6 +97,7 @@ const sampleArtworks = [
   "https://images.unsplash.com/photo-1513364776144-60967b0f800f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
 ];
 
+// Define interface for profile data
 interface ProfileData {
   id: string;
   full_name: string | null;
@@ -116,6 +106,7 @@ interface ProfileData {
   avatar_url: string | null;
 }
 
+// Define interface for portfolio with profile
 interface PortfolioWithProfile {
   id: string;
   name: string;
@@ -128,139 +119,99 @@ interface PortfolioWithProfile {
   } | null;
 }
 
-const FeaturedArtists: React.FC<{ scrollPosition?: number }> = ({ scrollPosition = 0 }) => {
+const FeaturedArtists: React.FC = () => {
   const [artists, setArtists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [sectionOffset, setSectionOffset] = useState(0);
 
   useEffect(() => {
-    const updateSectionOffset = () => {
-      if (sectionRef.current) {
-        const rect = sectionRef.current.getBoundingClientRect();
-        setSectionOffset(rect.top + window.scrollY);
-      }
-    };
-
-    updateSectionOffset();
-    window.addEventListener('resize', updateSectionOffset);
-    return () => window.removeEventListener('resize', updateSectionOffset);
-  }, []);
-
-  const fetchArtists = async () => {
-    try {
-      setLoading(true);
-      
-      const { data: portfoliosData, error: portfoliosError } = await supabase
-        .from('portfolios')
-        .select(`
-          id,
-          name,
-          user_id,
-          is_public,
-          profiles:user_id (
-            id, 
-            full_name, 
-            username, 
-            bio, 
-            avatar_url
-          )
-        `)
-        .eq('is_public', true)
-        .order('created_at', { ascending: false })
-        .limit(12);
-      
-      if (portfoliosError) {
-        throw portfoliosError;
-      }
-      
-      const validPortfolios = (portfoliosData?.filter(p => p.profiles) || []) as unknown as PortfolioWithProfile[];
-      
-      const portfoliosWithArtwork = await Promise.all(
-        validPortfolios.map(async (portfolio) => {
-          try {
-            const { data, error } = await supabase
-              .from('artworks')
-              .select('id, image_url')
-              .eq('portfolio_id', portfolio.id)
-              .limit(1)
-              .maybeSingle();
-            
-            return {
-              ...portfolio,
-              artwork: !error && data ? data : null
-            };
-          } catch (e) {
-            console.error('Error fetching artwork for portfolio', portfolio.id, e);
-            return {
-              ...portfolio,
-              artwork: null
-            };
-          }
-        })
-      );
-      
-      const portfoliosWithData = portfoliosWithArtwork.filter(p => p.artwork);
-      
-      const artistData = portfoliosWithData.slice(0, 8).map((portfolio, index) => {
-        if (!portfolio.profiles) {
-          return {
-            id: `temp-${index}`,
-            name: portfolio.name || 'Artist',
-            specialty: 'Digital Artist',
-            imageUrl: portfolio.artwork?.image_url || sampleArtworks[index % sampleArtworks.length],
-            userId: portfolio.user_id,
-            portfolioId: portfolio.id
-          };
+    const fetchArtists = async () => {
+      try {
+        setLoading(true);
+        
+        // First, fetch public portfolios
+        const { data: portfoliosData, error: portfoliosError } = await supabase
+          .from('portfolios')
+          .select(`
+            id,
+            name,
+            user_id,
+            is_public,
+            profiles:user_id (
+              id, 
+              full_name, 
+              username, 
+              bio, 
+              avatar_url
+            )
+          `)
+          .eq('is_public', true)
+          .order('created_at', { ascending: false })
+          .limit(12);
+        
+        if (portfoliosError) {
+          throw portfoliosError;
         }
-
-        return {
-          id: portfolio.profiles.id || `temp-${index}`,
-          name: portfolio.profiles.full_name || portfolio.profiles.username || portfolio.name || 'Artist',
-          specialty: portfolio.profiles.bio ? 
+        
+        console.log('Fetched portfolios:', portfoliosData);
+        
+        // Filter portfolios to make sure they have associated profile data
+        const validPortfolios = (portfoliosData?.filter(p => p.profiles) || []) as PortfolioWithProfile[];
+        
+        // Fetch at least one artwork for each portfolio to display
+        const portfoliosWithArtwork = await Promise.all(
+          validPortfolios.map(async (portfolio) => {
+            try {
+              const { data, error } = await supabase
+                .from('artworks')
+                .select('id, image_url')
+                .eq('portfolio_id', portfolio.id)
+                .limit(1)
+                .maybeSingle();
+                
+              return {
+                ...portfolio,
+                artwork: !error && data ? data : null
+              };
+            } catch (e) {
+              console.error('Error fetching artwork for portfolio', portfolio.id, e);
+              return {
+                ...portfolio,
+                artwork: null
+              };
+            }
+          })
+        );
+        
+        // Filter out portfolios without artwork
+        const portfoliosWithData = portfoliosWithArtwork.filter(p => p.artwork);
+        
+        // Create an array of artists with mapped data
+        const artistData = portfoliosWithData.slice(0, 8).map((portfolio, index) => ({
+          id: portfolio.profiles?.id || `temp-${index}`,
+          name: portfolio.profiles?.full_name || portfolio.profiles?.username || portfolio.name || 'Artist',
+          specialty: portfolio.profiles?.bio ? 
             portfolio.profiles.bio.substring(0, 30) + (portfolio.profiles.bio.length > 30 ? '...' : '') : 
             'Digital Artist',
           imageUrl: portfolio.artwork?.image_url || 
-                    portfolio.profiles.avatar_url || 
-                    sampleArtworks[index % sampleArtworks.length],
-          userId: portfolio.profiles.id || portfolio.user_id,
+                   portfolio.profiles?.avatar_url || 
+                   sampleArtworks[index % sampleArtworks.length],
+          userId: portfolio.profiles?.id || portfolio.user_id,
           portfolioId: portfolio.id
-        };
-      });
-      
-      setArtists(artistData);
-    } catch (error) {
-      console.error('Error fetching artists:', error);
-      toast.error('Failed to load featured artists');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsVisible(entry.isIntersecting);
-      },
-      {
-        root: null,
-        rootMargin: '0px',
-        threshold: 0.1
-      }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => {
-      if (sectionRef.current) {
-        observer.unobserve(sectionRef.current);
+        }));
+        
+        setArtists(artistData);
+      } catch (error) {
+        console.error('Error fetching artists:', error);
+        toast.error('Failed to load featured artists');
+      } finally {
+        setLoading(false);
       }
     };
+
+    fetchArtists();
   }, []);
 
+  // Fallback data in case there are no artists in the database
   const fallbackArtists = [
     { id: "1", name: "Alex Riviera", specialty: "Digital Illustration", imageUrl: sampleArtworks[0], userId: "1" },
     { id: "2", name: "Sophia Chen", specialty: "Pixel Art", imageUrl: sampleArtworks[1], userId: "2" },
@@ -274,30 +225,8 @@ const FeaturedArtists: React.FC<{ scrollPosition?: number }> = ({ scrollPosition
 
   const displayArtists = artists.length > 0 ? artists : fallbackArtists;
 
-  const calculateParallaxTransform = (index: number): number => {
-    if (!isVisible) return 0;
-    
-    const columnPosition = index % 4;
-    const rowPosition = Math.floor(index / 4);
-    
-    // Adjust these values to control parallax intensity
-    const baseSpeed = 0.15;
-    const speedVariation = 0.05;
-    const maxOffset = 50;
-    
-    // Calculate relative scroll position
-    const relativeScroll = Math.max(0, scrollPosition - sectionOffset);
-    
-    // Apply different speeds based on position
-    const speed = baseSpeed + (columnPosition * speedVariation) + (rowPosition * 0.03);
-    const offset = (relativeScroll * speed) % maxOffset;
-    
-    // Alternate direction based on column
-    return columnPosition % 2 === 0 ? offset : -offset;
-  };
-
   return (
-    <section ref={sectionRef} className="py-24 bg-gray-50 overflow-hidden">
+    <section className="py-24 bg-gray-50">
       <div className="container-custom">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12">
           <div className="max-w-xl">
@@ -342,7 +271,6 @@ const FeaturedArtists: React.FC<{ scrollPosition?: number }> = ({ scrollPosition
                 userId={artist.userId}
                 portfolioId={artist.portfolioId}
                 delay={index + 1}
-                translateY={calculateParallaxTransform(index)}
               />
             ))}
           </div>
