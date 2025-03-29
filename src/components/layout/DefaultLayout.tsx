@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import Footer from './Footer';
+import ChatWidget from '../chat/ChatWidget';
 
 interface DefaultLayoutProps {
   children: React.ReactNode;
@@ -41,6 +42,7 @@ const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children }) => {
         {childrenWithProps}
       </main>
       <Footer />
+      <ChatWidget />
     </div>
   );
 };
