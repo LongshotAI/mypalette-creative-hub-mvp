@@ -2,14 +2,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, RefreshCw } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
 import { cn } from '@/lib/utils';
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,8 +15,11 @@ export const ChatWidget = () => {
     messages, 
     addMessage, 
     isLoading, 
-    error 
-  } = useChat();
+    error,
+    resetChat
+  } = useChat({
+    useKnowledgeBase: true
+  });
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
@@ -32,6 +31,10 @@ export const ChatWidget = () => {
       addMessage(inputValue);
       setInputValue('');
     }
+  };
+
+  const handleReset = () => {
+    resetChat();
   };
 
   // Scroll to bottom when messages change
@@ -59,15 +62,35 @@ export const ChatWidget = () => {
               <MessageCircle className="text-primary" size={20} />
               <h3 className="font-medium">MyPalette Assistant</h3>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleToggle}
-              className="h-8 w-8 p-0 rounded-full"
-              aria-label="Close chat"
-            >
-              <X size={18} />
-            </Button>
+            <div className="flex items-center space-x-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleReset}
+                      className="h-8 w-8 p-0 rounded-full"
+                      aria-label="Reset chat"
+                    >
+                      <RefreshCw size={16} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Reset chat</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleToggle}
+                className="h-8 w-8 p-0 rounded-full"
+                aria-label="Close chat"
+              >
+                <X size={18} />
+              </Button>
+            </div>
           </div>
           
           {/* Chat messages */}

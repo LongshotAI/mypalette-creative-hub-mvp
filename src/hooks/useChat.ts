@@ -1,6 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -15,19 +16,26 @@ interface UseChatReturn {
   resetChat: () => void;
 }
 
-export function useChat(): UseChatReturn {
+interface UseChatOptions {
+  useKnowledgeBase?: boolean;
+  customSystemPrompt?: string;
+}
+
+export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // System prompt that instructs the AI on how to respond
-  const systemPrompt = `
+  // Default system prompt
+  const defaultSystemPrompt = `
     You are a helpful assistant for MyPalette, a creative hub platform.
     You help users with questions about using the platform, creating portfolios,
     submitting to open calls, and other art-related queries.
     Always be friendly, helpful, and concise in your responses.
     If you don't know the answer to something, say so honestly.
   `;
+  
+  const systemPrompt = options.customSystemPrompt || defaultSystemPrompt;
 
   const addMessage = useCallback(async (content: string) => {
     const userMessage: ChatMessage = { role: 'user', content };
@@ -52,6 +60,7 @@ export function useChat(): UseChatReturn {
         body: {
           messages: chatHistory,
           systemPrompt,
+          useKnowledgeBase: options.useKnowledgeBase || false,
         },
       });
       
@@ -70,10 +79,11 @@ export function useChat(): UseChatReturn {
     } catch (err: any) {
       console.error('Error in chat:', err);
       setError(err.message || 'Failed to get a response. Please try again.');
+      toast.error('Failed to get a response. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  }, [messages]);
+  }, [messages, options.useKnowledgeBase, systemPrompt]);
 
   const resetChat = useCallback(() => {
     setMessages([]);
