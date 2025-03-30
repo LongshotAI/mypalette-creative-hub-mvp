@@ -9,10 +9,11 @@ import TopicFilter from '@/components/education/TopicFilter';
 import { getEducationResources, toggleFavoriteResource, getUserFavorites, getFavoriteResources, enhanceEducationResourcesWithImages } from '@/services/api/education.api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { EducationResource } from '@/hooks/useEducationResources';
 
 const Education = () => {
   const { user } = useAuth();
-  const [resources, setResources] = useState([]);
+  const [resources, setResources] = useState<EducationResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [resourceType, setResourceType] = useState('all');
@@ -33,9 +34,16 @@ const Education = () => {
         if (response.status === 'success') {
           // Enhance resources with images and descriptions
           const enhancedResources = enhanceEducationResourcesWithImages(response.data || []);
-          setResources(enhancedResources);
+          // Ensure type is correctly cast
+          const typedResources = enhancedResources.map(resource => ({
+            ...resource,
+            type: resource.type as 'article' | 'video' | 'guide'
+          }));
+          setResources(typedResources);
+        } else if (response.error) {
+          throw new Error(response.error.message || 'Failed to load favorite resources');
         } else {
-          throw new Error(response.error?.message || 'Failed to load favorite resources');
+          throw new Error('Failed to load favorite resources');
         }
       } else {
         // Regular resources fetch with filters
@@ -43,9 +51,16 @@ const Education = () => {
         if (response.status === 'success') {
           // Enhance resources with images and descriptions
           const enhancedResources = enhanceEducationResourcesWithImages(response.data || []);
-          setResources(enhancedResources);
+          // Ensure type is correctly cast
+          const typedResources = enhancedResources.map(resource => ({
+            ...resource,
+            type: resource.type as 'article' | 'video' | 'guide'
+          }));
+          setResources(typedResources);
+        } else if (response.error) {
+          throw new Error(response.error.message || 'Failed to load resources');
         } else {
-          throw new Error(response.error?.message || 'Failed to load resources');
+          throw new Error('Failed to load resources');
         }
       }
       
@@ -94,8 +109,10 @@ const Education = () => {
           setFavoriteIds(prev => [...prev, resourceId]);
           toast.success('Added to favorites');
         }
+      } else if (response.error) {
+        throw new Error(response.error.message || 'Failed to update favorites');
       } else {
-        throw new Error(response.error?.message || 'Failed to update favorites');
+        throw new Error('Failed to update favorites');
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);

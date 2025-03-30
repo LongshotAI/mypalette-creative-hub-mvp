@@ -1,5 +1,5 @@
-
 // This file will likely be read-only in your app, but we need to add some sample data
+import { EducationResource, ApiResponse } from '@/hooks/useEducationResources';
 
 // Sample images
 const resourceImages = [
@@ -26,7 +26,7 @@ const resourceDescriptions = [
 ];
 
 // Sample education resources for mock data
-const mockEducationResources = [
+const mockEducationResources: EducationResource[] = [
   {
     id: "1",
     title: "Digital Art Composition Masterclass",
@@ -126,7 +126,7 @@ const mockEducationResources = [
 ];
 
 // This will enhance any function that returns education resources
-export const enhanceEducationResourcesWithImages = (resources) => {
+export const enhanceEducationResourcesWithImages = (resources: any[]) => {
   return resources.map((resource, index) => ({
     ...resource,
     image_url: resource.image_url || resourceImages[index % resourceImages.length],
@@ -139,7 +139,7 @@ export const getEducationResources = async (
   searchQuery = '',
   resourceType = 'all',
   category = 'all'
-) => {
+): Promise<ApiResponse<any[]>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   
@@ -153,7 +153,7 @@ export const getEducationResources = async (
     const query = searchQuery.toLowerCase();
     filteredResources = filteredResources.filter(resource =>
       resource.title.toLowerCase().includes(query) ||
-      resource.description.toLowerCase().includes(query) ||
+      resource.description?.toLowerCase().includes(query) ||
       resource.author.toLowerCase().includes(query)
     );
   }
@@ -174,23 +174,25 @@ export const getEducationResources = async (
   
   return {
     status: 'success',
-    data: filteredResources
+    data: filteredResources,
+    error: undefined
   };
 };
 
 // Get all education resources for admin (including drafts)
-export const getAdminEducationResources = async () => {
+export const getAdminEducationResources = async (): Promise<ApiResponse<any[]>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   
   return {
     status: 'success',
-    data: mockEducationResources
+    data: mockEducationResources,
+    error: undefined
   };
 };
 
 // Function to toggle favorite status
-export const toggleFavoriteResource = async (resourceId, userId, isFavorite) => {
+export const toggleFavoriteResource = async (resourceId: string, userId: string, isFavorite: boolean): Promise<ApiResponse<any>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300));
   
@@ -198,12 +200,13 @@ export const toggleFavoriteResource = async (resourceId, userId, isFavorite) => 
   
   return {
     status: 'success',
-    data: { resourceId, userId, isFavorite: !isFavorite }
+    data: { resourceId, userId, isFavorite: !isFavorite },
+    error: undefined
   };
 };
 
 // Get user's favorite resource IDs
-export const getUserFavorites = async (userId) => {
+export const getUserFavorites = async (userId: string): Promise<ApiResponse<string[]>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300));
   
@@ -214,12 +217,13 @@ export const getUserFavorites = async (userId) => {
   
   return {
     status: 'success',
-    data: sampleFavorites
+    data: sampleFavorites,
+    error: undefined
   };
 };
 
 // Get user's favorite resources (full objects)
-export const getFavoriteResources = async (userId) => {
+export const getFavoriteResources = async (userId: string): Promise<ApiResponse<EducationResource[]>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   
@@ -233,12 +237,13 @@ export const getFavoriteResources = async (userId) => {
   
   return {
     status: 'success',
-    data: favoriteResources
+    data: favoriteResources,
+    error: undefined
   };
 };
 
 // Create a new education resource
-export const createEducationResource = async (resourceData) => {
+export const createEducationResource = async (resourceData: any): Promise<ApiResponse<any>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 700));
   
@@ -253,12 +258,13 @@ export const createEducationResource = async (resourceData) => {
   
   return {
     status: 'success',
-    data: newResource
+    data: newResource,
+    error: undefined
   };
 };
 
 // Update an existing education resource
-export const updateEducationResource = async (resourceId, updates) => {
+export const updateEducationResource = async (resourceId: string, updates: any): Promise<ApiResponse<any>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 700));
   
@@ -268,6 +274,7 @@ export const updateEducationResource = async (resourceId, updates) => {
   if (resourceIndex === -1) {
     return {
       status: 'error',
+      data: null,
       error: { message: 'Resource not found' }
     };
   }
@@ -282,12 +289,13 @@ export const updateEducationResource = async (resourceId, updates) => {
   
   return {
     status: 'success',
-    data: updatedResource
+    data: updatedResource,
+    error: undefined
   };
 };
 
 // Delete an education resource
-export const deleteEducationResource = async (resourceId) => {
+export const deleteEducationResource = async (resourceId: string): Promise<ApiResponse<any>> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   
@@ -295,6 +303,7 @@ export const deleteEducationResource = async (resourceId) => {
   
   return {
     status: 'success',
-    data: { id: resourceId }
+    data: { id: resourceId },
+    error: undefined
   };
 };

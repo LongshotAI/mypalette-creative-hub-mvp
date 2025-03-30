@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { getAdminEducationResources } from "@/services/api/education.api";
 import AdminEducationList from "./education/AdminEducationList";
 import EducationResourceFilter from "./education/EducationResourceFilter";
+import { ApiResponse } from "@/hooks/useEducationResources";
 
 interface EducationResource {
   id: string;
@@ -42,9 +43,17 @@ const AdminEducation = () => {
       const response = await getAdminEducationResources();
       
       if (response.status === 'success') {
-        setResources(response.data || []);
+        // Ensure proper type casting for the response data
+        const typedResources = response.data?.map(resource => ({
+          ...resource,
+          type: resource.type as 'article' | 'video' | 'guide'
+        })) || [];
+        
+        setResources(typedResources);
+      } else if (response.error) {
+        throw new Error(response.error.message || 'Failed to load resources');
       } else {
-        throw new Error(response.error?.message || 'Failed to load resources');
+        throw new Error('Failed to load resources');
       }
     } catch (error) {
       console.error('Error fetching resources:', error);

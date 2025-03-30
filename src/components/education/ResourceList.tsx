@@ -3,22 +3,7 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ResourceCard from '@/components/education/ResourceCard';
-
-interface EducationResource {
-  id: string;
-  title: string;
-  description: string;
-  type: 'article' | 'video' | 'guide';
-  category: string;
-  author: string;
-  external_url?: string;
-  image_url?: string;
-  file_url?: string; // Add this property to match usage
-  imageUrl?: string; // For compatibility with existing code
-  is_published: boolean;
-  created_at: string;
-  updated_at?: string;
-}
+import { EducationResource } from '@/hooks/useEducationResources';
 
 interface ResourceListProps {
   resources: EducationResource[];
@@ -65,8 +50,8 @@ const ResourceList = ({
           category={resource.category}
           imageUrl={resource.imageUrl || resource.image_url || ''}
           author={resource.author}
+          description={resource.description}
           externalUrl={resource.external_url}
-          fileUrl={resource.file_url}
           isFavorite={favoriteIds.includes(resource.id)}
           onFavoriteToggle={onFavoriteToggle}
         />

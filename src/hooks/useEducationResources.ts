@@ -19,6 +19,14 @@ export interface EducationResource {
   external_url?: string;
 }
 
+export interface ApiResponse<T> {
+  status: string;
+  data: T;
+  error?: {
+    message: string;
+  };
+}
+
 export const useEducationResources = (
   searchQuery: string = '',
   resourceType: string = 'all',
@@ -40,10 +48,11 @@ export const useEducationResources = (
           // Enhance with images and descriptions
           const enhancedData = enhanceEducationResourcesWithImages(response.data);
           
-          // Transform data to match our interface
+          // Transform data to match our interface - ensure type is correctly cast
           const transformedData = enhancedData.map(resource => ({
             ...resource,
-            imageUrl: resource.image_url || ''
+            imageUrl: resource.image_url || '',
+            type: resource.type as 'article' | 'video' | 'guide'
           }));
           
           setResources(transformedData);
