@@ -64,8 +64,10 @@ serve(async (req) => {
         throw new Error('ElevenLabs API key is not configured');
       }
 
-      // Prepare the conversation for ElevenLabs
+      // Prepare the messages for ElevenLabs
       const userMessage = messages[messages.length - 1].content;
+      
+      // Format conversation history - this is important for ElevenLabs to understand the context
       const conversationHistory = messages.length > 1 
         ? messages.slice(0, -1).map(m => `${m.role}: ${m.content}`).join('\n') 
         : '';

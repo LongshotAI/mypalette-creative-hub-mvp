@@ -1,4 +1,3 @@
-
 export interface Portfolio {
   id: string;
   name: string;
@@ -119,3 +118,16 @@ export type OrderStatus = 'all' | 'pending' | 'completed' | 'failed';
 export type PortfolioTemplateType = 'grid' | 'masonry' | 'slideshow' | 'minimal' | 'gallery' | 'studio';
 
 export type PortfolioThemeType = 'default' | 'minimal' | 'bold' | 'elegant' | 'dark';
+
+export interface PortfolioWithProfile {
+  id: string;
+  user_id: string;
+  title?: string;
+  description?: string;
+  featured?: boolean;
+  created_at?: string;
+  user_profiles?: {
+    full_name: string | null;
+    avatar_url: string | null;
+  };
+}
