@@ -59,15 +59,10 @@ serve(async (req) => {
     }
 
     try {
-      // Check if API key is available
-      if (!anthropicApiKey) {
-        throw new Error('Anthropic API key is not configured');
-      }
-
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
-          'x-api-key': anthropicApiKey,
+          'x-api-key': anthropicApiKey || '',
           'anthropic-version': '2023-06-01',
           'Content-Type': 'application/json',
         },
@@ -84,20 +79,6 @@ serve(async (req) => {
       // Check if there's an error in the response
       if (data.type === 'error') {
         console.error('Error from Anthropic API:', data.error);
-        
-        // Special handling for credit balance errors
-        if (data.error?.message?.includes('credit balance is too low')) {
-          return new Response(JSON.stringify({ 
-            error: {
-              message: 'The AI assistant is currently unavailable due to API credit limitations. Please contact support to resolve this issue.'
-            },
-            errorType: 'credit_limit'
-          }), {
-            status: 402, // Payment Required
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-        
         return new Response(JSON.stringify({ error: data.error }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

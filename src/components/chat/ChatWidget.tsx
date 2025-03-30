@@ -2,18 +2,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MessageCircle, X, Send, Loader2, RefreshCw, Volume2, VolumeX, AlertTriangle } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, RefreshCw } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
-import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
-  const [speakingMessageId, setSpeakingMessageId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { 
     messages, 
@@ -37,8 +34,6 @@ export const ChatWidget = () => {
     `
   });
 
-  const { speak, stopSpeaking, isSpeaking, error: ttsError } = useTextToSpeech();
-
   const handleToggle = () => {
     setIsOpen(!isOpen);
   };
@@ -53,25 +48,6 @@ export const ChatWidget = () => {
 
   const handleReset = () => {
     resetChat();
-    stopSpeaking();
-    setSpeakingMessageId(null);
-  };
-
-  const handleSpeakMessage = (message: string, index: number) => {
-    if (isSpeaking && speakingMessageId === index) {
-      stopSpeaking();
-      setSpeakingMessageId(null);
-    } else {
-      if (isSpeaking) {
-        stopSpeaking();
-      }
-      setSpeakingMessageId(index);
-      speak(message).catch(err => {
-        console.error('TTS error:', err);
-        toast.error('Failed to generate speech. Please try again.');
-        setSpeakingMessageId(null);
-      });
-    }
   };
 
   // Scroll to bottom when messages change
@@ -80,16 +56,6 @@ export const ChatWidget = () => {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
-
-  // Reset speaking message ID when speaking stops
-  useEffect(() => {
-    if (!isSpeaking && speakingMessageId !== null) {
-      setSpeakingMessageId(null);
-    }
-  }, [isSpeaking]);
-
-  const isApiLimitError = error?.includes('API limitations') || 
-                          error?.includes('quota exceeded');
 
   return (
     <div className="fixed bottom-4 left-4 z-50">
@@ -142,16 +108,7 @@ export const ChatWidget = () => {
           
           {/* Chat messages */}
           <div className="flex-1 overflow-y-auto p-3 space-y-4">
-            {isApiLimitError ? (
-              <Alert variant="destructive" className="mb-4">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Service Unavailable</AlertTitle>
-                <AlertDescription>
-                  The AI assistant is currently unavailable due to API limitations. 
-                  Please try again later or contact support for assistance.
-                </AlertDescription>
-              </Alert>
-            ) : messages.length === 0 ? (
+            {messages.length === 0 ? (
               <div className="text-center text-muted-foreground p-4">
                 How can I help you with MyPalette today? You can also ask about Pixel Palette Nation (PPN) collections and resources.
               </div>
@@ -167,23 +124,6 @@ export const ChatWidget = () => {
                   )}
                 >
                   {message.content}
-                  
-                  {message.role === 'assistant' && (
-                    <div className="mt-2 flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                          "h-6 w-6 p-0 rounded-full opacity-70 hover:opacity-100",
-                          speakingMessageId === index && "text-primary opacity-100"
-                        )}
-                        onClick={() => handleSpeakMessage(message.content, index)}
-                        aria-label={isSpeaking && speakingMessageId === index ? "Stop speaking" : "Speak message"}
-                      >
-                        {isSpeaking && speakingMessageId === index ? <VolumeX size={14} /> : <Volume2 size={14} />}
-                      </Button>
-                    </div>
-                  )}
                 </div>
               ))
             )}
@@ -193,17 +133,12 @@ export const ChatWidget = () => {
                 <span>Thinking...</span>
               </div>
             )}
-            {error && !isApiLimitError && (
+            {error && (
               <Alert variant="destructive" className="max-w-[95%] mx-auto">
                 <AlertDescription>
-                  {error}
-                </AlertDescription>
-              </Alert>
-            )}
-            {ttsError && (
-              <Alert variant="destructive" className="max-w-[95%] mx-auto">
-                <AlertDescription>
-                  Failed to generate speech: {ttsError}
+                  {error.includes("credit balance is too low") 
+                    ? "The AI assistant is currently unavailable due to API credit limitations. Please try again later." 
+                    : error}
                 </AlertDescription>
               </Alert>
             )}
@@ -218,12 +153,12 @@ export const ChatWidget = () => {
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Type your message..."
                 className="flex-1"
-                disabled={isLoading || isApiLimitError}
+                disabled={isLoading}
               />
               <Button 
                 type="submit" 
                 size="icon"
-                disabled={isLoading || !inputValue.trim() || isApiLimitError}
+                disabled={isLoading || !inputValue.trim()}
                 aria-label="Send message"
               >
                 {isLoading ? (

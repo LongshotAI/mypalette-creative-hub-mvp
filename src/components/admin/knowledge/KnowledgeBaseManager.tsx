@@ -1,207 +1,317 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { Loader2, Plus, Trash } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
+import { PlusCircle, Trash2, RefreshCw, Database } from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  getUserKnowledgeItems, 
+  addKnowledgeItem, 
+  updateKnowledgeItem, 
+  deleteKnowledgeItem 
+} from '@/services/api/knowledgeBase.api';
+import { seedPPNKnowledgeBase } from '@/services/api/knowledgeBaseSeeding';
+import type { KnowledgeItem } from '@/services/api/knowledgeBase.api';
 
-interface KnowledgeItem {
-  id: string;
-  title: string;
-  content: string;
-  created_at: string;
-}
+const KnowledgeBaseManager = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSeedingLoading, setIsSeedingLoading] = useState(false);
+  const [knowledgeItems, setKnowledgeItems] = useState<KnowledgeItem[]>([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentItem, setCurrentItem] = useState<Partial<KnowledgeItem>>({});
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-const KnowledgeBaseManager: React.FC = () => {
-  const [items, setItems] = useState<KnowledgeItem[]>([]);
-  const [newTitle, setNewTitle] = useState('');
-  const [newContent, setNewContent] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  
   useEffect(() => {
-    fetchKnowledgeBase();
-  }, []);
-  
-  const fetchKnowledgeBase = async () => {
+    if (user?.id) {
+      loadKnowledgeItems();
+    }
+  }, [user]);
+
+  const loadKnowledgeItems = async () => {
+    if (!user?.id) return;
+    
+    setIsLoading(true);
     try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('knowledge_base')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      
-      setItems(data || []);
+      const response = await getUserKnowledgeItems(user.id);
+      if (response.status === 'success' && response.data) {
+        setKnowledgeItems(response.data);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to load knowledge base items",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
-      console.error('Error fetching knowledge base:', error);
-      toast.error('Failed to load knowledge base');
+      console.error('Error loading knowledge items:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-  
-  const addKnowledgeItem = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!newTitle.trim() || !newContent.trim()) {
-      toast.error('Title and content are required');
+
+  const handleAddItem = () => {
+    setIsEditMode(false);
+    setCurrentItem({ title: '', content: '' });
+    setIsFormOpen(true);
+  };
+
+  const handleEditItem = (item: KnowledgeItem) => {
+    setIsEditMode(true);
+    setCurrentItem(item);
+    setIsFormOpen(true);
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    if (confirm("Are you sure you want to delete this knowledge item?")) {
+      try {
+        const response = await deleteKnowledgeItem(id);
+        if (response.status === 'success') {
+          toast({
+            title: "Success",
+            description: "Knowledge item deleted successfully"
+          });
+          loadKnowledgeItems();
+        } else {
+          toast({
+            title: "Error",
+            description: response.error?.message || "Failed to delete knowledge item",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error('Error deleting knowledge item:', error);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!user?.id || !currentItem.title || !currentItem.content) {
+      toast({
+        title: "Error",
+        description: "Title and content are required",
+        variant: "destructive"
+      });
       return;
     }
+
+    try {
+      let response;
+      if (isEditMode && currentItem.id) {
+        response = await updateKnowledgeItem(currentItem.id, {
+          title: currentItem.title,
+          content: currentItem.content
+        });
+      } else {
+        response = await addKnowledgeItem(
+          currentItem.title,
+          currentItem.content,
+          user.id
+        );
+      }
+
+      if (response.status === 'success') {
+        toast({
+          title: "Success",
+          description: `Knowledge item ${isEditMode ? 'updated' : 'added'} successfully`
+        });
+        setIsFormOpen(false);
+        loadKnowledgeItems();
+      } else {
+        toast({
+          title: "Error",
+          description: response.error?.message || `Failed to ${isEditMode ? 'update' : 'add'} knowledge item`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting knowledge item:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSeedPPNKnowledge = async () => {
+    if (!user?.id) return;
     
+    setIsSeedingLoading(true);
     try {
-      setSubmitting(true);
-      
-      const { error } = await supabase
-        .from('knowledge_base')
-        .insert([
-          { title: newTitle, content: newContent }
-        ]);
-        
-      if (error) throw error;
-      
-      toast.success('Knowledge item added successfully');
-      setNewTitle('');
-      setNewContent('');
-      fetchKnowledgeBase();
+      const response = await seedPPNKnowledgeBase(user.id);
+      if (response.status === 'success' && response.data) {
+        toast({
+          title: "Success",
+          description: `Successfully seeded ${response.data.count} PPN knowledge items`,
+        });
+        loadKnowledgeItems();
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to seed PPN knowledge base items",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
-      console.error('Error adding knowledge item:', error);
-      toast.error('Failed to add knowledge item');
+      console.error('Error seeding PPN knowledge:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
     } finally {
-      setSubmitting(false);
+      setIsSeedingLoading(false);
     }
   };
-  
-  const deleteKnowledgeItem = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('knowledge_base')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      toast.success('Knowledge item deleted');
-      setItems(prevItems => prevItems.filter(item => item.id !== id));
-    } catch (error) {
-      console.error('Error deleting knowledge item:', error);
-      toast.error('Failed to delete knowledge item');
-    }
-  };
-  
+
   return (
-    <Tabs defaultValue="manage">
-      <TabsList className="mb-4">
-        <TabsTrigger value="manage">Manage Knowledge</TabsTrigger>
-        <TabsTrigger value="add">Add New</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="manage">
-        <Card>
-          <CardHeader>
-            <CardTitle>Knowledge Base Items</CardTitle>
-            <CardDescription>
-              Manage knowledge for the AI assistant to use when responding to users
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex justify-center py-6">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : items.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                No knowledge base items found. Add some to enhance the AI assistant.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {items.map(item => (
-                  <Card key={item.id} className="overflow-hidden">
-                    <div className="p-4 bg-muted/50">
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-medium">{item.title}</h3>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Knowledge Base Management</span>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={loadKnowledgeItems} 
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button onClick={handleAddItem}>
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add Item
+              </Button>
+              <Button 
+                variant="secondary" 
+                onClick={handleSeedPPNKnowledge} 
+                disabled={isSeedingLoading}
+              >
+                <Database className="h-4 w-4 mr-2" />
+                Seed PPN Knowledge
+              </Button>
+            </div>
+          </CardTitle>
+          <CardDescription>
+            Manage knowledge base entries for AI chat assistance
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {knowledgeItems.length === 0 ? (
+            <Alert>
+              <AlertTitle>No Knowledge Items</AlertTitle>
+              <AlertDescription>
+                You haven't added any knowledge base items yet. Add items to enhance AI chat responses.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Content Preview</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {knowledgeItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.title}</TableCell>
+                    <TableCell className="max-w-md truncate">
+                      {item.content.substring(0, 100)}
+                      {item.content.length > 100 ? '...' : ''}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end space-x-2">
                         <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="h-8 w-8 p-0 text-destructive"
-                          onClick={() => deleteKnowledgeItem(item.id)}
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleEditItem(item)}
                         >
-                          <Trash size={16} />
-                          <span className="sr-only">Delete</span>
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm" 
+                          onClick={() => handleDeleteItem(item.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                      <div className="mt-2 text-sm text-muted-foreground">
-                        {new Date(item.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <div className="p-4 text-sm whitespace-pre-wrap">
-                      {item.content}
-                    </div>
-                  </Card>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </TabsContent>
-      
-      <TabsContent value="add">
-        <Card>
-          <CardHeader>
-            <CardTitle>Add Knowledge Item</CardTitle>
-            <CardDescription>
-              Add new information to the knowledge base for the AI assistant
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={addKnowledgeItem} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  placeholder="Enter a descriptive title"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="content">Content</Label>
-                <Textarea
-                  id="content"
-                  placeholder="Enter the knowledge content here"
-                  value={newContent}
-                  onChange={(e) => setNewContent(e.target.value)}
-                  className="min-h-[200px]"
-                  required
-                />
-              </div>
-              
-              <Button type="submit" disabled={submitting}>
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add to Knowledge Base
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {isEditMode ? 'Edit Knowledge Item' : 'Add Knowledge Item'}
+            </DialogTitle>
+            <DialogDescription>
+              {isEditMode 
+                ? 'Update knowledge base information to enhance AI responses'
+                : 'Add new information to the knowledge base to enhance AI responses'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="title" className="text-sm font-medium">Title</label>
+              <Input 
+                id="title"
+                value={currentItem.title || ''}
+                onChange={(e) => setCurrentItem({ ...currentItem, title: e.target.value })}
+                placeholder="Enter a descriptive title"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="content" className="text-sm font-medium">Content</label>
+              <Textarea 
+                id="content"
+                value={currentItem.content || ''}
+                onChange={(e) => setCurrentItem({ ...currentItem, content: e.target.value })}
+                placeholder="Enter the knowledge content"
+                rows={8}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
+            <Button onClick={handleSubmit}>
+              {isEditMode ? 'Update' : 'Add'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 

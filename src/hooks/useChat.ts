@@ -46,7 +46,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     setError(null);
     
     try {
-      // Prepare messages in the format ElevenLabs expects
+      // Prepare messages in the format Anthropic expects
       const chatHistory = messages.map(msg => ({
         role: msg.role,
         content: msg.content,
@@ -55,13 +55,13 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       // Add the new user message
       chatHistory.push({ role: 'user', content });
       
-      console.log('Calling ElevenLabs edge function with:', {
+      console.log('Calling Anthropic edge function with:', {
         messageCount: chatHistory.length,
         usingKnowledgeBase: options.useKnowledgeBase
       });
       
       // Call our Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('eleven-labs-chat', {
+      const { data, error } = await supabase.functions.invoke('anthropic-chat', {
         body: {
           messages: chatHistory,
           systemPrompt,
@@ -74,27 +74,25 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       if (data?.content) {
         const assistantMessage: ChatMessage = {
           role: 'assistant',
-          content: data.content
+          content: data.content[0].text
         };
         
         setMessages(prev => [...prev, assistantMessage]);
       } else if (data?.error) {
-        // Handle special error response from our edge function
-        if (data.errorType === 'api_limit') {
-          toast.error('AI assistant is currently unavailable due to API limitations.');
-          setError('AI assistant is currently unavailable due to API limitations.');
-        } else {
-          throw new Error(data.error.message || 'Invalid response from ElevenLabs API');
-        }
+        throw new Error(data.error.message || 'Invalid response from Anthropic API');
       } else {
-        throw new Error('Invalid response from ElevenLabs API');
+        throw new Error('Invalid response from Anthropic API');
       }
     } catch (err: any) {
       console.error('Error in chat:', err);
       const errorMessage = err.message || 'Failed to get a response. Please try again.';
       setError(errorMessage);
       
-      toast.error('Failed to get a response. Please try again.');
+      if (errorMessage.includes('credit balance is too low')) {
+        toast.error('AI assistant is currently unavailable due to API credit limitations.');
+      } else {
+        toast.error('Failed to get a response. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
