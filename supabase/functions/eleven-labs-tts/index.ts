@@ -24,13 +24,17 @@ serve(async (req) => {
 
     console.log(`Converting to speech: "${text.substring(0, 50)}..." using voice ID: ${voiceId}`);
 
+    if (!ELEVEN_LABS_API_KEY) {
+      throw new Error('Eleven Labs API key is not configured');
+    }
+
     // Call Eleven Labs API
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {
         'Accept': 'audio/mpeg',
         'Content-Type': 'application/json',
-        'xi-api-key': ELEVEN_LABS_API_KEY || '',
+        'xi-api-key': ELEVEN_LABS_API_KEY,
       },
       body: JSON.stringify({
         text,

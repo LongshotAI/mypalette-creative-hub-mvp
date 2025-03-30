@@ -39,17 +39,21 @@ export function useTextToSpeech() {
       setIsSpeaking(true);
       
       // Call the edge function to get the audio
-      const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
+      const { data, error: functionError } = await supabase.functions.invoke('eleven-labs-tts', {
         body: { text, voiceId },
-        responseType: 'arraybuffer',
       });
       
-      if (error) {
-        throw new Error(error.message || 'Failed to generate speech');
+      if (functionError) {
+        throw new Error(functionError.message || 'Failed to generate speech');
       }
       
-      // Create a blob URL for the audio
-      const blob = new Blob([data], { type: 'audio/mpeg' });
+      if (!data) {
+        throw new Error('No audio data received');
+      }
+      
+      // Convert the ArrayBuffer to a Blob
+      const audioData = new Uint8Array(data);
+      const blob = new Blob([audioData], { type: 'audio/mpeg' });
       const url = URL.createObjectURL(blob);
       
       // Play the audio

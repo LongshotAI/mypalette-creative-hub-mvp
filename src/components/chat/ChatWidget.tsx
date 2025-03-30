@@ -8,10 +8,12 @@ import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
 
 export const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [speakingMessageId, setSpeakingMessageId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { 
     messages, 
@@ -52,13 +54,23 @@ export const ChatWidget = () => {
   const handleReset = () => {
     resetChat();
     stopSpeaking();
+    setSpeakingMessageId(null);
   };
 
-  const handleSpeakMessage = (message: string) => {
-    if (isSpeaking) {
+  const handleSpeakMessage = (message: string, index: number) => {
+    if (isSpeaking && speakingMessageId === index) {
       stopSpeaking();
+      setSpeakingMessageId(null);
     } else {
-      speak(message);
+      if (isSpeaking) {
+        stopSpeaking();
+      }
+      setSpeakingMessageId(index);
+      speak(message).catch(err => {
+        console.error('TTS error:', err);
+        toast.error('Failed to generate speech. Please try again.');
+        setSpeakingMessageId(null);
+      });
     }
   };
 
@@ -68,6 +80,13 @@ export const ChatWidget = () => {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
+
+  // Reset speaking message ID when speaking stops
+  useEffect(() => {
+    if (!isSpeaking && speakingMessageId !== null) {
+      setSpeakingMessageId(null);
+    }
+  }, [isSpeaking]);
 
   return (
     <div className="fixed bottom-4 left-4 z-50">
@@ -142,11 +161,14 @@ export const ChatWidget = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 w-6 p-0 rounded-full opacity-70 hover:opacity-100"
-                        onClick={() => handleSpeakMessage(message.content)}
-                        aria-label={isSpeaking ? "Stop speaking" : "Speak message"}
+                        className={cn(
+                          "h-6 w-6 p-0 rounded-full opacity-70 hover:opacity-100",
+                          speakingMessageId === index && "text-primary opacity-100"
+                        )}
+                        onClick={() => handleSpeakMessage(message.content, index)}
+                        aria-label={isSpeaking && speakingMessageId === index ? "Stop speaking" : "Speak message"}
                       >
-                        {isSpeaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                        {isSpeaking && speakingMessageId === index ? <VolumeX size={14} /> : <Volume2 size={14} />}
                       </Button>
                     </div>
                   )}
