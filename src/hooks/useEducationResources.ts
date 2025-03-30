@@ -34,27 +34,23 @@ export const useEducationResources = (
       setLoading(true);
       try {
         // Fetch resources
-        const response = await getEducationResources(searchQuery, resourceType, category);
+        const data = await getEducationResources(searchQuery, resourceType, category);
         
-        if (response.status === 'success') {
-          // Enhance with images and descriptions
-          const enhancedData = enhanceEducationResourcesWithImages(response.data);
-          
-          // Transform data to match our interface
-          const transformedData = enhancedData.map(resource => ({
-            ...resource,
-            imageUrl: resource.image_url || ''
-          }));
-          
-          setResources(transformedData);
-          
-          // If user is logged in, fetch their favorites
-          if (user) {
-            const favsResponse = await getUserFavorites(user.id);
-            if (favsResponse.status === 'success') {
-              setFavoriteIds(favsResponse.data);
-            }
-          }
+        // Enhance with images and descriptions
+        const enhancedData = enhanceEducationResourcesWithImages(data);
+        
+        // Transform data to match our interface
+        const transformedData = enhancedData.map(resource => ({
+          ...resource,
+          imageUrl: resource.image_url || ''
+        }));
+        
+        setResources(transformedData);
+        
+        // If user is logged in, fetch their favorites
+        if (user) {
+          const favs = await getUserFavorites(user.id);
+          setFavoriteIds(favs);
         }
       } catch (error) {
         console.error('Error fetching resources:', error);

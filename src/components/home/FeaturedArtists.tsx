@@ -97,28 +97,6 @@ const sampleArtworks = [
   "https://images.unsplash.com/photo-1513364776144-60967b0f800f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
 ];
 
-// Define interface for profile data
-interface ProfileData {
-  id: string;
-  full_name: string | null;
-  username: string | null;
-  bio: string | null;
-  avatar_url: string | null;
-}
-
-// Define interface for portfolio with profile
-interface PortfolioWithProfile {
-  id: string;
-  name: string;
-  user_id: string;
-  is_public: boolean;
-  profiles: ProfileData;
-  artwork?: {
-    id: string;
-    image_url: string;
-  } | null;
-}
-
 const FeaturedArtists: React.FC = () => {
   const [artists, setArtists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -155,7 +133,7 @@ const FeaturedArtists: React.FC = () => {
         console.log('Fetched portfolios:', portfoliosData);
         
         // Filter portfolios to make sure they have associated profile data
-        const validPortfolios = (portfoliosData?.filter(p => p.profiles) || []) as PortfolioWithProfile[];
+        const validPortfolios = portfoliosData?.filter(p => p.profiles) || [];
         
         // Fetch at least one artwork for each portfolio to display
         const portfoliosWithArtwork = await Promise.all(
