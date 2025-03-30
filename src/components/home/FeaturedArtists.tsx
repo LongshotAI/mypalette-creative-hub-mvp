@@ -13,39 +13,9 @@ interface ArtistCardProps {
   imageUrl: string;
   userId: string;
   delay: number;
-  portfolioId?: string;
 }
 
-const ArtistCard: React.FC<ArtistCardProps> = ({ name, specialty, imageUrl, userId, delay, portfolioId }) => {
-  const [artworkImageUrl, setArtworkImageUrl] = useState<string | null>(null);
-  
-  useEffect(() => {
-    const fetchArtistArtwork = async () => {
-      if (portfolioId) {
-        try {
-          // Fetch one artwork from artist's portfolio to use as a background
-          const { data, error } = await supabase
-            .from('artworks')
-            .select('image_url')
-            .eq('portfolio_id', portfolioId)
-            .limit(1)
-            .maybeSingle();
-          
-          if (!error && data?.image_url) {
-            setArtworkImageUrl(data.image_url);
-          }
-        } catch (error) {
-          console.error('Error fetching artist artwork:', error);
-        }
-      }
-    };
-    
-    fetchArtistArtwork();
-  }, [portfolioId]);
-  
-  // Use artwork image if available, otherwise use provided imageUrl
-  const displayImageUrl = artworkImageUrl || imageUrl;
-  
+const ArtistCard: React.FC<ArtistCardProps> = ({ name, specialty, imageUrl, userId, delay }) => {
   return (
     <div 
       className={cn(
@@ -58,12 +28,12 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ name, specialty, imageUrl, user
         <div 
           className="w-full h-full bg-gray-200 flex items-center justify-center"
           style={{
-            backgroundImage: displayImageUrl ? `url(${displayImageUrl})` : 'none',
+            backgroundImage: imageUrl ? `url(${imageUrl})` : 'none',
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
         >
-          {!displayImageUrl && (
+          {!imageUrl && (
             <span className="text-gray-400">Image placeholder</span>
           )}
         </div>
@@ -76,26 +46,14 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ name, specialty, imageUrl, user
       
       <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <Button variant="outline" size="sm" className="bg-white/90 hover:bg-white text-black" asChild>
-          <Link to={portfolioId ? `/portfolio/${portfolioId}` : `/user/${userId}`}>
-            View {portfolioId ? 'Portfolio' : 'Profile'}
+          <Link to={`/user/${userId}`}>
+            View Profile
           </Link>
         </Button>
       </div>
     </div>
   );
 };
-
-// Sample images from Unsplash for fallback purposes
-const sampleArtworks = [
-  "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1615184697985-c9bde1b07da7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1579783928621-7a13d66a62b1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1613989668327-fc08ea519c09?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1602532305019-3dbbd482dae9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1637847999747-6efb359e49f6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1513364776144-60967b0f800f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
-];
 
 const FeaturedArtists: React.FC = () => {
   const [artists, setArtists] = useState<any[]>([]);
@@ -106,76 +64,28 @@ const FeaturedArtists: React.FC = () => {
       try {
         setLoading(true);
         
-        // First, fetch public portfolios
-        const { data: portfoliosData, error: portfoliosError } = await supabase
-          .from('portfolios')
-          .select(`
-            id,
-            name,
-            user_id,
-            is_public,
-            profiles:user_id (
-              id, 
-              full_name, 
-              username, 
-              bio, 
-              avatar_url
-            )
-          `)
-          .eq('is_public', true)
+        // Fetch artists from profiles table
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, full_name, username, bio, avatar_url')
+          .not('full_name', 'is', null)
           .order('created_at', { ascending: false })
-          .limit(12);
+          .limit(8);
         
-        if (portfoliosError) {
-          throw portfoliosError;
+        if (error) {
+          throw error;
         }
         
-        console.log('Fetched portfolios:', portfoliosData);
-        
-        // Filter portfolios to make sure they have associated profile data
-        const validPortfolios = portfoliosData?.filter(p => p.profiles) || [];
-        
-        // Fetch at least one artwork for each portfolio to display
-        const portfoliosWithArtwork = await Promise.all(
-          validPortfolios.map(async (portfolio) => {
-            try {
-              const { data, error } = await supabase
-                .from('artworks')
-                .select('id, image_url')
-                .eq('portfolio_id', portfolio.id)
-                .limit(1)
-                .maybeSingle();
-                
-              return {
-                ...portfolio,
-                artwork: !error && data ? data : null
-              };
-            } catch (e) {
-              console.error('Error fetching artwork for portfolio', portfolio.id, e);
-              return {
-                ...portfolio,
-                artwork: null
-              };
-            }
-          })
-        );
-        
-        // Filter out portfolios without artwork
-        const portfoliosWithData = portfoliosWithArtwork.filter(p => p.artwork);
+        console.log('Fetched artists:', data);
         
         // Create an array of artists with mapped data
-        const artistData = portfoliosWithData.slice(0, 8).map((portfolio, index) => ({
-          id: portfolio.profiles?.id || `temp-${index}`,
-          name: portfolio.profiles?.full_name || portfolio.profiles?.username || portfolio.name || 'Artist',
-          specialty: portfolio.profiles?.bio ? 
-            portfolio.profiles.bio.substring(0, 30) + (portfolio.profiles.bio.length > 30 ? '...' : '') : 
-            'Digital Artist',
-          imageUrl: portfolio.artwork?.image_url || 
-                   portfolio.profiles?.avatar_url || 
-                   sampleArtworks[index % sampleArtworks.length],
-          userId: portfolio.profiles?.id || portfolio.user_id,
-          portfolioId: portfolio.id
-        }));
+        const artistData = data ? data.map(profile => ({
+          id: profile.id,
+          name: profile.full_name || profile.username || 'Artist',
+          specialty: profile.bio ? profile.bio.substring(0, 30) + (profile.bio.length > 30 ? '...' : '') : 'Artist',
+          imageUrl: profile.avatar_url || '',
+          userId: profile.id
+        })) : [];
         
         setArtists(artistData);
       } catch (error) {
@@ -191,14 +101,10 @@ const FeaturedArtists: React.FC = () => {
 
   // Fallback data in case there are no artists in the database
   const fallbackArtists = [
-    { id: "1", name: "Alex Riviera", specialty: "Digital Illustration", imageUrl: sampleArtworks[0], userId: "1" },
-    { id: "2", name: "Sophia Chen", specialty: "Pixel Art", imageUrl: sampleArtworks[1], userId: "2" },
-    { id: "3", name: "Marcus Johnson", specialty: "3D Modeling", imageUrl: sampleArtworks[2], userId: "3" },
-    { id: "4", name: "Naomi Wright", specialty: "Traditional Painting", imageUrl: sampleArtworks[3], userId: "4" },
-    { id: "5", name: "Jordan Blake", specialty: "Digital Collage", imageUrl: sampleArtworks[4], userId: "5" },
-    { id: "6", name: "Emma Liu", specialty: "Vector Art", imageUrl: sampleArtworks[5], userId: "6" },
-    { id: "7", name: "Carlos Rodriguez", specialty: "Abstract Digital", imageUrl: sampleArtworks[6], userId: "7" },
-    { id: "8", name: "Aisha Khan", specialty: "Generative Art", imageUrl: sampleArtworks[7], userId: "8" }
+    { id: "1", name: "Alex Riviera", specialty: "Digital Illustration", imageUrl: "", userId: "1" },
+    { id: "2", name: "Sophia Chen", specialty: "Pixel Art", imageUrl: "", userId: "2" },
+    { id: "3", name: "Marcus Johnson", specialty: "3D Modeling", imageUrl: "", userId: "3" },
+    { id: "4", name: "Naomi Wright", specialty: "Traditional Painting", imageUrl: "", userId: "4" },
   ];
 
   const displayArtists = artists.length > 0 ? artists : fallbackArtists;
@@ -247,7 +153,6 @@ const FeaturedArtists: React.FC = () => {
                 specialty={artist.specialty} 
                 imageUrl={artist.imageUrl}
                 userId={artist.userId}
-                portfolioId={artist.portfolioId}
                 delay={index + 1}
               />
             ))}

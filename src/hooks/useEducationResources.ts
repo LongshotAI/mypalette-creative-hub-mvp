@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { getEducationResources, getUserFavorites, enhanceEducationResourcesWithImages } from '@/services/api/education.api';
+import { getEducationResources, getUserFavorites } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface EducationResource {
@@ -36,11 +36,8 @@ export const useEducationResources = (
         // Fetch resources
         const data = await getEducationResources(searchQuery, resourceType, category);
         
-        // Enhance with images and descriptions
-        const enhancedData = enhanceEducationResourcesWithImages(data);
-        
         // Transform data to match our interface
-        const transformedData = enhancedData.map(resource => ({
+        const transformedData = data.map(resource => ({
           ...resource,
           imageUrl: resource.image_url || ''
         }));

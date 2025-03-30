@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import PixelWave from '@/components/animations/PixelWave';
 import { motion } from 'framer-motion';
-import { supabase } from '@/lib/supabase';
 
 interface HeroProps {
   scrollPosition?: number;
@@ -17,51 +16,11 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pixelGridRef = useRef<HTMLDivElement>(null);
   const [headingVisible, setHeadingVisible] = useState(true);
-  const [artworks, setArtworks] = useState<any[]>([]);
   
   useEffect(() => {
     const threshold = 100;
     setHeadingVisible(scrollPosition < threshold);
   }, [scrollPosition]);
-  
-  useEffect(() => {
-    // Fetch featured artworks from the database
-    const fetchArtworks = async () => {
-      try {
-        const { data: portfolioData } = await supabase
-          .from('portfolios')
-          .select('id, is_public')
-          .eq('is_public', true)
-          .limit(10);
-        
-        if (portfolioData && portfolioData.length > 0) {
-          // Get a random selection of 3 portfolio IDs
-          const randomPortfolios = portfolioData.sort(() => 0.5 - Math.random()).slice(0, 3);
-          
-          // Fetch artworks from these portfolios
-          const promises = randomPortfolios.map(portfolio => {
-            return supabase
-              .from('artworks')
-              .select('id, title, image_url, portfolio_id')
-              .eq('portfolio_id', portfolio.id)
-              .limit(1)
-              .single();
-          });
-          
-          const results = await Promise.all(promises);
-          const artworkData = results
-            .filter(result => !result.error && result.data)
-            .map(result => result.data);
-          
-          setArtworks(artworkData);
-        }
-      } catch (error) {
-        console.error('Error fetching artworks for hero:', error);
-      }
-    };
-    
-    fetchArtworks();
-  }, []);
   
   useEffect(() => {
     if (!pixelGridRef.current) return;
@@ -72,40 +31,43 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
     
     pixelGrid.innerHTML = '';
     
-    const createPixels = () => {
-      for (let i = 0; i < gridSize; i++) {
-        for (let j = 0; j < gridSize; j++) {
-          const pixel = document.createElement('div');
-          pixel.className = 'absolute transition-all duration-2000 rounded-sm opacity-0';
-          pixel.style.width = `${pixelSize}px`;
-          pixel.style.height = `${pixelSize}px`;
-          pixel.style.left = `${j * pixelSize}px`;
-          pixel.style.top = `${i * pixelSize}px`;
-          
-          if (Math.random() > 0.7) {
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        const pixel = document.createElement('div');
+        pixel.className = 'absolute transition-all duration-2000 rounded-sm opacity-0';
+        pixel.style.width = `${pixelSize}px`;
+        pixel.style.height = `${pixelSize}px`;
+        pixel.style.left = `${j * pixelSize}px`;
+        pixel.style.top = `${i * pixelSize}px`;
+        
+        if (Math.random() > 0.7) {
+          const delay = Math.random() * 5000;
+          setTimeout(() => {
             const colors = [
               'bg-brand-red/15', 'bg-brand-green/15', 'bg-brand-blue/15', 
               'bg-primary/10', 'bg-secondary/10'
             ];
             const color = colors[Math.floor(Math.random() * colors.length)];
-            pixel.className = `absolute transition-all duration-2000 ${color} rounded-sm opacity-0`;
+            pixel.className = `absolute transition-all duration-2000 ${color} rounded-sm`;
             
-            pixelGrid.appendChild(pixel);
-          }
+            if (Math.random() > 0.8) {
+              pixel.style.opacity = '0.3';
+            }
+          }, delay);
+          
+          pixelGrid.appendChild(pixel);
         }
       }
-    };
-    
-    createPixels();
+    }
     
     const animatePixels = () => {
       Array.from(pixelGrid.children).forEach((pixel) => {
-        if (Math.random() > 0.98) {
+        if (Math.random() > 0.995) {
           const elem = pixel as HTMLElement;
-          if (elem.style.opacity === '0' || elem.style.opacity === '') {
-            elem.style.opacity = Math.random() > 0.5 ? '0.3' : '0.5';
-          } else {
+          if (elem.style.opacity !== '0') {
             elem.style.opacity = '0';
+          } else if (Math.random() > 0.8) {
+            elem.style.opacity = '0.3';
           }
         }
       });
@@ -114,18 +76,6 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
     };
     
     const animationId = requestAnimationFrame(animatePixels);
-    
-    const refreshInterval = setInterval(() => {
-      if (pixelGrid.children.length > 100) {
-        for (let i = 0; i < 20; i++) {
-          if (pixelGrid.children.length > 0) {
-            pixelGrid.removeChild(pixelGrid.children[Math.floor(Math.random() * pixelGrid.children.length)]);
-          }
-        }
-      }
-      
-      createPixels();
-    }, 5000);
     
     const handleResize = () => {
       if (pixelGrid) {
@@ -148,7 +98,7 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
       const pixelTextContainer = document.createElement('div');
       pixelTextContainer.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none';
       
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 8; i++) {
         const floatingPixel = document.createElement('div');
         const size = 4 + Math.random() * 8;
         const xPos = (Math.random() - 0.5) * 100;
@@ -174,10 +124,6 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
     
     setTimeout(addPixelText, 1000);
     
-    const floatingPixelsInterval = setInterval(() => {
-      addPixelText();
-    }, 8000);
-    
     console.log(`
     ███╗   ███╗██╗   ██╗██████╗  █████╗ ██╗     ███████╗████████╗████████╗███████╗
     ████╗ ████║╚██╗ ██╔╝██╔══██╗██╔══██╗██║     ██╔════╝╚══██╔══╝╚══██╔══╝██╔════╝
@@ -191,18 +137,9 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
     
     return () => {
       cancelAnimationFrame(animationId);
-      clearInterval(refreshInterval);
-      clearInterval(floatingPixelsInterval);
       window.removeEventListener('resize', handleResize);
     };
   }, []);
-  
-  // Fallback images in case no real artworks are found
-  const fallbackImages = [
-    "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400&h=300&fit=crop",
-    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=300&fit=crop",
-    "https://images.unsplash.com/photo-1615184697985-c9bde1b07da7?w=400&h=300&fit=crop"
-  ];
   
   return (
     <section ref={heroRef} className="relative overflow-hidden py-16 md:py-24 lg:py-32 bg-ppn-light -mt-20 pt-20">
@@ -318,18 +255,21 @@ const Hero: React.FC<HeroProps> = ({ scrollPosition = 0 }) => {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 w-full max-w-xs md:max-w-2xl">
-                {[0, 1, 2].map((index) => {
-                  const artwork = artworks[index];
-                  const imageUrl = artwork?.image_url || fallbackImages[index];
-                  return (
-                    <div key={index} className="col-span-1 bg-white rounded-lg shadow-md p-2 md:p-4 hover-pixel">
-                      <div className="bg-brand-red/10 h-20 md:h-32 rounded mb-2" 
-                          style={{backgroundImage: `url('${imageUrl}')`, backgroundSize: 'cover'}}></div>
-                      <div className="h-3 md:h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                      <div className="h-2 md:h-3 bg-gray-200 rounded w-1/2"></div>
-                    </div>
-                  );
-                })}
+                <div className="col-span-1 bg-white rounded-lg shadow-md p-2 md:p-4 hover-pixel">
+                  <div className="bg-brand-red/10 h-20 md:h-32 rounded mb-2"></div>
+                  <div className="h-3 md:h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-2 md:h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+                <div className="col-span-1 bg-white rounded-lg shadow-md p-2 md:p-4 hover-pixel">
+                  <div className="bg-brand-green/10 h-20 md:h-32 rounded mb-2"></div>
+                  <div className="h-3 md:h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-2 md:h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+                <div className="col-span-1 bg-white rounded-lg shadow-md p-2 md:p-4 hover-pixel">
+                  <div className="bg-brand-blue/10 h-20 md:h-32 rounded mb-2"></div>
+                  <div className="h-3 md:h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-2 md:h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
               </div>
             </div>
           </motion.div>

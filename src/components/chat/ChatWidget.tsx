@@ -31,8 +31,6 @@ export const ChatWidget = () => {
       
       Always be friendly, helpful, and concise in your responses.
       If you don't know the answer to something, say so honestly.
-      
-      If you encounter any errors, respond in a friendly way without mentioning technical problems.
     `
   });
 
@@ -134,6 +132,15 @@ export const ChatWidget = () => {
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>Thinking...</span>
               </div>
+            )}
+            {error && (
+              <Alert variant="destructive" className="max-w-[95%] mx-auto">
+                <AlertDescription>
+                  {error.includes("credit balance is too low") 
+                    ? "The AI assistant is currently unavailable due to API credit limitations. Please try again later." 
+                    : error}
+                </AlertDescription>
+              </Alert>
             )}
             <div ref={messagesEndRef} />
           </div>

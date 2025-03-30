@@ -46,7 +46,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     setError(null);
     
     try {
-      // Prepare messages in the format expected
+      // Prepare messages in the format Anthropic expects
       const chatHistory = messages.map(msg => ({
         role: msg.role,
         content: msg.content,
@@ -55,77 +55,43 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       // Add the new user message
       chatHistory.push({ role: 'user', content });
       
-      // First try ElevenLabs chat function
-      let response;
-      try {
-        console.log('Calling ElevenLabs edge function with:', {
-          messageCount: chatHistory.length,
-          usingKnowledgeBase: options.useKnowledgeBase
-        });
+      console.log('Calling Anthropic edge function with:', {
+        messageCount: chatHistory.length,
+        usingKnowledgeBase: options.useKnowledgeBase
+      });
+      
+      // Call our Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('anthropic-chat', {
+        body: {
+          messages: chatHistory,
+          systemPrompt,
+          useKnowledgeBase: options.useKnowledgeBase || false,
+        },
+      });
+      
+      if (error) throw new Error(error.message);
+      
+      if (data?.content) {
+        const assistantMessage: ChatMessage = {
+          role: 'assistant',
+          content: data.content[0].text
+        };
         
-        response = await supabase.functions.invoke('eleven-labs-chat', {
-          body: {
-            messages: chatHistory,
-            systemPrompt,
-            useKnowledgeBase: options.useKnowledgeBase || false,
-          },
-        });
-      } catch (elevenlabsError) {
-        console.error('Error with ElevenLabs chat:', elevenlabsError);
-        // If ElevenLabs fails, try Anthropic as fallback
-        response = await supabase.functions.invoke('anthropic-chat', {
-          body: {
-            messages: chatHistory,
-            systemPrompt,
-            useKnowledgeBase: options.useKnowledgeBase || false,
-          },
-        });
-      }
-      
-      if (response.error) throw new Error(response.error.message);
-      
-      // Handle response from either service
-      if (response.data?.content) {
-        // ElevenLabs format
-        const assistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: response.data.content
-        };
         setMessages(prev => [...prev, assistantMessage]);
-      } else if (response.data?.content?.[0]?.text) {
-        // Anthropic format
-        const assistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: response.data.content[0].text
-        };
-        setMessages(prev => [...prev, assistantMessage]);
-      } else if (response.data?.error) {
-        throw new Error(response.data.error.message || 'Invalid response from AI service');
+      } else if (data?.error) {
+        throw new Error(data.error.message || 'Invalid response from Anthropic API');
       } else {
-        // Fallback response if no valid response from either service
-        const fallbackMessage: ChatMessage = {
-          role: 'assistant',
-          content: "I'm sorry, I'm having trouble connecting to my brain right now. Please try asking me something else or try again later."
-        };
-        setMessages(prev => [...prev, fallbackMessage]);
+        throw new Error('Invalid response from Anthropic API');
       }
     } catch (err: any) {
       console.error('Error in chat:', err);
       const errorMessage = err.message || 'Failed to get a response. Please try again.';
       setError(errorMessage);
       
-      // Add a friendly error message to the chat instead of just showing an error notification
-      const errorChatMessage: ChatMessage = {
-        role: 'assistant',
-        content: "I'm sorry, I'm having trouble generating a response right now. Our team is working on it. In the meantime, feel free to browse the education resources or explore portfolios on MyPalette."
-      };
-      setMessages(prev => [...prev, errorChatMessage]);
-      
       if (errorMessage.includes('credit balance is too low')) {
-        // Show toast but don't block the UI
-        toast.error('AI assistant is currently experiencing connection issues. We\'re working on it!');
+        toast.error('AI assistant is currently unavailable due to API credit limitations.');
       } else {
-        toast.error('Having trouble connecting to the AI. Please try again later.');
+        toast.error('Failed to get a response. Please try again.');
       }
     } finally {
       setIsLoading(false);

@@ -8,7 +8,7 @@ export interface Portfolio {
   is_public: boolean;
   user_id: string;
   created_at: string;
-  updated_at: string;
+  updated_at: string;  // Add this line to include the updated_at property
 }
 
 export interface PortfolioFormData {
@@ -31,7 +31,6 @@ export interface Artwork {
   created_at: string;
   quantity?: number | null;
   sold_out?: boolean;
-  listing_url?: string;
   portfolios?: {
     user_id: string;
     name?: string;
@@ -51,7 +50,6 @@ export interface ArtworkFormData {
   price: string;
   currency: string;
   for_sale: boolean;
-  listing_url?: string;
 }
 
 export interface PortfolioWithArtist {
@@ -116,6 +114,8 @@ export interface Order {
 
 export type OrderStatus = 'all' | 'pending' | 'completed' | 'failed';
 
+// Template types for clear representation in the UI
 export type PortfolioTemplateType = 'grid' | 'masonry' | 'slideshow' | 'minimal' | 'gallery' | 'studio';
 
+// Theme types for consistent styling
 export type PortfolioThemeType = 'default' | 'minimal' | 'bold' | 'elegant' | 'dark';

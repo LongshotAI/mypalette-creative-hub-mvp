@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import DefaultLayout from '@/components/layout/DefaultLayout';
 import { Button } from '@/components/ui/button';
@@ -9,17 +10,7 @@ import OpenCallCard from '@/components/opencalls/OpenCallCard';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
-// Sample art images
-const artImages = [
-  "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1615184697985-c9bde1b07da7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1561214115-f2f134cc4912?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1579783928621-7a13d66a62b1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
-];
-
-// Sample data with added images
+// Sample data
 const openCallsData = [
   { 
     id: '1',
@@ -27,7 +18,7 @@ const openCallsData = [
     organization: "Modern Art Gallery", 
     deadline: "June 30, 2023", 
     category: "Exhibition", 
-    imageUrl: artImages[0],
+    imageUrl: "",
     status: "open" as const
   },
   { 
@@ -36,7 +27,7 @@ const openCallsData = [
     organization: "Art Foundation", 
     deadline: "July 15, 2023", 
     category: "Grant", 
-    imageUrl: artImages[1],
+    imageUrl: "",
     status: "open" as const
   },
   { 
@@ -45,7 +36,7 @@ const openCallsData = [
     organization: "Crypto Art Collective", 
     deadline: "May 20, 2023", 
     category: "Commission", 
-    imageUrl: artImages[2],
+    imageUrl: "",
     status: "closed" as const
   },
   { 
@@ -54,7 +45,7 @@ const openCallsData = [
     organization: "City Arts Commission", 
     deadline: "August 5, 2023", 
     category: "Public Art", 
-    imageUrl: artImages[3],
+    imageUrl: "",
     status: "upcoming" as const
   },
   { 
@@ -63,7 +54,7 @@ const openCallsData = [
     organization: "Tech Arts Initiative", 
     deadline: "July 10, 2023", 
     category: "Digital Art", 
-    imageUrl: artImages[4],
+    imageUrl: "",
     status: "open" as const
   },
   { 
@@ -72,7 +63,7 @@ const openCallsData = [
     organization: "Green Planet Foundation", 
     deadline: "August 30, 2023", 
     category: "Competition", 
-    imageUrl: artImages[5],
+    imageUrl: "",
     status: "upcoming" as const
   },
 ];

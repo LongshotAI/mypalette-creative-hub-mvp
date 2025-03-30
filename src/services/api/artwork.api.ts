@@ -131,8 +131,7 @@ export async function createArtwork(
       image_url: artworkData.image_url,
       price: artworkData.price ? parseFloat(artworkData.price) : null,
       currency: artworkData.currency,
-      for_sale: artworkData.for_sale,
-      listing_url: artworkData.listing_url || null
+      for_sale: artworkData.for_sale
     };
     
     const { data, error } = await supabase
@@ -167,8 +166,7 @@ export async function updateArtwork(
       image_url: artworkData.image_url,
       price: artworkData.price ? parseFloat(artworkData.price) : null,
       currency: artworkData.currency,
-      for_sale: artworkData.for_sale,
-      listing_url: artworkData.listing_url || null
+      for_sale: artworkData.for_sale
     };
     
     const { data, error } = await supabase

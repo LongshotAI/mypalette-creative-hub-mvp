@@ -1,20 +1,13 @@
 
 import React from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter,
-  DialogClose
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { ArtworkFormData } from '@/types/portfolio';
-import { Loader2, UploadCloud } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
+import { ArtworkFormData, Artwork } from '@/types/portfolio';
 
 interface ArtworkFormProps {
   open: boolean;
@@ -39,161 +32,132 @@ const ArtworkForm = ({
   isUploading,
   isEditing
 }: ArtworkFormProps) => {
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit();
-  };
-
-  const currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY'];
-  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit Artwork' : 'Add New Artwork'}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? 'Edit Artwork' : 'Add New Artwork'}
+          </DialogTitle>
+          <DialogDescription>
+            {isEditing 
+              ? 'Update your artwork details below.' 
+              : 'Add a new artwork to your portfolio.'}
+          </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={artworkForm.title}
-                onChange={(e) => setArtworkForm({ ...artworkForm, title: e.target.value })}
-                placeholder="Enter artwork title"
-                required
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={artworkForm.description}
-                onChange={(e) => setArtworkForm({ ...artworkForm, description: e.target.value })}
-                placeholder="Describe your artwork"
-                rows={3}
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label>Artwork Image</Label>
-              {artworkForm.image_url ? (
-                <div className="relative">
-                  <img 
-                    src={artworkForm.image_url} 
-                    alt="Artwork preview" 
-                    className="w-full h-48 object-cover rounded-md"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => setArtworkForm({ ...artworkForm, image_url: '' })}
-                  >
-                    Change
-                  </Button>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-md p-4 text-center relative">
-                  <input
-                    type="file"
-                    id="image_upload"
-                    accept="image/*"
-                    onChange={onImageUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  <div className="flex flex-col items-center justify-center h-32">
-                    {isUploading ? (
-                      <>
-                        <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-                        <p className="text-sm text-muted-foreground">Uploading image...</p>
-                      </>
-                    ) : (
-                      <>
-                        <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground">Click or drag to upload image</p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="for_sale"
-                checked={artworkForm.for_sale}
-                onCheckedChange={(checked) => setArtworkForm({ ...artworkForm, for_sale: checked })}
-              />
-              <Label htmlFor="for_sale">This artwork is for sale</Label>
-            </div>
-            
-            {artworkForm.for_sale && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="price">Price</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={artworkForm.price}
-                    onChange={(e) => setArtworkForm({ ...artworkForm, price: e.target.value })}
-                    placeholder="0.00"
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="currency">Currency</Label>
-                  <select
-                    id="currency"
-                    value={artworkForm.currency}
-                    onChange={(e) => setArtworkForm({ ...artworkForm, currency: e.target.value })}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  >
-                    {currencies.map((currency) => (
-                      <option key={currency} value={currency}>
-                        {currency}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-            
-            <div className="grid gap-2">
-              <Label htmlFor="listing_url">External Listing URL (Optional)</Label>
-              <Input
-                id="listing_url"
-                value={artworkForm.listing_url || ''}
-                onChange={(e) => setArtworkForm({ ...artworkForm, listing_url: e.target.value })}
-                placeholder="https://marketplace.com/your-artwork"
-              />
-              <p className="text-xs text-muted-foreground">
-                Add a link to an external marketplace where this artwork is listed
-              </p>
-            </div>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="artwork-title">Title</Label>
+            <Input
+              id="artwork-title"
+              value={artworkForm.title}
+              onChange={(e) => setArtworkForm({...artworkForm, title: e.target.value})}
+              placeholder="Untitled Artwork"
+            />
           </div>
           
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" type="button">Cancel</Button>
-            </DialogClose>
-            <Button type="submit" disabled={isSubmitting || isUploading || !artworkForm.title || !artworkForm.image_url}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isEditing ? 'Updating...' : 'Creating...'}
-                </>
-              ) : (
-                isEditing ? 'Update Artwork' : 'Add Artwork'
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
+          <div className="space-y-2">
+            <Label htmlFor="artwork-description">Description</Label>
+            <Textarea
+              id="artwork-description"
+              value={artworkForm.description}
+              onChange={(e) => setArtworkForm({...artworkForm, description: e.target.value})}
+              placeholder="Describe your artwork..."
+              rows={3}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="artwork-image">Artwork Image</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="artwork-image"
+                type="file"
+                disabled={isUploading}
+                onChange={onImageUpload}
+                accept="image/jpeg,image/png,image/gif"
+                className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+              />
+              {isUploading && <Loader2 className="h-4 w-4 animate-spin" />}
+            </div>
+            {artworkForm.image_url && (
+              <div className="mt-2">
+                <img
+                  src={artworkForm.image_url}
+                  alt="Artwork preview"
+                  className="max-h-40 rounded-md object-contain"
+                />
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="artwork-for-sale"
+              checked={artworkForm.for_sale}
+              onChange={(e) => setArtworkForm({...artworkForm, for_sale: e.target.checked})}
+              className="rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            <Label htmlFor="artwork-for-sale">For Sale</Label>
+          </div>
+          
+          {artworkForm.for_sale && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="artwork-price">Price</Label>
+                <Input
+                  id="artwork-price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={artworkForm.price}
+                  onChange={(e) => setArtworkForm({...artworkForm, price: e.target.value})}
+                  placeholder="0.00"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="artwork-currency">Currency</Label>
+                <Select
+                  value={artworkForm.currency}
+                  onValueChange={(value) => setArtworkForm({...artworkForm, currency: value})}
+                >
+                  <SelectTrigger id="artwork-currency">
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                    <SelectItem value="GBP">GBP (£)</SelectItem>
+                    <SelectItem value="JPY">JPY (¥)</SelectItem>
+                    <SelectItem value="ETH">ETH (Ξ)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={onSubmit}
+            disabled={isSubmitting || !artworkForm.title || !artworkForm.image_url}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isEditing ? 'Updating...' : 'Adding...'}
+              </>
+            ) : (
+              isEditing ? 'Update Artwork' : 'Add Artwork'
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
