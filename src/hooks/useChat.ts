@@ -79,7 +79,13 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         
         setMessages(prev => [...prev, assistantMessage]);
       } else if (data?.error) {
-        throw new Error(data.error.message || 'Invalid response from Anthropic API');
+        // Handle special error response from our edge function
+        if (data.errorType === 'credit_limit') {
+          toast.error('AI assistant is currently unavailable due to API credit limitations.');
+          setError('AI assistant is currently unavailable due to API credit limitations.');
+        } else {
+          throw new Error(data.error.message || 'Invalid response from Anthropic API');
+        }
       } else {
         throw new Error('Invalid response from Anthropic API');
       }

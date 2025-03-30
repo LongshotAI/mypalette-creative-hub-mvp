@@ -2,12 +2,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MessageCircle, X, Send, Loader2, RefreshCw, Volume2, VolumeX } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, RefreshCw, Volume2, VolumeX, AlertTriangle } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
 
 export const ChatWidget = () => {
@@ -88,6 +88,9 @@ export const ChatWidget = () => {
     }
   }, [isSpeaking]);
 
+  const isCreditLimitError = error?.includes('credit balance is too low') || 
+                             error?.includes('API credit limitations');
+
   return (
     <div className="fixed bottom-4 left-4 z-50">
       {!isOpen ? (
@@ -139,7 +142,16 @@ export const ChatWidget = () => {
           
           {/* Chat messages */}
           <div className="flex-1 overflow-y-auto p-3 space-y-4">
-            {messages.length === 0 ? (
+            {isCreditLimitError ? (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Service Unavailable</AlertTitle>
+                <AlertDescription>
+                  The AI assistant is currently unavailable due to API credit limitations. 
+                  Please try again later or contact support for assistance.
+                </AlertDescription>
+              </Alert>
+            ) : messages.length === 0 ? (
               <div className="text-center text-muted-foreground p-4">
                 How can I help you with MyPalette today? You can also ask about Pixel Palette Nation (PPN) collections and resources.
               </div>
@@ -181,12 +193,10 @@ export const ChatWidget = () => {
                 <span>Thinking...</span>
               </div>
             )}
-            {error && (
+            {error && !isCreditLimitError && (
               <Alert variant="destructive" className="max-w-[95%] mx-auto">
                 <AlertDescription>
-                  {error.includes("credit balance is too low") 
-                    ? "The AI assistant is currently unavailable due to API credit limitations. Please try again later." 
-                    : error}
+                  {error}
                 </AlertDescription>
               </Alert>
             )}
@@ -208,12 +218,12 @@ export const ChatWidget = () => {
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Type your message..."
                 className="flex-1"
-                disabled={isLoading}
+                disabled={isLoading || isCreditLimitError}
               />
               <Button 
                 type="submit" 
                 size="icon"
-                disabled={isLoading || !inputValue.trim()}
+                disabled={isLoading || !inputValue.trim() || isCreditLimitError}
                 aria-label="Send message"
               >
                 {isLoading ? (
