@@ -1,176 +1,100 @@
-// Import React and required components
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { AnimatedLink } from '@/components/ui/AnimatedLink';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { GlareCard } from '@/components/ui/glare-card';
+import { ArrowRight } from 'lucide-react';
+import AnimatedLink from '@/components/ui/AnimatedLink';
+import { supabase } from '@/lib/supabase';
+import { PortfolioWithProfile } from '@/types/portfolio';
 import { toast } from 'sonner';
 
-// Define types for the API responses
-interface ProfileData {
-  id: string;
-  full_name: string | null;
-  username: string | null;
-  bio: string | null;
-  avatar_url: string | null;
+interface FeaturedArtistsProps {
+  limit?: number;
 }
 
-interface PortfolioWithProfile {
-  id: string;
-  name: string;
-  user_id: string;
-  is_public: boolean;
-  profile: ProfileData;
-}
-
-interface ArtworkData {
-  id: string;
-  title: string;
-  image_url: string;
-  portfolio_id: string;
-}
-
-const FeaturedArtists = () => {
-  const [artists, setArtists] = useState<PortfolioWithProfile[]>([]);
-  const [artworks, setArtworks] = useState<Record<string, ArtworkData>>({});
-  const [loading, setLoading] = useState(true);
+const FeaturedArtists: React.FC<FeaturedArtistsProps> = ({ limit = 6 }) => {
+  const [artists, setArtists] = useState<PortfolioWithProfile[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchArtists();
-  }, []);
+    const fetchFeaturedArtists = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const { data, error } = await supabase
+          .from('portfolios')
+          .select('*, user_profiles(full_name, avatar_url)')
+          .eq('featured', true)
+          .order('created_at', { ascending: false })
+          .limit(limit);
 
-  const fetchArtists = async () => {
-    try {
-      // Get public portfolios first
-      const { data: portfolios, error } = await supabase
-        .from('portfolios')
-        .select('id, is_public')
-        .eq('is_public', true)
-        .limit(10);
-
-      if (error) throw error;
-
-      // For each portfolio, get the user profile and a sample artwork
-      const portfoliosWithProfiles: PortfolioWithProfile[] = [];
-      const artworksMap: Record<string, ArtworkData> = {};
-
-      // Process portfolios sequentially to avoid race conditions
-      for (const portfolio of portfolios) {
-        try {
-          // Get portfolio details
-          const { data: portfolioData, error: portfolioError } = await supabase
-            .from('portfolios')
-            .select('id, name, user_id, is_public')
-            .eq('id', portfolio.id)
-            .single();
-
-          if (portfolioError) continue;
-
-          // Get user profile
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('id, username, full_name, bio, avatar_url')
-            .eq('id', portfolioData.user_id)
-            .single();
-
-          if (profileError) continue;
-
-          // Combined data
-          portfoliosWithProfiles.push({
-            ...portfolioData,
-            profile: profileData
-          });
-
-          // Get a sample artwork
-          const { data: artworkData, error: artworkError } = await supabase
-            .from('artworks')
-            .select('id, title, image_url, portfolio_id')
-            .eq('portfolio_id', portfolio.id)
-            .limit(1)
-            .single();
-
-          if (!artworkError && artworkData) {
-            artworksMap[portfolio.id] = artworkData;
-          }
-        } catch (err) {
-          console.error('Error processing portfolio:', err);
+        if (error) {
+          console.error('Supabase error:', error);
+          setError(error.message);
+          toast.error(`Failed to fetch featured artists: ${error.message}`);
+        } else {
+          setArtists(data as PortfolioWithProfile[]);
         }
+      } catch (err: any) {
+        console.error('Unexpected error:', err);
+        setError(err.message || 'An unexpected error occurred');
+        toast.error(`An unexpected error occurred: ${err.message}`);
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      setArtists(portfoliosWithProfiles);
-      setArtworks(artworksMap);
-    } catch (err) {
-      console.error('Error fetching artists:', err);
-      toast.error('Failed to load featured artists');
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchFeaturedArtists();
+  }, [limit]);
 
   return (
-    <div className="container py-12">
-      <h2 className="text-3xl font-bold mb-8 text-center">Featured Artists</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {loading ? (
-          // Display skeleton loaders while loading
-          [...Array(6)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <Skeleton className="h-40 w-full rounded-md mb-4" />
-                <div className="flex items-center space-x-4 mb-2">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-4 w-24" />
-                  </div>
+    <Card>
+      <CardContent className="grid gap-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Featured Artists</h2>
+          <AnimatedLink href="/artists" className="hover:underline">
+            View All <ArrowRight className="inline-block ml-1 h-4 w-4" />
+          </AnimatedLink>
+        </div>
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {isLoading ? (
+            // Skeleton loaders while loading
+            [...Array(limit)].map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
                 </div>
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-5/6" />
-                <Skeleton className="h-4 w-2/3" />
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          // Display featured artists
-          artists.map((artist) => (
-            <GlareCard key={artist.id}>
-              <CardContent className="p-4">
-                {artworks[artist.id]?.image_url ? (
-                  <img
-                    src={artworks[artist.id]?.image_url}
-                    alt={artworks[artist.id]?.title || 'Artwork'}
-                    className="object-cover w-full h-40 rounded-md mb-4"
-                  />
-                ) : (
-                  <Skeleton className="h-40 w-full rounded-md mb-4" />
-                )}
-                <div className="flex items-center space-x-4 mb-2">
-                  <Avatar>
-                    {artist.profile?.avatar_url ? (
-                      <AvatarImage src={artist.profile?.avatar_url} alt={artist.profile?.full_name || 'Avatar'} />
-                    ) : (
-                      <AvatarFallback>{artist.profile?.full_name?.charAt(0) || artist.profile?.username?.charAt(0) || '?'}</AvatarFallback>
-                    )}
+              </div>
+            ))
+          ) : error ? (
+            // Error message if fetching fails
+            <div className="text-red-500">{error}</div>
+          ) : artists && artists.length > 0 ? (
+            // Display featured artists
+            artists.map((artist) => (
+              <AnimatedLink key={artist.id} href={`/artist/${artist.user_id}`} className="space-y-3">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="h-12 w-12">
+                    <img src={artist.user_profiles?.avatar_url || "/placeholder-avatar.jpg"} alt={artist.user_profiles?.full_name || "Artist"} className="rounded-full" />
                   </Avatar>
                   <div>
-                    <h3 className="text-lg font-semibold">{artist.profile?.full_name || artist.profile?.username || 'Unknown'}</h3>
-                    <p className="text-sm text-muted-foreground">{artist.profile?.bio?.substring(0, 50) || 'No bio available'}</p>
+                    <h3 className="text-sm font-medium">{artist.user_profiles?.full_name || 'Unknown Artist'}</h3>
+                    <p className="text-sm text-muted-foreground">{artist.title}</p>
                   </div>
                 </div>
-              </CardContent>
-              <CardFooter className="p-4">
-                <AnimatedLink to={`/user/${artist.profile?.id}`}>
-                  <Button className="w-full">View Profile</Button>
-                </AnimatedLink>
-              </CardFooter>
-            </GlareCard>
-          ))
-        )}
-      </div>
-    </div>
+              </AnimatedLink>
+            ))
+          ) : (
+            // Message if no featured artists are found
+            <div className="text-muted-foreground">No featured artists found.</div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

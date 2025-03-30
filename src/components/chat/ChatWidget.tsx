@@ -88,8 +88,8 @@ export const ChatWidget = () => {
     }
   }, [isSpeaking]);
 
-  const isCreditLimitError = error?.includes('credit balance is too low') || 
-                             error?.includes('API credit limitations');
+  const isApiLimitError = error?.includes('API limitations') || 
+                          error?.includes('quota exceeded');
 
   return (
     <div className="fixed bottom-4 left-4 z-50">
@@ -142,12 +142,12 @@ export const ChatWidget = () => {
           
           {/* Chat messages */}
           <div className="flex-1 overflow-y-auto p-3 space-y-4">
-            {isCreditLimitError ? (
+            {isApiLimitError ? (
               <Alert variant="destructive" className="mb-4">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Service Unavailable</AlertTitle>
                 <AlertDescription>
-                  The AI assistant is currently unavailable due to API credit limitations. 
+                  The AI assistant is currently unavailable due to API limitations. 
                   Please try again later or contact support for assistance.
                 </AlertDescription>
               </Alert>
@@ -193,7 +193,7 @@ export const ChatWidget = () => {
                 <span>Thinking...</span>
               </div>
             )}
-            {error && !isCreditLimitError && (
+            {error && !isApiLimitError && (
               <Alert variant="destructive" className="max-w-[95%] mx-auto">
                 <AlertDescription>
                   {error}
@@ -218,12 +218,12 @@ export const ChatWidget = () => {
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Type your message..."
                 className="flex-1"
-                disabled={isLoading || isCreditLimitError}
+                disabled={isLoading || isApiLimitError}
               />
               <Button 
                 type="submit" 
                 size="icon"
-                disabled={isLoading || !inputValue.trim() || isCreditLimitError}
+                disabled={isLoading || !inputValue.trim() || isApiLimitError}
                 aria-label="Send message"
               >
                 {isLoading ? (
