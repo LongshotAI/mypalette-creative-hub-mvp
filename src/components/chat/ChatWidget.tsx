@@ -2,8 +2,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MessageCircle, X, Send, Loader2, RefreshCw } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, RefreshCw, Volume2, VolumeX } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
+import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -34,6 +35,8 @@ export const ChatWidget = () => {
     `
   });
 
+  const { speak, stopSpeaking, isSpeaking, error: ttsError } = useTextToSpeech();
+
   const handleToggle = () => {
     setIsOpen(!isOpen);
   };
@@ -48,6 +51,15 @@ export const ChatWidget = () => {
 
   const handleReset = () => {
     resetChat();
+    stopSpeaking();
+  };
+
+  const handleSpeakMessage = (message: string) => {
+    if (isSpeaking) {
+      stopSpeaking();
+    } else {
+      speak(message);
+    }
   };
 
   // Scroll to bottom when messages change
@@ -124,6 +136,20 @@ export const ChatWidget = () => {
                   )}
                 >
                   {message.content}
+                  
+                  {message.role === 'assistant' && (
+                    <div className="mt-2 flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 rounded-full opacity-70 hover:opacity-100"
+                        onClick={() => handleSpeakMessage(message.content)}
+                        aria-label={isSpeaking ? "Stop speaking" : "Speak message"}
+                      >
+                        {isSpeaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))
             )}
@@ -139,6 +165,13 @@ export const ChatWidget = () => {
                   {error.includes("credit balance is too low") 
                     ? "The AI assistant is currently unavailable due to API credit limitations. Please try again later." 
                     : error}
+                </AlertDescription>
+              </Alert>
+            )}
+            {ttsError && (
+              <Alert variant="destructive" className="max-w-[95%] mx-auto">
+                <AlertDescription>
+                  Failed to generate speech: {ttsError}
                 </AlertDescription>
               </Alert>
             )}
